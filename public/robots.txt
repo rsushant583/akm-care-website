@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /.env
+Disallow: /api/
+
+Sitemap: https://akmcare.com/sitemap.xml
