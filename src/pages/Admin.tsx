@@ -6,8 +6,9 @@ import { useProducts } from "@/hooks/useProducts";
 import { useMotivation } from "@/hooks/useMotivation";
 import { useFAQ } from "@/hooks/useFAQ";
 import { useInbox } from "@/hooks/useInbox";
+import { useOrders } from "@/hooks/useOrders";
 
-const tabs = ["Motivation", "Products", "Services", "FAQ", "Inbox"] as const;
+const tabs = ["Motivation", "Products", "Services", "FAQ", "Inbox", "Orders"] as const;
 
 export default function Admin() {
   const [pin, setPin] = useState("");
@@ -20,6 +21,7 @@ export default function Admin() {
   const { data: quotes } = useMotivation();
   const { data: faqs } = useFAQ();
   const inbox = useInbox();
+  const orders = useOrders();
 
   const unreadCounts = useMemo(
     () => ({
@@ -84,6 +86,7 @@ export default function Admin() {
         {tab === "Services" && <ServicesTab services={services} onSave={upsert} onDelete={remove} />}
         {tab === "FAQ" && <FAQTab faqs={faqs} onSave={upsert} onDelete={remove} />}
         {tab === "Inbox" && <InboxTab inbox={inbox.data} unreadCounts={unreadCounts} onMarkRead={async (table: string, id: string) => upsert(table, { is_read: true }, id)} />}
+        {tab === "Orders" && <OrdersTab orders={orders.data} loading={orders.loading} />}
       </div>
     </section>
   );
@@ -108,17 +111,17 @@ function MotivationTab({ quotes, onSave, onDelete }: any) {
 }
 
 function ProductsTab({ products, onSave, onDelete }: any) {
-  const [form, setForm] = useState({ name: "", price: 0, quantity: "", description: "", image_url: "", status: "coming_soon" });
+  const [form, setForm] = useState({ name: "", price: 0, quantity: "", stock_quantity: 10, description: "", image_url: "", status: "available" });
   return (
     <div className="space-y-4">
       <input className="w-full px-4 py-3 rounded-xl border" placeholder="Product Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
       <input className="w-full px-4 py-3 rounded-xl border" placeholder="Price" type="number" value={form.price || ""} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} />
       <input className="w-full px-4 py-3 rounded-xl border" placeholder="Weight/Quantity" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} />
+      <input className="w-full px-4 py-3 rounded-xl border" placeholder="Stock Quantity (0-50)" type="number" min={0} max={50} value={form.stock_quantity} onChange={(e) => setForm({ ...form, stock_quantity: Math.min(50, Math.max(0, Number(e.target.value))) })} />
       <textarea className="w-full px-4 py-3 rounded-xl border" placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
       <input className="w-full px-4 py-3 rounded-xl border" placeholder="Product Image URL" value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} />
-      <select className="w-full px-4 py-3 rounded-xl border" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}><option value="coming_soon">Coming Soon</option><option value="sold_out">Sold Out</option><option value="available">Available</option></select>
-      <button className="px-8 py-3 rounded-full bg-primary text-primary-foreground font-semibold" onClick={() => onSave("products", form)}>Add Product ✓</button>
-      <div className="grid md:grid-cols-2 gap-4">{products.map((p: any) => <EditableCard key={p.id} title={p.name} subtitle={`Rs ${p.price} - ${p.status}`} onDelete={() => onDelete("products", p.id)} onUpdate={(payload: any) => onSave("products", payload, p.id)} fields={["name","price","quantity","description","image_url","status"]} data={p} />)}</div>
+      <button className="px-8 py-3 rounded-full bg-primary text-primary-foreground font-semibold" onClick={() => onSave("products", { ...form, status: form.stock_quantity > 0 ? "available" : "sold_out" })}>Add Product ✓</button>
+      <div className="grid md:grid-cols-2 gap-4">{products.map((p: any) => <EditableCard key={p.id} title={p.name} subtitle={`Rs ${p.price} - ${(p.stock_quantity ?? 0) > 0 ? `In Stock (${p.stock_quantity})` : "Out of Stock"}`} onDelete={() => onDelete("products", p.id)} onUpdate={(payload: any) => onSave("products", { ...payload, stock_quantity: Math.min(50, Math.max(0, Number(payload.stock_quantity ?? 0))), status: Number(payload.stock_quantity ?? 0) > 0 ? "available" : "sold_out" }, p.id)} fields={["name","price","quantity","stock_quantity","description","image_url"]} data={p} />)}</div>
     </div>
   );
 }
@@ -163,6 +166,37 @@ function InboxTab({ inbox, unreadCounts, onMarkRead }: any) {
     <div>
       <div className="flex gap-2 overflow-x-auto mb-4">{sections.map((s) => <button key={s.key} onClick={() => setActive(s.key)} className="px-4 py-2 rounded-full bg-accent">{s.label}</button>)}</div>
       <div className="space-y-3">{current.data.map((item: any) => <div key={item.id} className="bg-card rounded-xl border p-4"><pre className="text-sm whitespace-pre-wrap">{JSON.stringify(item, null, 2)}</pre><button onClick={() => onMarkRead(current.table, item.id)} className="mt-3 px-4 py-2 rounded-full bg-primary text-primary-foreground">Mark as Read</button></div>)}</div>
+    </div>
+  );
+}
+
+function OrdersTab({ orders, loading }: any) {
+  if (loading) return <div className="text-muted-foreground">Loading orders...</div>;
+  if (!orders.length) return <div className="text-muted-foreground">No orders yet.</div>;
+
+  return (
+    <div className="space-y-3">
+      {orders.map((order: any) => (
+        <div key={order.id} className="bg-card rounded-xl border p-4">
+          <div className="flex items-start justify-between gap-4 mb-2">
+            <div>
+              <h3 className="font-semibold">{order.product_name}</h3>
+              <p className="text-sm text-muted-foreground">{order.customer_name} • {order.customer_email}</p>
+            </div>
+            <span className={`text-xs font-semibold px-3 py-1 rounded-full ${order.payment_status === "paid" ? "bg-emerald-100 text-emerald-700" : "bg-muted text-muted-foreground"}`}>
+              {order.payment_status}
+            </span>
+          </div>
+          <div className="text-sm text-muted-foreground grid sm:grid-cols-2 gap-1">
+            <p>Amount: ₹{order.amount}</p>
+            <p>Qty: {order.quantity}</p>
+            <p>Order ID: {order.razorpay_order_id}</p>
+            <p>Payment ID: {order.razorpay_payment_id || "-"}</p>
+            <p>Phone: {order.customer_phone || "-"}</p>
+            <p>Date: {new Date(order.created_at).toLocaleString()}</p>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

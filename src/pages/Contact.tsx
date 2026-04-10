@@ -6,7 +6,7 @@ import { useServices } from "@/hooks/useServices";
 import { SEO } from "@/components/SEO";
 
 export default function Contact() {
-  const [formData, setFormData] = useState({ name: "", email: "", phone: "", service: "", message: "" });
+  const [formData, setFormData] = useState({ name: "", email: "", phone: "", service: "", message: "", website: "" });
   const [submitted, setSubmitted] = useState(false);
   const { data: services } = useServices();
 
@@ -15,13 +15,13 @@ export default function Contact() {
     try {
       const result = await submitContact(formData);
       if (!result.success) {
-        toast.error("Could not submit contact form. Please try again.");
+        toast.error(result.error || "Could not submit contact form. Please try again.");
         return;
       }
       toast.success("Message sent successfully!");
       setSubmitted(true);
       setTimeout(() => setSubmitted(false), 3000);
-      setFormData({ name: "", email: "", phone: "", service: "", message: "" });
+      setFormData({ name: "", email: "", phone: "", service: "", message: "", website: "" });
     } catch {
       toast.error("Could not submit contact form. Please try again.");
     }
@@ -82,6 +82,15 @@ export default function Contact() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="bg-card rounded-2xl p-6 sm:p-8 card-shadow space-y-5">
+                  <input
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={formData.website}
+                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                    className="hidden"
+                    aria-hidden="true"
+                  />
                   <input type="text" placeholder="Your Name" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-border bg-background text-base focus:outline-none focus:ring-2 focus:ring-primary/20" />
                   <input type="email" placeholder="Email Address" required value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-border bg-background text-base focus:outline-none focus:ring-2 focus:ring-primary/20" />
                   <input type="tel" placeholder="Phone Number" required value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-border bg-background text-base focus:outline-none focus:ring-2 focus:ring-primary/20" />

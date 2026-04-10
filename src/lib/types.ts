@@ -1,5 +1,5 @@
 export type ServiceCategory = "training" | "hr" | "logistics" | "compliance" | "other";
-export type ProductStatus = "coming_soon" | "sold_out" | "available";
+export type ProductStatus = "sold_out" | "available";
 
 export interface ServiceItem {
   id: string;
@@ -17,11 +17,29 @@ export interface ProductItem {
   name: string;
   price: number;
   quantity: string;
+  stock_quantity?: number;
   description: string;
   image_url: string;
   status: ProductStatus | string;
   display_order: number;
   created_at: string;
+}
+
+export interface OrderItem {
+  id?: string;
+  product_id: string;
+  product_name: string;
+  amount: number;
+  currency: string;
+  quantity: number;
+  customer_name: string;
+  customer_email: string;
+  customer_phone?: string;
+  razorpay_order_id: string;
+  razorpay_payment_id?: string;
+  razorpay_signature?: string;
+  payment_status: "created" | "paid" | "failed";
+  created_at?: string;
 }
 
 export interface MotivationQuote {

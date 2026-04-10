@@ -16,7 +16,17 @@ async function insertRow(table: string, payload: Record<string, unknown>) {
   }
 }
 
+function isLikelySpam(input: { message?: string; email?: string; website?: string }) {
+  if (input.website && input.website.trim().length > 0) return true;
+  const message = (input.message || "").toLowerCase();
+  const blockedTokens = ["http://", "https://", "viagra", "casino", "crypto"];
+  return blockedTokens.some((token) => message.includes(token));
+}
+
 export async function submitContact(data: ContactSubmission) {
+  if (isLikelySpam({ message: data.message, email: data.email, website: (data as any).website })) {
+    return { success: false, error: "Spam detected" };
+  }
   const save = await insertRow("contact_submissions", data);
   if (!save.success) return save;
   await sendContactAlert(data);

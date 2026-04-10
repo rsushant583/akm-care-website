@@ -16,10 +16,34 @@ create table if not exists products (
   name text not null,
   price numeric not null,
   quantity text,
+  stock_quantity integer not null default 0 check (stock_quantity between 0 and 50),
   description text,
   image_url text,
   status text default 'sold_out',
   display_order integer default 0,
+  created_at timestamptz default now()
+);
+
+alter table products add column if not exists stock_quantity integer not null default 0;
+alter table products alter column stock_quantity set default 0;
+update products set stock_quantity = 0 where stock_quantity is null;
+update products set stock_quantity = 50 where stock_quantity > 50;
+update products set stock_quantity = 0 where stock_quantity < 0;
+
+create table if not exists orders (
+  id uuid default gen_random_uuid() primary key,
+  product_id uuid references products(id) on delete set null,
+  product_name text not null,
+  amount numeric not null,
+  currency text not null default 'INR',
+  quantity integer not null default 1,
+  customer_name text not null,
+  customer_email text not null,
+  customer_phone text,
+  razorpay_order_id text not null,
+  razorpay_payment_id text,
+  razorpay_signature text,
+  payment_status text not null default 'created',
   created_at timestamptz default now()
 );
 
@@ -90,6 +114,7 @@ alter table contact_submissions enable row level security;
 alter table feedback_submissions enable row level security;
 alter table product_interests enable row level security;
 alter table career_applications enable row level security;
+alter table orders enable row level security;
 
 drop policy if exists "public_read_services" on services;
 create policy "public_read_services" on services
@@ -121,4 +146,8 @@ for insert with check (true);
 
 drop policy if exists "public_insert_career" on career_applications;
 create policy "public_insert_career" on career_applications
+for insert with check (true);
+
+drop policy if exists "public_insert_orders" on orders;
+create policy "public_insert_orders" on orders
 for insert with check (true);

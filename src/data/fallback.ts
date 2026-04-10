@@ -13,11 +13,11 @@ export const services = [
 ];
 
 export const products = [
-  { id: "1", name: "Makhana (Fox Nuts)", price: 299, quantity: "250g", status: "sold_out" as const, description: "Premium quality fox nuts sourced directly from Bihar's villages." },
-  { id: "2", name: "Sattu Powder", price: 199, quantity: "500g", status: "sold_out" as const, description: "Authentic roasted gram flour, a superfood from rural India." },
-  { id: "3", name: "Organic Honey", price: 399, quantity: "500ml", status: "sold_out" as const, description: "Pure, unprocessed honey from the forests of central India." },
-  { id: "4", name: "Pure Desi Ghee", price: 899, quantity: "1kg", status: "coming_soon" as const, description: "Traditional clarified butter made from pure cow's milk." },
-  { id: "5", name: "Roasted Chana", price: 149, quantity: "500g", status: "coming_soon" as const, description: "Crunchy roasted chickpeas, a healthy and delicious snack." },
+  { id: "1", name: "Makhana (Fox Nuts)", price: 299, quantity: "250g", stock_quantity: 50, status: "available" as const, image_url: "/products/makhana.png", description: "Premium quality fox nuts sourced directly from Bihar's villages." },
+  { id: "2", name: "Sattu Powder", price: 199, quantity: "500g", stock_quantity: 35, status: "available" as const, image_url: "/products/sattu.png", description: "Authentic roasted gram flour, a superfood from rural India." },
+  { id: "3", name: "Organic Honey", price: 399, quantity: "500ml", stock_quantity: 24, status: "available" as const, image_url: "/products/honey.png", description: "Pure, unprocessed honey from the forests of central India." },
+  { id: "4", name: "Pure Desi Ghee", price: 899, quantity: "1kg", stock_quantity: 12, status: "available" as const, image_url: "/products/ghee.png", description: "Traditional clarified butter made from pure cow's milk." },
+  { id: "5", name: "Roasted Chana", price: 149, quantity: "500g", stock_quantity: 28, status: "available" as const, image_url: "/products/roasted-chana.png", description: "Crunchy roasted chickpeas, a healthy and delicious snack." },
 ];
 
 export const motivationQuotes = [

@@ -2,10 +2,10 @@ import { Play, ExternalLink } from "lucide-react";
 import { useState } from "react";
 
 const fallbackVideos = [
-  { id: "1", title: "Soft Skills Training Session", videoId: "dQw4w9WgXcQ" },
-  { id: "2", title: "Motivational Talk by Team AKM Care", videoId: "dQw4w9WgXcQ" },
-  { id: "3", title: "Industrial Compliance Workshop", videoId: "dQw4w9WgXcQ" },
-  { id: "4", title: "Leadership Development Program", videoId: "dQw4w9WgXcQ" },
+  { id: "1", title: "AKM Care Session 1", videoId: "7ZMkdj_Zl7Q" },
+  { id: "2", title: "AKM Care Session 2", videoId: "5dOz3VlOqSM" },
+  { id: "3", title: "AKM Care Session 3", videoId: "I6rIeHUroZ8" },
+  { id: "4", title: "AKM Care Session 4", videoId: "vmboyU5x-z8" },
 ];
 
 export default function YouTubeCarousel() {
