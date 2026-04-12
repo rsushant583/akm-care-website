@@ -37,7 +37,7 @@ export default function ImageCarousel() {
               <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-5">
                 <img
                   src={slide.image}
-                  alt={slide.title}
+                  alt={`${slide.title} — ${slide.subtitle}`}
                   width={1200}
                   height={720}
                   className="max-h-full max-w-full w-auto h-auto object-contain"

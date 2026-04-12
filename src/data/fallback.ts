@@ -59,8 +59,18 @@ export const trainingCategories = [
 ];
 
 export const carouselSlides = [
-  { title: "AKM Care Branded", subtitle: "Core identity", image: "/slides/slide-synopsis.png", theme: "brand" },
-  { title: "Tamso Ma Jyotirgamaya", subtitle: "Wisdom and upliftment", image: "/slides/slide-tamso.png", theme: "wisdom" },
+  {
+    title: "Bhagavad Gita — Chapter II, Verse 47",
+    subtitle: "Sanskrit verse with English translation on duty and non-attachment to outcomes",
+    image: "/slides/slide-bhagavad-gita-ch2-v47.png",
+    theme: "wisdom",
+  },
+  {
+    title: "AKM Care & AKM Freight — training, HR, logistics & e-commerce",
+    subtitle: "Milestone for industry solutions on one platform with ethics and integrity",
+    image: "/slides/slide-akm-care-freight-intro.png",
+    theme: "brand",
+  },
   { title: "Humanity and CSR", subtitle: "Community impact", image: "/slides/slide-csr.png", theme: "humanity" },
   { title: "Industry and Services", subtitle: "Industrial support", image: "/slides/slide-services.png", theme: "industry" },
   { title: "Growth and Environment", subtitle: "Sustainable progress", image: "/slides/slide-objective.png", theme: "environment" },

@@ -20,7 +20,10 @@ export const organizationSchema = {
       availableLanguage: ["English", "Hindi"],
     },
   ],
-  sameAs: ["https://www.youtube.com/@akmcare1309"],
+  sameAs: [
+    "https://www.youtube.com/@akmcare1309",
+    "https://www.facebook.com/AKMCARE/",
+  ],
   areaServed: "IN",
   foundingLocation: "Ahmedabad, Gujarat, India",
 };

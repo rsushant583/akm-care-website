@@ -1,4 +1,4 @@
-import { Play, ExternalLink } from "lucide-react";
+import { Play, ExternalLink, Facebook } from "lucide-react";
 import { useState } from "react";
 import { SEO } from "@/components/SEO";
 
@@ -23,7 +23,7 @@ export default function Media() {
       <SEO
         title="Videos & Media — Training Sessions & Motivation"
         description="Watch AKM Care's training videos, motivational sessions, and industry insights on our media page. Subscribe to our YouTube channel for regular updates."
-        keywords="AKM Care YouTube, industrial training videos, motivation videos India, HR training sessions"
+        keywords="AKM Care YouTube, AKM Care Facebook, industrial training videos, motivation videos India, HR training sessions"
         canonical="/media"
       />
       <section className="section-padding bg-warm-beige">
@@ -62,9 +62,23 @@ export default function Media() {
             ))}
           </div>
 
-          <div className="text-center mt-10">
-            <a href="https://www.youtube.com/@akmcare1309" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-primary font-medium hover:underline">
+          <div className="text-center mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8">
+            <a
+              href="https://www.youtube.com/@akmcare1309"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-primary font-medium hover:underline"
+            >
               View all on YouTube <ExternalLink size={16} />
+            </a>
+            <a
+              href="https://www.facebook.com/AKMCARE/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-primary font-medium hover:underline"
+            >
+              <Facebook size={20} className="shrink-0" aria-hidden />
+              Follow AKM Care on Facebook <ExternalLink size={16} />
             </a>
           </div>
         </div>
