@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { SEO } from "@/components/SEO";
 import { toast } from "@/components/ui/sonner";
 import { getSupabaseAdminClient } from "@/lib/supabaseClient";
 import { useServices } from "@/hooks/useServices";
@@ -35,6 +36,13 @@ export default function Admin() {
 
   if (!allowed) {
     return (
+      <>
+      <SEO
+        title="Admin"
+        description="AKM Care administration — authenticated access only."
+        canonical="/admin"
+        robots="noindex, nofollow"
+      />
       <section className="section-padding">
         <div className="container-premium max-w-md">
           <div className="bg-card rounded-2xl p-8 card-shadow">
@@ -53,6 +61,7 @@ export default function Admin() {
           </div>
         </div>
       </section>
+      </>
     );
   }
 
@@ -72,6 +81,13 @@ export default function Admin() {
   };
 
   return (
+    <>
+      <SEO
+        title="Admin"
+        description="AKM Care administration — authenticated access only."
+        canonical="/admin"
+        robots="noindex, nofollow"
+      />
     <section className="section-padding bg-white">
       <div className="container-premium">
         <h1 className="font-heading text-3xl mb-6">AKM Admin Panel</h1>
@@ -89,6 +105,7 @@ export default function Admin() {
         {tab === "Orders" && <OrdersTab orders={orders.data} loading={orders.loading} />}
       </div>
     </section>
+    </>
   );
 }
 

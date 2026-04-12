@@ -47,7 +47,6 @@ export const servicesSchema = {
       { "@type": "Offer", itemOffered: { "@type": "Service", name: "Logistics & Freight" } },
       { "@type": "Offer", itemOffered: { "@type": "Service", name: "Compliance Consulting" } },
       { "@type": "Offer", itemOffered: { "@type": "Service", name: "Employment Verification" } },
-      { "@type": "Offer", itemOffered: { "@type": "Service", name: "IT Solutions — Web, Apps & Software" } },
     ],
   },
 };

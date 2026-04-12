@@ -8,6 +8,8 @@ interface SEOProps {
   ogImage?: string;
   ogType?: string;
   schema?: object;
+  /** Override default robots meta (e.g. "noindex, nofollow" for admin/404). */
+  robots?: string;
 }
 
 const SITE_URL = "https://akmcare.com";
@@ -22,6 +24,7 @@ export function SEO({
   ogImage = DEFAULT_IMAGE,
   ogType = "website",
   schema,
+  robots = "index, follow, max-image-preview:large",
 }: SEOProps) {
   const fullTitle = `${title} | ${ORG_NAME}`;
   const canonicalUrl = canonical ? `${SITE_URL}${canonical}` : SITE_URL;
@@ -32,7 +35,7 @@ export function SEO({
       <meta name="description" content={description} />
       {keywords && <meta name="keywords" content={keywords} />}
       <meta name="author" content={ORG_NAME} />
-      <meta name="robots" content="index, follow, max-image-preview:large" />
+      <meta name="robots" content={robots} />
       <meta name="theme-color" content="#F97316" />
       <link rel="canonical" href={canonicalUrl} />
 

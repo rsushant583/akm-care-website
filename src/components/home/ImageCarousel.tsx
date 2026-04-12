@@ -38,8 +38,11 @@ export default function ImageCarousel() {
                 <img
                   src={slide.image}
                   alt={slide.title}
+                  width={1200}
+                  height={720}
                   className="max-h-full max-w-full w-auto h-auto object-contain"
                   loading={i === 0 ? "eager" : "lazy"}
+                  decoding="async"
                 />
               </div>
               <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/25 to-transparent" />
