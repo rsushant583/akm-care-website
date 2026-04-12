@@ -17,9 +17,8 @@ export default function Hero() {
               <span className="text-sm font-medium text-accent-foreground">Trusted by Industries Across India</span>
             </div>
 
-            <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl xl:text-7xl leading-[1.1] mb-6 animate-fade-up" style={{ animationDelay: "100ms" }}>
-              One Platform.{" "}
-              <span className="text-gradient-saffron">Every Solution.</span>
+            <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl xl:text-7xl leading-[1.08] mb-8 animate-fade-up" style={{ animationDelay: "100ms" }}>
+              One Platform For All Solutions.
             </h1>
 
             <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-10 animate-fade-up" style={{ animationDelay: "200ms" }}>

@@ -28,7 +28,13 @@ export default function Motivation() {
           {loading || !today ? (
             <Skeleton className="h-64 rounded-2xl mb-14" />
           ) : (
-          <div className="bg-warm-beige rounded-2xl p-8 sm:p-12 card-shadow text-center mb-14">
+          <div
+            className={`rounded-2xl p-8 sm:p-12 card-shadow text-center mb-14 ${
+              today.source === "Phil Jackson"
+                ? "bg-gradient-to-br from-primary/10 via-warm-beige to-amber-100/80 ring-2 ring-primary/25"
+                : "bg-warm-beige"
+            }`}
+          >
             <div className="text-sm font-medium text-primary mb-4">Today's Quote</div>
             <Quote size={40} className="text-primary/30 mx-auto mb-4" />
             <blockquote className="font-heading text-2xl sm:text-3xl italic leading-relaxed mb-6">
@@ -41,7 +47,14 @@ export default function Motivation() {
           <h2 className="font-heading text-2xl mb-6">Past Inspirations</h2>
           <div className="grid gap-4">
             {archive.map((q) => (
-              <div key={q.id} className="bg-card rounded-2xl p-6 card-shadow">
+              <div
+                key={q.id}
+                className={`rounded-2xl p-6 card-shadow ${
+                  q.source === "Phil Jackson"
+                    ? "bg-gradient-to-br from-primary/5 to-warm-beige ring-1 ring-primary/20"
+                    : "bg-card"
+                }`}
+              >
                 <blockquote className="font-heading text-lg italic mb-3">"{q.quote}"</blockquote>
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <span>— {q.source}</span>

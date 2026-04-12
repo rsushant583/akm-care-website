@@ -5,8 +5,8 @@ import { MotivationQuote } from "@/lib/types";
 
 const emergencyFallback: MotivationQuote = {
   id: "fallback-motivation",
-  quote: "The secret of getting ahead is getting started. Every expert was once a beginner.",
-  source: "AKM Care",
+  quote: "The strength of the team is each individual member. The strength of each member is the team.",
+  source: "Phil Jackson",
   is_active: true,
   created_at: new Date().toISOString(),
 };

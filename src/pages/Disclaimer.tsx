@@ -52,14 +52,8 @@ export default function Disclaimer() {
               </p>
             </div>
 
-            <div>
-              <h2 className="font-heading text-2xl mb-4">6. Contact for Queries</h2>
-              <p className="text-muted-foreground leading-relaxed">
-                If you have any questions about this disclaimer or our services, please contact us at akmcare108@gmail.com or call +91-8200224226.
-              </p>
-            </div>
-
-            <div className="bg-accent rounded-2xl p-6">
+            <div className="rounded-2xl border border-border bg-card p-6 sm:p-8">
+              <h2 className="font-heading text-2xl mb-4">6. Jurisdiction</h2>
               <p className="text-foreground font-medium leading-relaxed">
                 In case of any legal dispute, redressal will be in Ahmedabad, Gujarat Jurisdiction.
               </p>

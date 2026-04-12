@@ -10,6 +10,7 @@ export const services = [
   { id: "9", title: "Client's Need Based Services", description: "Customized solutions designed around your specific industrial and organizational requirements.", icon: "Settings", category: "Others" },
   { id: "10", title: "Employment Verification", description: "Thorough background checks and employment verification services for secure hiring.", icon: "UserCheck", category: "HR" },
   { id: "11", title: "CSR Initiatives", description: "Free soft skill and motivational training programs for communities, schools, and NGOs.", icon: "Heart", category: "Others" },
+  { id: "12", title: "IT Solutions", description: "Website creation, mobile app development, and custom software development tailored to your business needs.", icon: "Code", category: "Others" },
 ];
 
 export const products = [
@@ -25,10 +26,11 @@ export const motivationQuotes = [
   { id: "2", quote: "The only way to do great work is to love what you do.", source: "Steve Jobs", created_at: new Date(Date.now() - 86400000).toISOString() },
   { id: "3", quote: "In the middle of every difficulty lies opportunity.", source: "Albert Einstein", created_at: new Date(Date.now() - 172800000).toISOString() },
   { id: "4", quote: "It does not matter how slowly you go, as long as you do not stop.", source: "Confucius", created_at: new Date(Date.now() - 259200000).toISOString() },
+  { id: "5", quote: "The strength of the team is each individual member. The strength of each member is the team.", source: "Phil Jackson", created_at: new Date(Date.now() - 345600000).toISOString() },
 ];
 
 export const faqs = [
-  { id: "1", question: "What services does AKM Care provide?", answer: "AKM Care provides a comprehensive range of industrial solutions including corporate training, placement services, manpower deployment, compliance consulting, logistics through AKM Freight, catering & facility management, tours & travel, maintenance services, and customized need-based solutions. We serve industries Pan India.", category: "General" },
+  { id: "1", question: "What services does AKM Care provide?", answer: "AKM Care provides a comprehensive range of industrial solutions including corporate training, placement services, manpower deployment, compliance consulting, logistics through AKM Freight, IT solutions (websites, apps, software development), catering & facility management, tours & travel, maintenance services, and customized need-based solutions. We serve industries Pan India.", category: "General" },
   { id: "2", question: "Do you offer training programs across India?", answer: "Yes, we offer training programs Pan India. Our specialized trainers deliver soft skills, technical, behavioral, commercial, leadership, sales & marketing, customer service, and safety & compliance training at your premises or in our training centers.", category: "Training" },
   { id: "3", question: "How can we collaborate with AKM Freight?", answer: "You can reach out to us via our contact form, email at akmcare108@gmail.com, or call us at +91-8200224226. Our logistics team will assess your requirements and provide customized freight solutions.", category: "Logistics" },
   { id: "4", question: "When will products be available for purchase?", answer: "We are currently preparing our e-commerce platform to bring authentic village products directly to your doorstep. Products like Makhana, Sattu, and organic items will be available soon. You can sign up for notifications on our Shop page.", category: "Products" },
@@ -57,11 +59,9 @@ export const trainingCategories = [
 ];
 
 export const carouselSlides = [
-  { title: "Guided by Timeless Wisdom", subtitle: "Drawing from the sacred teachings of the Bhagavad Gita", gradient: "from-amber-700 to-orange-600" },
-  { title: "AKM Care — Your Trusted Partner", subtitle: "Building excellence through ethics and integrity", gradient: "from-orange-600 to-amber-500" },
-  { title: "People First, Always", subtitle: "Empowering humanity through skill and knowledge", gradient: "from-amber-600 to-yellow-500" },
-  { title: "Industrial Resources", subtitle: "Providing material solutions for every industrial need", gradient: "from-orange-700 to-red-500" },
-  { title: "Process Excellence", subtitle: "Systematic methods driving consistent results", gradient: "from-amber-700 to-orange-500" },
-  { title: "Technology & Automation", subtitle: "Embracing machines and innovation for the future", gradient: "from-orange-600 to-amber-600" },
-  { title: "Sustainability & Environment", subtitle: "Committed to a greener, sustainable tomorrow", gradient: "from-green-700 to-emerald-500" },
+  { title: "AKM Care Branded", subtitle: "Core identity", image: "/slides/slide-synopsis.png", theme: "brand" },
+  { title: "Tamso Ma Jyotirgamaya", subtitle: "Wisdom and upliftment", image: "/slides/slide-tamso.png", theme: "wisdom" },
+  { title: "Humanity and CSR", subtitle: "Community impact", image: "/slides/slide-csr.png", theme: "humanity" },
+  { title: "Industry and Services", subtitle: "Industrial support", image: "/slides/slide-services.png", theme: "industry" },
+  { title: "Growth and Environment", subtitle: "Sustainable progress", image: "/slides/slide-objective.png", theme: "environment" },
 ];

@@ -5,6 +5,7 @@ import { useProducts } from "@/hooks/useProducts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/sonner";
 import { createRazorpayOrder, loadRazorpayScript, verifyRazorpayPayment } from "@/lib/paymentService";
+import { isValidIndianPincode, mockDeliveryAvailable } from "@/lib/pincodeDelivery";
 
 export default function EcommercePreview() {
   const { ref, isVisible } = useScrollAnimation();
@@ -13,6 +14,17 @@ export default function EcommercePreview() {
   const [checkout, setCheckout] = useState({ name: "", email: "", phone: "" });
   const [processingPayment, setProcessingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState("");
+  const [pinInput, setPinInput] = useState("");
+  const [pinStatus, setPinStatus] = useState<"idle" | "invalid" | "ok" | "no">("idle");
+
+  const checkPincode = () => {
+    const p = pinInput.trim();
+    if (!isValidIndianPincode(p)) {
+      setPinStatus("invalid");
+      return;
+    }
+    setPinStatus(mockDeliveryAvailable(p) ? "ok" : "no");
+  };
 
   const openRazorpay = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,6 +127,41 @@ export default function EcommercePreview() {
           <p className="text-muted-foreground text-lg">
             Authentic rural products, coming to your doorstep
           </p>
+        </div>
+
+        <div className="max-w-xl mx-auto mb-12 bg-card rounded-2xl border border-border p-5 sm:p-6 card-shadow">
+          <h3 className="font-heading text-base sm:text-lg mb-1 text-center">Check Delivery Availability by Pincode</h3>
+          <p className="text-xs sm:text-sm text-muted-foreground text-center mb-4">Enter your 6-digit Indian pincode</p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="Pincode"
+              value={pinInput}
+              onChange={(e) => {
+                setPinInput(e.target.value.replace(/\D/g, "").slice(0, 6));
+                setPinStatus("idle");
+              }}
+              className="flex-1 px-4 py-3 rounded-xl border border-border bg-background text-base"
+            />
+            <button
+              type="button"
+              onClick={checkPincode}
+              className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:brightness-110 transition-all whitespace-nowrap"
+            >
+              Check Availability
+            </button>
+          </div>
+          {pinStatus === "invalid" && (
+            <p className="text-sm text-destructive mt-3 text-center">Please enter a valid 6-digit pincode.</p>
+          )}
+          {pinStatus === "ok" && (
+            <p className="text-sm font-medium text-emerald-700 mt-3 text-center">Delivery Available</p>
+          )}
+          {pinStatus === "no" && (
+            <p className="text-sm font-medium text-destructive mt-3 text-center">Delivery Not Available</p>
+          )}
         </div>
 
         <div ref={ref} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">

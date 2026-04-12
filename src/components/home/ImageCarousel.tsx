@@ -11,7 +11,7 @@ export default function ImageCarousel() {
 
   useEffect(() => {
     if (isPaused) return;
-    const timer = setInterval(next, 4000);
+    const timer = setInterval(next, 4500);
     return () => clearInterval(timer);
   }, [isPaused, next]);
 
@@ -23,27 +23,26 @@ export default function ImageCarousel() {
         </h2>
 
         <div
-          className="relative w-full h-[280px] sm:h-[400px] lg:h-[500px] rounded-2xl overflow-hidden card-shadow"
+          className="relative w-full min-h-[280px] h-[min(72vh,640px)] sm:min-h-[360px] sm:h-[min(75vh,680px)] lg:min-h-[440px] lg:h-[min(78vh,720px)] rounded-2xl overflow-hidden card-shadow bg-gradient-to-br from-stone-200/90 via-warm-beige to-amber-100/70"
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
         >
           {carouselSlides.map((slide, i) => (
             <div
               key={i}
-              className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
                 i === current ? "opacity-100" : "opacity-0"
               }`}
             >
-              <div className={`absolute inset-0 bg-gradient-to-br ${slide.gradient}`} />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
-                <h3 className="font-heading text-2xl sm:text-4xl lg:text-5xl text-card mb-3">
-                  {slide.title}
-                </h3>
-                <p className="text-card/80 text-base sm:text-lg max-w-lg">
-                  {slide.subtitle}
-                </p>
+              <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-5">
+                <img
+                  src={slide.image}
+                  alt={slide.title}
+                  className="max-h-full max-w-full w-auto h-auto object-contain"
+                  loading={i === 0 ? "eager" : "lazy"}
+                />
               </div>
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/25 to-transparent" />
             </div>
           ))}
 

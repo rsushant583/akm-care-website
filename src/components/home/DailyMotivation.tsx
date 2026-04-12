@@ -16,7 +16,13 @@ export default function DailyMotivation() {
         {loading || !quote ? (
           <Skeleton className="max-w-3xl mx-auto h-56 rounded-2xl" />
         ) : (
-        <div className="max-w-3xl mx-auto bg-warm-beige rounded-2xl p-8 sm:p-12 card-shadow text-center">
+        <div
+          className={`max-w-3xl mx-auto rounded-2xl p-8 sm:p-12 card-shadow text-center ${
+            quote.source === "Phil Jackson"
+              ? "bg-gradient-to-br from-primary/10 via-warm-beige to-amber-100/80 ring-2 ring-primary/25"
+              : "bg-warm-beige"
+          }`}
+        >
           <Quote size={40} className="text-primary/30 mx-auto mb-4" />
           <blockquote className="font-heading text-xl sm:text-2xl lg:text-3xl italic leading-relaxed mb-6 text-foreground">
             "{quote.quote}"

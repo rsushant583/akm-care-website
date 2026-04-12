@@ -18,6 +18,7 @@ import {
   Target,
   Headphones,
   Shield,
+  Code,
 } from "lucide-react";
 
 export const iconMap: Record<string, any> = {
@@ -40,4 +41,5 @@ export const iconMap: Record<string, any> = {
   Target,
   Headphones,
   Shield,
+  Code,
 };
