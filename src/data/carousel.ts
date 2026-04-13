@@ -1,7 +1,7 @@
 import type { CarouselSlide } from "./carouselTypes";
 
 /**
- * Homepage slideshow — only the five client-provided images (see /public/slides/slide-home-*.png).
+ * Homepage slideshow — client-provided images (see /public/slides/slide-home-*.png).
  */
 export const carouselSlides: CarouselSlide[] = [
   {
@@ -27,11 +27,5 @@ export const carouselSlides: CarouselSlide[] = [
     subtitle: "Training, HR, sales & marketing, logistics, e-commerce — ethics and integrity",
     image: "/slides/slide-home-04-brand-message.png",
     theme: "brand",
-  },
-  {
-    title: "Founder — Bimleshkumar Bibhakar",
-    subtitle: "AKM Care & AKM Freight Carriers; corporate trainer and former HR professional",
-    image: "/slides/slide-home-05-founder.png",
-    theme: "team",
   },
 ];

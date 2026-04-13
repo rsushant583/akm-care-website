@@ -13,6 +13,50 @@ const mapFallbackServices = () =>
     created_at: new Date().toISOString(),
   }));
 
+/** Match titles case-insensitively so Supabase rows override the same service from fallback. */
+function normalizeTitle(title: string) {
+  return title.trim().toLowerCase();
+}
+
+/**
+ * Supabase may only contain a subset (e.g. Policy Formation). Merge DB rows with the full
+ * fallback list so every catalog service still appears; DB wins when titles match.
+ */
+function mergeServicesWithFallback(rows: ServiceItem[]): ServiceItem[] {
+  const byTitle = new Map<string, ServiceItem>();
+  for (const r of rows) {
+    byTitle.set(normalizeTitle(r.title), r);
+  }
+
+  const merged: ServiceItem[] = [];
+  const consumedDbIds = new Set<string>();
+
+  fallbackServices.forEach((fb, index) => {
+    const fromDb = byTitle.get(normalizeTitle(fb.title));
+    if (fromDb) {
+      merged.push(fromDb);
+      consumedDbIds.add(fromDb.id);
+    } else {
+      merged.push({
+        ...fb,
+        category: fb.category.toLowerCase(),
+        icon: fb.icon,
+        display_order: index,
+        is_active: true,
+        created_at: new Date().toISOString(),
+      });
+    }
+  });
+
+  for (const r of rows) {
+    if (!consumedDbIds.has(r.id)) {
+      merged.push(r);
+    }
+  }
+
+  return merged;
+}
+
 export function useServices() {
   const [data, setData] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,7 +78,7 @@ export function useServices() {
         .order("display_order", { ascending: true });
 
       if (dbError) throw dbError;
-      setData(rows && rows.length > 0 ? rows : mapFallbackServices());
+      setData(rows && rows.length > 0 ? mergeServicesWithFallback(rows) : mapFallbackServices());
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load services");
