@@ -9,7 +9,7 @@ const values = [
 ];
 
 const timeline = [
-  { year: "Foundation", desc: "AKM Care established as a proprietary firm in Gujarat" },
+  { year: "Foundation", desc: "AKM Care serves and provides training, HR, logistics, and industrial solutions Pan India." },
   { year: "Training", desc: "Launched corporate soft skill & behavioral training programs" },
   { year: "Expansion", desc: "Extended services to placement, manpower, and compliance consulting" },
   { year: "Logistics", desc: "AKM Freight launched to serve freight & logistics needs" },
@@ -33,7 +33,7 @@ export default function About() {
           <p className="text-xs font-semibold tracking-[0.25em] uppercase text-primary mb-4">Who we are</p>
           <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl mb-6">About AKM Care</h1>
           <p className="text-lg text-muted-foreground leading-relaxed">
-            AKM Care and AKM Freight provides all solutions on a single platform with ethics and integrity within a benchmarking value frame.
+            AKM Care and AKM Freight provide all solutions on a single platform with ethics and integrity within a benchmarking value frame.
           </p>
         </div>
       </section>

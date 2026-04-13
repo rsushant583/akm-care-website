@@ -17,8 +17,8 @@ export const carouselSlides: CarouselSlide[] = [
     theme: "brand",
   },
   {
-    title: "Our Objective — MSME firm, Pan-India training and services",
-    subtitle: "Industrial trainings, placement, manpower, tours & travel, Gujarat and India",
+    title: "Our Objective — Pan-India training and services",
+    subtitle: "AKM Care serves and provides industrial training, placement, manpower, tours & travel, and related solutions across India.",
     image: "/slides/slide-home-03-objective.png",
     theme: "industry",
   },
