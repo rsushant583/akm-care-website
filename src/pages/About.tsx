@@ -27,8 +27,10 @@ export default function About() {
         canonical="/about"
       />
       {/* Hero */}
-      <section className="section-padding bg-warm-beige">
-        <div className="container-premium text-center max-w-3xl">
+      <section className="section-padding relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.06] via-warm-beige to-background pointer-events-none" />
+        <div className="container-premium text-center max-w-3xl relative z-10">
+          <p className="text-xs font-semibold tracking-[0.25em] uppercase text-primary mb-4">Who we are</p>
           <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl mb-6">About AKM Care</h1>
           <p className="text-lg text-muted-foreground leading-relaxed">
             AKM Care and AKM Freight provides all solutions on a single platform with ethics and integrity within a benchmarking value frame.
@@ -40,13 +42,13 @@ export default function About() {
       <section className="section-padding">
         <div className="container-premium">
           <div className="grid sm:grid-cols-2 gap-6">
-            <div className="bg-card rounded-2xl p-8 card-shadow">
+            <div className="bg-card/90 backdrop-blur-sm rounded-2xl p-8 border border-border/60 card-shadow hover:border-primary/15 transition-colors">
               <h2 className="font-heading text-2xl mb-4 text-primary">Our Vision</h2>
               <p className="text-muted-foreground leading-relaxed">
                 To become India's most trusted single-platform provider of industrial training, HR solutions, logistics, and e-commerce services — empowering businesses and communities with excellence.
               </p>
             </div>
-            <div className="bg-card rounded-2xl p-8 card-shadow">
+            <div className="bg-card/90 backdrop-blur-sm rounded-2xl p-8 border border-border/60 card-shadow hover:border-primary/15 transition-colors">
               <h2 className="font-heading text-2xl mb-4 text-primary">Our Mission</h2>
               <p className="text-muted-foreground leading-relaxed">
                 Providing all solutions on a single platform with ethics and integrity within a benchmarking value frame. We serve industries, institutions, NGOs, and government sectors Pan India.
@@ -62,8 +64,8 @@ export default function About() {
           <h2 className="font-heading text-3xl sm:text-4xl text-center mb-12">Our Core Values</h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
             {values.map((v) => (
-              <div key={v.title} className="bg-card rounded-2xl p-6 text-center card-shadow">
-                <div className="w-14 h-14 rounded-xl bg-accent flex items-center justify-center mx-auto mb-4">
+              <div key={v.title} className="bg-card/90 backdrop-blur-sm rounded-2xl p-6 text-center border border-border/60 card-shadow hover:border-primary/20 hover:-translate-y-1 transition-all duration-300">
+                <div className="w-14 h-14 rounded-xl bg-primary/10 ring-1 ring-primary/10 flex items-center justify-center mx-auto mb-4">
                   <v.icon size={24} className="text-primary" />
                 </div>
                 <h3 className="font-heading text-lg mb-2">{v.title}</h3>
@@ -88,9 +90,9 @@ export default function About() {
       <section className="section-padding bg-warm-beige">
         <div className="container-premium">
           <h2 className="font-heading text-3xl sm:text-4xl text-center mb-12">Our Journey</h2>
-          <div className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory">
+          <div className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide -mx-1 px-1">
             {timeline.map((item, i) => (
-              <div key={i} className="flex-shrink-0 w-[220px] snap-start bg-card rounded-2xl p-6 card-shadow">
+              <div key={i} className="flex-shrink-0 w-[220px] snap-start bg-card/90 backdrop-blur-sm rounded-2xl p-6 border border-border/60 card-shadow hover:border-primary/20 transition-colors">
                 <div className="font-heading text-xl text-primary mb-2">{item.year}</div>
                 <p className="text-sm text-muted-foreground">{item.desc}</p>
               </div>

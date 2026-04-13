@@ -16,6 +16,7 @@ const serviceLinks = [
   "Manpower Deployment",
   "Logistics & Freight",
   "Compliance Consulting",
+  "Policy Formation",
 ];
 
 export default function Footer() {
@@ -35,7 +36,7 @@ export default function Footer() {
               <a href="https://wa.me/918200224226" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-card/10 flex items-center justify-center hover:bg-primary transition-colors">
                 <MessageCircle size={16} />
               </a>
-              <a href="#" className="w-9 h-9 rounded-full bg-card/10 flex items-center justify-center hover:bg-primary transition-colors">
+              <a href="https://www.facebook.com/share/1Jjs7ipP1x/" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-card/10 flex items-center justify-center hover:bg-primary transition-colors" aria-label="AKM Care on Facebook">
                 <Facebook size={16} />
               </a>
             </div>

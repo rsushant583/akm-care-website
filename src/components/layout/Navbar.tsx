@@ -33,10 +33,10 @@ export default function Navbar() {
   return (
     <>
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b ${
           isScrolled
-            ? "bg-card/90 backdrop-blur-xl shadow-sm border-b border-border"
-            : "bg-transparent"
+            ? "bg-background/85 backdrop-blur-2xl shadow-sm shadow-black/[0.03] border-border/60"
+            : "bg-background/70 backdrop-blur-xl border-transparent"
         }`}
       >
         <div className="container-premium flex items-center justify-between h-16 lg:h-20">
@@ -49,10 +49,10 @@ export default function Navbar() {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                className={`relative px-3 py-2 text-sm font-medium rounded-xl transition-all ${
                   location.pathname === link.path
-                    ? "text-primary bg-accent"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
                 }`}
               >
                 {link.label}
@@ -63,7 +63,7 @@ export default function Navbar() {
           <div className="hidden lg:block">
             <Link
               to="/contact"
-              className="inline-flex items-center px-6 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-all hover:scale-[1.02]"
+              className="inline-flex items-center px-6 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 hover:brightness-105 hover:-translate-y-0.5 transition-all duration-300"
             >
               Get In Touch
             </Link>

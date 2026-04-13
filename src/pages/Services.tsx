@@ -21,15 +21,17 @@ export default function Services() {
     <>
       <SEO
         title="Our Services — Training, HR, Logistics, Compliance & More"
-        description="Comprehensive industrial services including placement, manpower deployment, compliance consulting, logistics, employment verification, and customized business solutions across India."
-        keywords="placement services India, manpower deployment, industrial compliance, logistics freight Gujarat, employment verification services, customized industrial solutions"
+        description="Comprehensive industrial services including placement, manpower deployment, compliance consulting, policy formation, logistics, employment verification, and customized business solutions across India."
+        keywords="placement services India, manpower deployment, industrial compliance, policy formation India, logistics freight Gujarat, employment verification services, customized industrial solutions"
         canonical="/services"
         schema={servicesSchema}
       />
-      <section className="section-padding bg-warm-beige">
-        <div className="container-premium text-center max-w-3xl">
+      <section className="section-padding relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.06] via-warm-beige to-background pointer-events-none" />
+        <div className="container-premium text-center max-w-3xl relative z-10">
+          <p className="text-xs font-semibold tracking-[0.25em] uppercase text-primary mb-4">What we deliver</p>
           <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl mb-6">Our Services</h1>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-lg text-muted-foreground leading-relaxed">
             A complete ecosystem of industrial and human capital solutions
           </p>
         </div>
@@ -37,13 +39,16 @@ export default function Services() {
 
       <section className="section-padding">
         <div className="container-premium">
-          <div className="flex gap-2 overflow-x-auto pb-4 mb-8">
+          <div className="flex gap-2 overflow-x-auto pb-4 mb-10 scrollbar-hide -mx-1 px-1">
             {categories.map((cat) => (
               <button
                 key={cat}
+                type="button"
                 onClick={() => setFilter(cat)}
-                className={`px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                  filter === cat ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"
+                className={`px-5 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-300 ${
+                  filter === cat
+                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                    : "bg-card border border-border/70 text-muted-foreground hover:border-primary/20"
                 }`}
               >
                 {cat}
@@ -62,13 +67,19 @@ export default function Services() {
             {filtered.map((service) => {
               const Icon = iconMap[service.icon] || Briefcase;
               return (
-                <div key={service.id} className="bg-card rounded-2xl p-6 card-shadow hover:card-shadow-hover hover:-translate-y-1.5 transition-all duration-200">
-                  <div className="w-12 h-12 rounded-xl bg-accent flex items-center justify-center mb-4">
+                <div
+                  key={service.id}
+                  className="group bg-card/90 backdrop-blur-sm rounded-2xl p-6 border border-border/60 card-shadow hover:card-shadow-hover hover:-translate-y-1.5 hover:border-primary/20 transition-all duration-300"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 ring-1 ring-primary/10 group-hover:bg-primary/15 transition-colors">
                     <Icon size={22} className="text-primary" />
                   </div>
-                  <h3 className="font-heading text-lg mb-2">{service.title}</h3>
+                  <h3 className="font-heading text-lg mb-2 group-hover:text-primary transition-colors">{service.title}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed mb-4">{service.description}</p>
-                  <Link to="/contact" className="inline-flex items-center px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:brightness-110 transition-all">
+                  <Link
+                    to="/contact"
+                    className="inline-flex items-center px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 hover:shadow-lg hover:brightness-105 transition-all"
+                  >
                     Enquire Now
                   </Link>
                 </div>

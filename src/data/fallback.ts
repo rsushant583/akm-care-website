@@ -2,7 +2,8 @@ export const services = [
   { id: "1", title: "Training & Education", description: "Comprehensive industrial training programs including soft skills, technical, behavioral, and commercial training across India.", icon: "GraduationCap", category: "Training" },
   { id: "2", title: "Placement Services", description: "End-to-end job placement and recruitment consultancy connecting talent with the right opportunities.", icon: "Briefcase", category: "HR" },
   { id: "3", title: "Manpower Deployment", description: "Contractual manpower solutions tailored to your operational needs with verified and skilled workforce.", icon: "Users", category: "HR" },
-  { id: "4", title: "Industrial Compliance Consulting", description: "Expert guidance on regulatory compliance, policy formation, and industrial standards adherence.", icon: "ShieldCheck", category: "Compliance" },
+  { id: "4", title: "Industrial Compliance Consulting", description: "Expert guidance on regulatory compliance, statutory alignment, audits, and industrial standards adherence.", icon: "ShieldCheck", category: "Compliance" },
+  { id: "13", title: "Policy Formation", description: "Structured HR, industrial, and corporate policy design—handbooks, SOPs, code of conduct, and governance frameworks tailored to your organization.", icon: "FileText", category: "Compliance" },
   { id: "5", title: "Logistics & Freight Services", description: "Reliable freight and logistics solutions through AKM Freight for seamless supply chain management.", icon: "Truck", category: "Logistics" },
   { id: "6", title: "Catering & Facility Management", description: "Professional catering, event management, and guest house management services for organizations.", icon: "ChefHat", category: "Others" },
   { id: "7", title: "Tours & Travel", description: "Corporate travel management, employee transportation, and tours services across India.", icon: "Plane", category: "Others" },
@@ -58,20 +59,4 @@ export const trainingCategories = [
   { id: "8", title: "Safety & Compliance Training", description: "Workplace safety, regulatory compliance, fire safety, first aid, and industrial safety standards training.", icon: "Shield" },
 ];
 
-export const carouselSlides = [
-  {
-    title: "Bhagavad Gita — Chapter II, Verse 47",
-    subtitle: "Sanskrit verse with English translation on duty and non-attachment to outcomes",
-    image: "/slides/slide-bhagavad-gita-ch2-v47.png",
-    theme: "wisdom",
-  },
-  {
-    title: "AKM Care & AKM Freight — training, HR, logistics & e-commerce",
-    subtitle: "Milestone for industry solutions on one platform with ethics and integrity",
-    image: "/slides/slide-akm-care-freight-intro.png",
-    theme: "brand",
-  },
-  { title: "Humanity and CSR", subtitle: "Community impact", image: "/slides/slide-csr.png", theme: "humanity" },
-  { title: "Industry and Services", subtitle: "Industrial support", image: "/slides/slide-services.png", theme: "industry" },
-  { title: "Growth and Environment", subtitle: "Sustainable progress", image: "/slides/slide-objective.png", theme: "environment" },
-];
+export { carouselSlides } from "./carousel";

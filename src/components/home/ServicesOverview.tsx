@@ -10,16 +10,17 @@ export default function ServicesOverview() {
   const { data: services, loading } = useServices();
 
   return (
-    <section className="section-padding bg-gradient-to-b from-warm-beige to-background">
-      <div className="container-premium">
-        <div className="text-center mb-14">
-          <div className="inline-flex items-center rounded-full bg-primary/10 text-primary px-4 py-1.5 text-sm font-semibold mb-4">
+    <section className="section-padding relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-warm-beige/60 to-background pointer-events-none" />
+      <div className="container-premium relative z-10">
+        <div className="text-center mb-14 max-w-2xl mx-auto">
+          <div className="inline-flex items-center rounded-full bg-primary/10 text-primary px-4 py-1.5 text-xs font-bold tracking-widest uppercase mb-4 border border-primary/15">
             Core Services
           </div>
           <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl mb-4">
             Everything Your Business Needs
           </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          <p className="text-muted-foreground text-lg leading-relaxed">
             A complete ecosystem of industrial and human capital solutions
           </p>
         </div>
@@ -37,15 +38,15 @@ export default function ServicesOverview() {
                 return (
                   <div
                     key={service.id}
-                    className={`group bg-card/95 border border-border/60 rounded-2xl p-6 card-shadow hover:card-shadow-hover hover:-translate-y-1.5 hover:border-primary/30 transition-all duration-200 ${
+                    className={`group bg-card/90 backdrop-blur-sm border border-border/60 rounded-2xl p-6 card-shadow hover:card-shadow-hover hover:-translate-y-1.5 hover:border-primary/25 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 ${
                       isVisible ? "animate-fade-up" : "opacity-0"
                     }`}
                     style={{ animationDelay: `${i * 60}ms` }}
                   >
-                    <div className="w-12 h-12 rounded-xl bg-accent flex items-center justify-center mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 ring-1 ring-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/15 transition-colors">
                       <Icon size={22} className="text-primary" />
                     </div>
-                    <h3 className="font-heading text-lg mb-2">{service.title}</h3>
+                    <h3 className="font-heading text-lg mb-2 group-hover:text-primary transition-colors">{service.title}</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed mb-4">
                       {service.description}
                     </p>

@@ -3,32 +3,40 @@ import { ArrowRight, Play } from "lucide-react";
 
 export default function Hero() {
   return (
-    <section className="relative min-h-[90vh] lg:min-h-screen flex items-center overflow-hidden">
-      {/* Subtle background texture */}
-      <div className="absolute inset-0 bg-gradient-to-br from-saffron-light/50 via-background to-background" />
-      <div className="absolute top-20 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-amber-200/20 rounded-full blur-3xl" />
+    <section className="relative min-h-[92vh] lg:min-h-screen flex items-center overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,hsl(25_95%_53%/0.18),transparent)]" />
+      <div className="absolute inset-0 bg-gradient-to-br from-saffron-light/40 via-background to-background" />
+      <div className="absolute top-24 right-[10%] w-[420px] h-[420px] rounded-full bg-primary/[0.07] blur-3xl" />
+      <div className="absolute bottom-20 left-[5%] w-[320px] h-[320px] rounded-full bg-amber-400/10 blur-3xl" />
 
-      <div className="container-premium relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      <div className="container-premium relative z-10 py-12 lg:py-0">
+        <div className="grid lg:grid-cols-2 gap-14 lg:gap-20 items-center">
           <div className="max-w-xl">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent border border-primary/10 mb-8 animate-fade-up">
-              <span className="w-2 h-2 rounded-full bg-primary" />
-              <span className="text-sm font-medium text-accent-foreground">Trusted by Industries Across India</span>
+            <div className="inline-flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 py-3 rounded-2xl bg-card/60 backdrop-blur-xl border border-primary/10 shadow-lg shadow-primary/5 mb-8 animate-fade-up">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-primary shadow-[0_0_10px_hsl(25_95%_53%)]" />
+                <span className="text-sm font-semibold text-foreground">Pan-India · Ethics first</span>
+              </div>
+              <span className="hidden sm:block h-4 w-px bg-border" aria-hidden />
+              <span className="text-xs text-muted-foreground font-medium tracking-wide">
+                कर्मण्येवाधिकारस्ते
+              </span>
             </div>
 
-            <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl xl:text-7xl leading-[1.08] mb-8 animate-fade-up" style={{ animationDelay: "100ms" }}>
-              One Platform For All Solutions.
+            <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl xl:text-[3.5rem] leading-[1.06] mb-6 animate-fade-up tracking-tight" style={{ animationDelay: "80ms" }}>
+              One platform for{" "}
+              <span className="text-gradient-saffron">training, HR, logistics</span>
+              {" "}and rural commerce.
             </h1>
 
-            <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-10 animate-fade-up" style={{ animationDelay: "200ms" }}>
-              Training. Logistics. HR. E-Commerce — Delivered with Ethics and Excellence.
+            <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-10 animate-fade-up max-w-md" style={{ animationDelay: "160ms" }}>
+              Built with the discipline of duty and the warmth of dharma — solutions that scale with your values.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 animate-fade-up" style={{ animationDelay: "300ms" }}>
+            <div className="flex flex-col sm:flex-row gap-4 animate-fade-up" style={{ animationDelay: "240ms" }}>
               <Link
                 to="/services"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-primary text-primary-foreground font-semibold text-base hover:brightness-110 hover:scale-[1.02] transition-all"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-primary text-primary-foreground font-semibold text-base shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 hover:brightness-105 hover:-translate-y-0.5 transition-all duration-300"
               >
                 Explore Services <ArrowRight size={18} />
               </Link>
@@ -36,28 +44,34 @@ export default function Hero() {
                 href="https://www.youtube.com/@akmcare1309"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full border-2 border-border text-foreground font-semibold text-base hover:bg-muted transition-all"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full border-2 border-border/80 bg-card/50 backdrop-blur-md text-foreground font-semibold text-base hover:bg-card hover:border-primary/25 transition-all duration-300"
               >
-                <Play size={18} className="text-primary" /> Watch Our Story
+                <Play size={18} className="text-primary" /> Watch our story
               </a>
             </div>
           </div>
 
-          {/* Abstract geometric */}
-          <div className="hidden lg:flex items-center justify-center animate-fade-up" style={{ animationDelay: "400ms" }}>
-            <div className="relative w-[420px] h-[420px]">
-              <div className="absolute top-0 right-8 w-48 h-48 rounded-3xl bg-gradient-to-br from-primary/20 to-amber-300/20 rotate-12" />
-              <div className="absolute top-16 left-0 w-56 h-56 rounded-full border-[3px] border-primary/15" />
-              <div className="absolute bottom-8 right-0 w-40 h-40 rounded-2xl bg-gradient-to-tr from-primary to-amber-400 opacity-80" />
-              <div className="absolute bottom-20 left-12 w-32 h-32 rounded-full bg-amber-200/40" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center">
-                <div className="w-3 h-3 rounded-full bg-primary" />
+          <div className="hidden lg:flex items-center justify-center animate-fade-up" style={{ animationDelay: "320ms" }}>
+            <div className="relative w-[min(100%,440px)] aspect-square">
+              <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-primary/20 via-amber-200/10 to-transparent blur-2xl scale-110" />
+              <div className="relative h-full rounded-[2rem] border border-white/40 bg-card/40 backdrop-blur-2xl shadow-2xl shadow-black/10 p-10 flex flex-col justify-center ring-1 ring-primary/10">
+                <p className="font-heading text-2xl text-foreground/90 leading-snug mb-4">
+                  “You have the right to work, not to the fruits of work alone.”
+                </p>
+                <p className="text-sm text-primary font-semibold tracking-wide mb-6">— Bhagavad Gita, 2:47</p>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="rounded-xl bg-primary/5 border border-primary/10 p-4">
+                    <p className="text-2xl font-heading text-primary mb-1">Training</p>
+                    <p className="text-muted-foreground leading-tight">Soft skills, technical & compliance programs</p>
+                  </div>
+                  <div className="rounded-xl bg-muted/50 border border-border/60 p-4">
+                    <p className="text-2xl font-heading text-foreground mb-1">Logistics</p>
+                    <p className="text-muted-foreground leading-tight">AKM Freight — reliable movement of goods</p>
+                  </div>
+                </div>
               </div>
-              {/* Growth lines */}
-              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 420 420">
-                <line x1="60" y1="350" x2="200" y2="200" stroke="hsl(25 95% 53% / 0.15)" strokeWidth="2" />
-                <line x1="200" y1="200" x2="340" y2="100" stroke="hsl(25 95% 53% / 0.15)" strokeWidth="2" />
-              </svg>
+              <div className="absolute -top-4 -right-4 w-24 h-24 rounded-2xl bg-gradient-to-br from-primary to-amber-500 opacity-90 shadow-lg -z-10 rotate-6" />
+              <div className="absolute -bottom-6 -left-6 w-32 h-32 rounded-full border-2 border-primary/20 -z-10" />
             </div>
           </div>
         </div>

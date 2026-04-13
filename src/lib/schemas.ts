@@ -22,7 +22,7 @@ export const organizationSchema = {
   ],
   sameAs: [
     "https://www.youtube.com/@akmcare1309",
-    "https://www.facebook.com/AKMCARE/",
+    "https://www.facebook.com/share/1Jjs7ipP1x/",
   ],
   areaServed: "IN",
   foundingLocation: "Ahmedabad, Gujarat, India",
@@ -49,6 +49,7 @@ export const servicesSchema = {
       { "@type": "Offer", itemOffered: { "@type": "Service", name: "Manpower Deployment" } },
       { "@type": "Offer", itemOffered: { "@type": "Service", name: "Logistics & Freight" } },
       { "@type": "Offer", itemOffered: { "@type": "Service", name: "Compliance Consulting" } },
+      { "@type": "Offer", itemOffered: { "@type": "Service", name: "Policy Formation" } },
       { "@type": "Offer", itemOffered: { "@type": "Service", name: "Employment Verification" } },
     ],
   },
