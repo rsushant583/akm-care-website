@@ -1,19 +1,7 @@
-export type CarouselImageSlide = {
-  kind: "image";
+/** Homepage slideshow — image slides only (assets in /public/slides/). */
+export type CarouselSlide = {
   title: string;
   subtitle: string;
   image: string;
   theme: string;
 };
-
-export type CarouselMessageSlide = {
-  kind: "message";
-  title: string;
-  subtitle: string;
-  body: string;
-  theme: string;
-  epigraph?: string;
-  epigraphTranslation?: string;
-};
-
-export type CarouselSlide = CarouselImageSlide | CarouselMessageSlide;

@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { carouselSlides } from "@/data/carousel";
-import type { CarouselSlide } from "@/data/carouselTypes";
 
-function slideAlt(slide: CarouselSlide): string {
+function slideAlt(slide: (typeof carouselSlides)[number]): string {
   return `${slide.title} — ${slide.subtitle}`;
 }
 
@@ -43,46 +42,22 @@ export default function ImageCarousel() {
         >
           {carouselSlides.map((slide, i) => (
             <div
-              key={i}
+              key={slide.image}
               className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
                 i === current ? "opacity-100 z-[1]" : "opacity-0 z-0"
               }`}
             >
-              {slide.kind === "message" ? (
-                <div className="absolute inset-0 flex items-center justify-center p-4 sm:p-8">
-                  <div className="max-w-2xl w-full rounded-2xl sm:rounded-3xl border border-primary/15 bg-card/85 backdrop-blur-xl px-6 py-10 sm:px-10 sm:py-12 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.12)] ring-1 ring-primary/5">
-                    <h3 className="font-heading text-2xl sm:text-3xl lg:text-4xl text-foreground text-center mb-2 leading-tight">
-                      {slide.title}
-                    </h3>
-                    <p className="text-center text-xs sm:text-sm font-semibold uppercase tracking-[0.2em] text-primary mb-6">
-                      {slide.subtitle}
-                    </p>
-                    <p className="text-center text-base sm:text-lg text-muted-foreground leading-relaxed font-body">
-                      {slide.body}
-                    </p>
-                    {slide.epigraph && (
-                      <div className="mt-8 pt-6 border-t border-primary/10 text-center space-y-1">
-                        <p className="font-heading text-lg sm:text-xl text-primary/90 leading-snug">{slide.epigraph}</p>
-                        {slide.epigraphTranslation && (
-                          <p className="text-xs sm:text-sm text-muted-foreground italic">{slide.epigraphTranslation}</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-5">
-                  <img
-                    src={slide.image}
-                    alt={slideAlt(slide)}
-                    width={1200}
-                    height={720}
-                    className="max-h-full max-w-full w-auto h-auto object-contain"
-                    loading={i === 0 ? "eager" : "lazy"}
-                    decoding="async"
-                  />
-                </div>
-              )}
+              <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-5">
+                <img
+                  src={slide.image}
+                  alt={slideAlt(slide)}
+                  width={1200}
+                  height={720}
+                  className="max-h-full max-w-full w-auto h-auto object-contain"
+                  loading={i === 0 ? "eager" : "lazy"}
+                  decoding="async"
+                />
+              </div>
               <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/20 to-transparent z-[2]" />
             </div>
           ))}

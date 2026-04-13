@@ -1,42 +1,37 @@
 import type { CarouselSlide } from "./carouselTypes";
 
-/** Homepage wisdom carousel — Gita first; brand message is typography (no plain text image). */
+/**
+ * Homepage slideshow — only the five client-provided images (see /public/slides/slide-home-*.png).
+ */
 export const carouselSlides: CarouselSlide[] = [
   {
-    kind: "image",
     title: "Bhagavad Gita — Chapter II, Verse 47",
     subtitle: "Sanskrit verse with English translation on duty and non-attachment to outcomes",
-    image: "/slides/slide-bhagavad-gita-ch2-v47.png",
+    image: "/slides/slide-home-01-gita.png",
     theme: "wisdom",
   },
   {
-    kind: "message",
-    title: "AKM Care & AKM Freight",
-    subtitle: "One platform · Ethics · Integrity",
-    body: "AKM Care and AKM Freight (a milestone for training industry, HR, sales & marketing, logistics, other industrial requirements and e‑commerce services) provide all solutions on a single platform with ethics and integrity within a benchmarking value frame.",
+    title: "Our Synopsis — education, training, services, compliance",
+    subtitle: "Upanishadic vision: from darkness to light; AKM Care identity and quadrants",
+    image: "/slides/slide-home-02-synopsis.png",
     theme: "brand",
-    epigraph: "कर्मण्येवाधिकारस्ते मा फलेषु कदाचन",
-    epigraphTranslation: "Your right is to your duty — not to the fruits alone.",
   },
   {
-    kind: "image",
-    title: "Humanity and CSR",
-    subtitle: "Community impact",
-    image: "/slides/slide-csr.png",
-    theme: "humanity",
-  },
-  {
-    kind: "image",
-    title: "Industry and Services",
-    subtitle: "Industrial support",
-    image: "/slides/slide-services.png",
+    title: "Our Objective — MSME firm, Pan-India training and services",
+    subtitle: "Industrial trainings, placement, manpower, tours & travel, Gujarat and India",
+    image: "/slides/slide-home-03-objective.png",
     theme: "industry",
   },
   {
-    kind: "image",
-    title: "Growth and Environment",
-    subtitle: "Sustainable progress",
-    image: "/slides/slide-objective.png",
-    theme: "environment",
+    title: "AKM Care & AKM Freight — milestone and platform",
+    subtitle: "Training, HR, sales & marketing, logistics, e-commerce — ethics and integrity",
+    image: "/slides/slide-home-04-brand-message.png",
+    theme: "brand",
+  },
+  {
+    title: "Founder — Bimleshkumar Bibhakar",
+    subtitle: "AKM Care & AKM Freight Carriers; corporate trainer and former HR professional",
+    image: "/slides/slide-home-05-founder.png",
+    theme: "team",
   },
 ];
