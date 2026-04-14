@@ -9,7 +9,7 @@ const values = [
 ];
 
 const timeline = [
-  { year: "Foundation", desc: "AKM Care serves and provides training, HR, logistics, and industrial solutions Pan India." },
+  { year: "Foundation", desc: "A Well-known trustworthy name ensure need based multipln qualitative services for PAN India clients and provides all solutions on a single platform with ethics and integrity within a benchmarking value frame." },
   { year: "Training", desc: "Launched corporate soft skill & behavioral training programs" },
   { year: "Expansion", desc: "Extended services to placement, manpower, and compliance consulting" },
   { year: "Logistics", desc: "AKM Freight launched to serve freight & logistics needs" },

@@ -130,10 +130,10 @@ export default function Media() {
             onClick={(e) => e.stopPropagation()}
           >
             <iframe
-              src={`https://www.youtube.com/embed/${activeVideo}?autoplay=1`}
+              src={`https://www.youtube.com/embed/${activeVideo}?autoplay=0&controls=0&fs=0&disablekb=1&modestbranding=1&rel=0`}
               className="w-full h-full"
-              allow="autoplay; encrypted-media"
-              allowFullScreen
+              style={{ pointerEvents: "none" }}
+              allow="encrypted-media"
               title="AKM Care video"
             />
           </div>

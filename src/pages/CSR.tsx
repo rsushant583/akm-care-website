@@ -23,6 +23,14 @@ export default function CSR() {
           <p className="text-lg text-muted-foreground">
             We strongly believe that boosting the morale of people through extra awareness as well as assistance to the needy is the best contribution for society, country, and the entire universe.
           </p>
+          <a
+            href="https://www.facebook.com/share/1DzHMLUAbG/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center mt-5 text-sm font-semibold text-primary hover:underline"
+          >
+            View our CSR activities on Facebook
+          </a>
         </div>
       </section>
 

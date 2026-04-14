@@ -24,9 +24,7 @@ export default function Hero() {
             </div>
 
             <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl xl:text-[3.5rem] leading-[1.06] mb-6 animate-fade-up tracking-tight" style={{ animationDelay: "80ms" }}>
-              One platform for{" "}
-              <span className="text-gradient-saffron">training, HR, logistics</span>
-              {" "}and rural commerce.
+              One Platform For All Solutions.
             </h1>
 
             <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-10 animate-fade-up max-w-md" style={{ animationDelay: "160ms" }}>
