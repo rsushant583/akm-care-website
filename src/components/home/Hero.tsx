@@ -23,7 +23,10 @@ export default function Hero() {
               </span>
             </div>
 
-            <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl xl:text-[3.5rem] leading-[1.06] mb-6 animate-fade-up tracking-tight" style={{ animationDelay: "80ms" }}>
+            <h1
+              className="font-heading text-4xl sm:text-5xl lg:text-6xl xl:text-[3.5rem] leading-[1.06] mb-6 animate-fade-up tracking-tight"
+              style={{ animationDelay: "80ms", textWrap: "balance" }}
+            >
               One Platform For All Solutions.
             </h1>
 

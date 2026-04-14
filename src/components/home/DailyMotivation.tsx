@@ -1,10 +1,45 @@
 import { Quote } from "lucide-react";
 import { useMotivation } from "@/hooks/useMotivation";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect, useMemo, useState } from "react";
 
 export default function DailyMotivation() {
   const { data: motivationQuotes, loading } = useMotivation();
   const quote = motivationQuotes[0];
+
+  const dayKey = useMemo(() => {
+    const now = new Date();
+    const pivot = new Date(now);
+    pivot.setHours(5, 0, 0, 0);
+    if (now < pivot) {
+      pivot.setDate(pivot.getDate() - 1);
+    }
+    return pivot.toISOString().slice(0, 10);
+  }, []);
+
+  const popupQuote = useMemo(() => {
+    if (!motivationQuotes || motivationQuotes.length === 0) return null;
+    const sorted = [...motivationQuotes].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    const start = new Date("2026-01-01T05:00:00.000Z").getTime();
+    const today = new Date(`${dayKey}T05:00:00.000Z`).getTime();
+    const days = Math.max(0, Math.floor((today - start) / 86400000));
+    return sorted[days % sorted.length];
+  }, [motivationQuotes, dayKey]);
+
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      const k = "akm_inspiration_shown_for";
+      const shownFor = localStorage.getItem(k);
+      if (shownFor !== dayKey) {
+        setOpen(true);
+        localStorage.setItem(k, dayKey);
+      }
+    } catch {
+      setOpen(true);
+    }
+  }, [dayKey]);
 
   return (
     <section className="section-padding">
@@ -31,6 +66,34 @@ export default function DailyMotivation() {
         </div>
         )}
       </div>
+
+      {open && !loading && popupQuote && (
+        <div className="fixed inset-0 z-[120] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setOpen(false)}>
+          <div
+            className={`relative w-full max-w-3xl rounded-2xl p-8 sm:p-12 card-shadow text-center ${
+              popupQuote.source === "Phil Jackson"
+                ? "bg-gradient-to-br from-primary/10 via-warm-beige to-amber-100/80 ring-2 ring-primary/25"
+                : "bg-warm-beige"
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              aria-label="Close"
+              onClick={() => setOpen(false)}
+              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-card/70 border border-border/60 text-foreground font-semibold hover:bg-card transition-all"
+            >
+              ×
+            </button>
+            <h3 className="font-heading text-2xl sm:text-3xl mb-6">Today's Inspiration</h3>
+            <Quote size={40} className="text-primary/30 mx-auto mb-4" />
+            <blockquote className="font-heading text-xl sm:text-2xl lg:text-3xl italic leading-relaxed mb-6 text-foreground">
+              "{popupQuote.quote}"
+            </blockquote>
+            <p className="text-muted-foreground font-medium">— {popupQuote.source}</p>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

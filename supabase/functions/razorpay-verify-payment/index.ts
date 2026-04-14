@@ -9,6 +9,37 @@ const corsHeaders = {
 
 const NOTIFICATION_EMAIL = "rsushant583@gmail.com";
 
+async function sendWhatsAppOrderNotification(payload: Record<string, unknown>) {
+  const token = Deno.env.get("WHATSAPP_TOKEN") ?? "";
+  const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID") ?? "";
+  const to = Deno.env.get("WHATSAPP_TO_NUMBER") ?? "";
+  if (!token || !phoneNumberId || !to) return;
+
+  const lines = Object.entries(payload)
+    .filter(([, v]) => v !== undefined && v !== null && String(v).trim().length > 0)
+    .map(([k, v]) => `${k}: ${String(v)}`);
+
+  const text = `New Order Paid\n${lines.join("\n")}`;
+
+  try {
+    await fetch(`https://graph.facebook.com/v20.0/${phoneNumberId}/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to,
+        type: "text",
+        text: { body: text },
+      }),
+    });
+  } catch (_) {
+    // ignore WhatsApp failure
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
@@ -80,6 +111,17 @@ Deno.serve(async (req) => {
       payment_status: "paid",
     });
     if (orderErr) throw orderErr;
+
+    await sendWhatsAppOrderNotification({
+      product: orderData.product_name,
+      amount: `INR ${orderData.amount}`,
+      customer: orderData.customer_name,
+      email: orderData.customer_email,
+      phone: orderData.customer_phone || "-",
+      razorpay_order_id,
+      razorpay_payment_id,
+      timestamp: new Date().toISOString(),
+    });
 
     const resendKey = Deno.env.get("VITE_RESEND_API_KEY") ?? "";
     if (resendKey) {

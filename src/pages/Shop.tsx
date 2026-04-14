@@ -14,6 +14,8 @@ export default function Shop() {
   const [name, setName] = useState("");
   const [selectedProduct, setSelectedProduct] = useState("");
   const [selectedBuyProduct, setSelectedBuyProduct] = useState<any>(null);
+  const [cartProduct, setCartProduct] = useState<any>(null);
+  const [showCart, setShowCart] = useState(false);
   const [checkout, setCheckout] = useState({ name: "", email: "", phone: "" });
   const [processingPayment, setProcessingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState("");
@@ -51,6 +53,27 @@ export default function Shop() {
   const handleBuyNow = async (product: any) => {
     setPaymentError("");
     setSelectedBuyProduct(product);
+  };
+
+  const saveCart = (product: any | null) => {
+    try {
+      if (!product) localStorage.removeItem("akm_cart_product");
+      else localStorage.setItem("akm_cart_product", JSON.stringify(product));
+    } catch {
+      // ignore
+    }
+  };
+
+  const openCart = (product: any) => {
+    setCartProduct(product);
+    saveCart(product);
+    setShowCart(true);
+  };
+
+  const clearCart = () => {
+    setCartProduct(null);
+    saveCart(null);
+    setShowCart(false);
   };
 
   const openRazorpay = async (e: React.FormEvent) => {
@@ -230,7 +253,12 @@ export default function Shop() {
                   <p className="text-xs text-muted-foreground mb-3">{product.description}</p>
                   <div className="flex items-center justify-between">
                     <span className="font-semibold text-xl">₹{product.price}</span>
-                    <button disabled={(product.stock_quantity ?? 0) === 0} className={`p-2.5 rounded-xl ${(product.stock_quantity ?? 0) === 0 ? "bg-muted text-muted-foreground cursor-not-allowed" : "bg-primary text-primary-foreground"}`}>
+                    <button
+                      type="button"
+                      onClick={() => openCart(product)}
+                      disabled={(product.stock_quantity ?? 0) === 0}
+                      className={`p-2.5 rounded-xl ${(product.stock_quantity ?? 0) === 0 ? "bg-muted text-muted-foreground cursor-not-allowed" : "bg-primary text-primary-foreground"}`}
+                    >
                       <ShoppingCart size={18} />
                     </button>
                   </div>
@@ -280,6 +308,43 @@ export default function Shop() {
                 Notify Me
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showCart && cartProduct && (
+        <div className="fixed inset-0 z-[110] bg-foreground/50 flex items-center justify-center p-4" onClick={() => setShowCart(false)}>
+          <div className="bg-card rounded-2xl p-8 max-w-md w-full card-shadow" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-heading text-2xl mb-2">Your Cart</h3>
+            <p className="text-muted-foreground mb-6">Review your item before checkout.</p>
+            <div className="rounded-2xl border border-border/70 bg-background p-4 mb-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="font-heading text-base">{cartProduct.name}</div>
+                  <div className="text-sm text-muted-foreground">{cartProduct.quantity}</div>
+                </div>
+                <div className="font-semibold text-lg">₹{cartProduct.price}</div>
+              </div>
+            </div>
+            <div className="flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCart(false);
+                  handleBuyNow(cartProduct);
+                }}
+                className="w-full py-3 rounded-full bg-primary text-primary-foreground font-semibold hover:brightness-110 transition-all"
+              >
+                Proceed to Checkout
+              </button>
+              <button
+                type="button"
+                onClick={clearCart}
+                className="w-full py-3 rounded-full bg-muted text-muted-foreground font-semibold hover:brightness-105 transition-all"
+              >
+                Remove Item
+              </button>
+            </div>
           </div>
         </div>
       )}

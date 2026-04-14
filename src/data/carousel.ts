@@ -28,4 +28,10 @@ export const carouselSlides: CarouselSlide[] = [
     image: "/slides/slide-home-04-brand-message.png",
     theme: "brand",
   },
+  {
+    title: "Corporate Social Responsibility",
+    subtitle: "CSR program — free training and community support initiatives",
+    image: "/slides/slide-home-05-csr.png",
+    theme: "brand",
+  },
 ];

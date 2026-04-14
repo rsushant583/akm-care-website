@@ -1,5 +1,5 @@
 export const services = [
-  { id: "1", title: "Training & Education", description: "Comprehensive industrial training programs including soft skills, technical, behavioral, and commercial training across India.", icon: "GraduationCap", category: "Training" },
+  { id: "1", title: "Training & Education", description: "Comprehensive industrial training programs including soft skills, technical, behavioral, commercial training and Health Safety and Enviroment across India.", icon: "GraduationCap", category: "Training" },
   { id: "2", title: "Placement Services", description: "End-to-end job placement and recruitment consultancy connecting talent with the right opportunities.", icon: "Briefcase", category: "HR" },
   { id: "3", title: "Manpower Deployment", description: "Contractual manpower solutions tailored to your operational needs with verified and skilled workforce.", icon: "Users", category: "HR" },
   { id: "4", title: "Industrial Compliance Consulting", description: "Expert guidance on regulatory compliance, statutory alignment, audits, and industrial standards adherence.", icon: "ShieldCheck", category: "Compliance" },
