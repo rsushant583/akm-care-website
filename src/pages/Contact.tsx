@@ -49,7 +49,7 @@ export default function Contact() {
             <div className="space-y-5">
               {[
                 { icon: Phone, label: "Phone", value: "+91-8200224226", action: "tel:+918200224226", cta: "Call Now" },
-                { icon: Mail, label: "Email", value: "akmcare108@gmail.com", action: "mailto:akmcare108@gmail.com", cta: "Send Email" },
+                { icon: Mail, label: "Email", value: "contact@akmctr.com, akmcare108@gmail.com", action: "mailto:contact@akmctr.com", cta: "Send Email" },
                 { icon: MessageCircle, label: "WhatsApp", value: "+91-8200224226", action: "https://wa.me/918200224226", cta: "Chat on WhatsApp" },
                 { icon: MapPin, label: "Location", value: "Ahmedabad, Gujarat, India", action: "", cta: "" },
               ].map((item) => (

@@ -46,7 +46,7 @@ export default function Careers() {
       <section className="section-padding bg-warm-beige">
         <div className="container-premium text-center max-w-3xl">
           <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl mb-6">Careers</h1>
-          <p className="text-lg text-muted-foreground">Join Team AKM Care and be part of India's growing industrial solutions ecosystem</p>
+          <p className="text-lg text-muted-foreground">Connect with team AKM Care to be the part of India's growing job placement Services our PAN India and abroad clients.</p>
         </div>
       </section>
 
@@ -54,7 +54,9 @@ export default function Careers() {
         <div className="container-premium">
           <div className="bg-accent rounded-2xl p-8 text-center mb-14">
             <h2 className="font-heading text-2xl mb-3">Current Openings</h2>
-            <p className="text-muted-foreground">No openings currently — but we're always looking for great talent. Send us your resume below.</p>
+            <p className="text-muted-foreground">
+              No openings currently, but please share your recently updated CV for upcoming openings in future, based on our clients requirements, either directly through this website or on our email :- contact@akmctr.com akmcare108@gmail.com
+            </p>
           </div>
 
           <h2 className="font-heading text-3xl text-center mb-10">Why Work With Us</h2>
