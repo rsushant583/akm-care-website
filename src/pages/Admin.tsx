@@ -149,8 +149,8 @@ function ServicesTab({ services, onSave, onDelete }: any) {
     <div className="space-y-4">
       <input className="w-full px-4 py-3 rounded-xl border" placeholder="Service Name" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
       <textarea className="w-full px-4 py-3 rounded-xl border" placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-      <select className="w-full px-4 py-3 rounded-xl border" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}><option value="training">Training</option><option value="hr">HR</option><option value="logistics">Logistics</option><option value="compliance">Compliance</option><option value="other">Other</option></select>
-      <select className="w-full px-4 py-3 rounded-xl border" value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })}>{["Briefcase","GraduationCap","Users","ShieldCheck","Truck","ChefHat","Plane","Wrench","Settings","Heart","Code"].map((x) => <option key={x}>{x}</option>)}</select>
+      <select className="w-full px-4 py-3 rounded-xl border" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}><option value="training">Training</option><option value="hr">HR</option><option value="compliance">Compliance</option><option value="other">Other</option></select>
+      <select className="w-full px-4 py-3 rounded-xl border" value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })}>{["Briefcase","GraduationCap","Users","ShieldCheck","ChefHat","Plane","Wrench","Settings","Heart","Code"].map((x) => <option key={x}>{x}</option>)}</select>
       <button className="px-8 py-3 rounded-full bg-primary text-primary-foreground font-semibold" onClick={() => onSave("services", form)}>Add Service ✓</button>
       <div className="space-y-3">{services.map((s: any) => <EditableCard key={s.id} title={s.title} subtitle={s.category} onDelete={() => onDelete("services", s.id)} onUpdate={(payload: any) => onSave("services", payload, s.id)} fields={["title","description","category","icon","display_order"]} data={s} />)}</div>
     </div>
@@ -163,7 +163,7 @@ function FAQTab({ faqs, onSave, onDelete }: any) {
     <div className="space-y-4">
       <input className="w-full px-4 py-3 rounded-xl border" placeholder="Question" value={form.question} onChange={(e) => setForm({ ...form, question: e.target.value })} />
       <textarea className="w-full px-4 py-3 rounded-xl border" placeholder="Answer" value={form.answer} onChange={(e) => setForm({ ...form, answer: e.target.value })} />
-      <select className="w-full px-4 py-3 rounded-xl border" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}><option value="general">General</option><option value="training">Training</option><option value="services">Services</option><option value="products">Products</option><option value="logistics">Logistics</option></select>
+      <select className="w-full px-4 py-3 rounded-xl border" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}><option value="general">General</option><option value="training">Training</option><option value="services">Services</option><option value="products">Products</option></select>
       <button className="px-8 py-3 rounded-full bg-primary text-primary-foreground font-semibold" onClick={() => onSave("faq", form)}>Add FAQ ✓</button>
       <div className="space-y-3">{faqs.map((f: any) => <EditableCard key={f.id} title={f.question} subtitle={f.category} onDelete={() => onDelete("faq", f.id)} onUpdate={(payload: any) => onSave("faq", payload, f.id)} fields={["question","answer","category","display_order"]} data={f} />)}</div>
     </div>

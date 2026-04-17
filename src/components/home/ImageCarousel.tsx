@@ -1,11 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useLayoutEffect, useRef } from "react";
 import { carouselSlides } from "@/data/carousel";
+import { gsap } from "@/lib/gsapRegister";
+import { prefersReducedMotion } from "@/lib/motion";
 
 function slideAlt(slide: (typeof carouselSlides)[number]): string {
   return `${slide.title} — ${slide.subtitle}`;
 }
 
 export default function ImageCarousel() {
+  const rootRef = useRef<HTMLElement>(null);
   const [current, setCurrent] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
@@ -19,23 +22,72 @@ export default function ImageCarousel() {
     return () => clearInterval(timer);
   }, [isPaused, next]);
 
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root || prefersReducedMotion()) return;
+
+    const ctx = gsap.context(() => {
+      const parts = root.querySelectorAll("[data-carousel-reveal]");
+      gsap.from(parts, {
+        opacity: 0,
+        y: 44,
+        duration: 0.9,
+        stagger: 0.1,
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: root,
+          start: "top 80%",
+          toggleActions: "play none none reverse",
+        },
+      });
+
+      const frame = root.querySelector("[data-carousel-frame]");
+      if (frame) {
+        gsap.fromTo(
+          frame,
+          { opacity: 0, scale: 0.97, y: 24 },
+          {
+            opacity: 1,
+            scale: 1,
+            y: 0,
+            duration: 1,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: root,
+              start: "top 78%",
+              toggleActions: "play none none reverse",
+            },
+          },
+        );
+      }
+    }, root);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <section className="section-padding relative overflow-hidden">
+    <section ref={rootRef} className="section-padding relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.06] via-warm-beige to-background pointer-events-none" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(90vw,720px)] h-[min(90vw,720px)] rounded-full bg-primary/[0.04] blur-3xl pointer-events-none" />
 
       <div className="container-premium relative z-10">
         <div className="text-center mb-10 max-w-2xl mx-auto">
-          <p className="text-xs font-semibold tracking-[0.25em] uppercase text-primary mb-3">Dharma · Work · Purpose</p>
-          <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl mb-3 bg-gradient-to-br from-foreground via-foreground to-foreground/70 bg-clip-text">
+          <p data-carousel-reveal className="text-xs font-semibold tracking-[0.25em] uppercase text-primary mb-3">
+            Dharma · Work · Purpose
+          </p>
+          <h2
+            data-carousel-reveal
+            className="font-heading text-3xl sm:text-4xl lg:text-5xl mb-3 bg-gradient-to-br from-foreground via-foreground to-foreground/70 bg-clip-text"
+          >
             Guided by Timeless Wisdom
           </h2>
-          <p className="text-muted-foreground text-base sm:text-lg leading-relaxed">
+          <p data-carousel-reveal className="text-muted-foreground text-base sm:text-lg leading-relaxed">
             Reflections that shape how we train, serve, and grow with integrity.
           </p>
         </div>
 
         <div
+          data-carousel-frame
           className="relative w-full min-h-[280px] h-[min(72vh,640px)] sm:min-h-[360px] sm:h-[min(75vh,680px)] lg:min-h-[440px] lg:h-[min(78vh,720px)] rounded-[1.75rem] overflow-hidden border border-primary/10 shadow-[0_24px_80px_-24px_rgba(249,115,22,0.25),0_0_0_1px_rgba(0,0,0,0.03)] bg-gradient-to-br from-stone-100/90 via-card to-amber-50/40 backdrop-blur-sm"
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}

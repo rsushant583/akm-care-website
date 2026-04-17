@@ -23,8 +23,8 @@ export const carouselSlides: CarouselSlide[] = [
     theme: "industry",
   },
   {
-    title: "AKM Care & AKM Freight — milestone and platform",
-    subtitle: "Training, HR, sales & marketing, logistics, e-commerce — ethics and integrity",
+    title: "AKM Care — milestone and platform",
+    subtitle: "Training, HR, sales & marketing, e-commerce — ethics and integrity",
     image: "/slides/slide-home-04-brand-message.png",
     theme: "brand",
   },

@@ -57,6 +57,21 @@ function mergeServicesWithFallback(rows: ServiceItem[]): ServiceItem[] {
   return merged;
 }
 
+function removeLogisticsServices(items: ServiceItem[]): ServiceItem[] {
+  return items.filter((item) => {
+    const category = String(item.category ?? "").toLowerCase();
+    const title = String(item.title ?? "").toLowerCase();
+    const description = String(item.description ?? "").toLowerCase();
+    return !(
+      category.includes("logistics") ||
+      title.includes("logistics") ||
+      title.includes("freight") ||
+      description.includes("logistics") ||
+      description.includes("freight")
+    );
+  });
+}
+
 export function useServices() {
   const [data, setData] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,7 +80,7 @@ export function useServices() {
   const fetchData = async () => {
     const client = getSupabaseClient();
     if (!client) {
-      setData(mapFallbackServices());
+      setData(removeLogisticsServices(mapFallbackServices()));
       setLoading(false);
       return;
     }
@@ -78,11 +93,12 @@ export function useServices() {
         .order("display_order", { ascending: true });
 
       if (dbError) throw dbError;
-      setData(rows && rows.length > 0 ? mergeServicesWithFallback(rows) : mapFallbackServices());
+      const merged = rows && rows.length > 0 ? mergeServicesWithFallback(rows) : mapFallbackServices();
+      setData(removeLogisticsServices(merged));
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load services");
-      setData(mapFallbackServices());
+      setData(removeLogisticsServices(mapFallbackServices()));
     } finally {
       setLoading(false);
     }

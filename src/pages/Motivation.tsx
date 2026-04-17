@@ -3,6 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Quote } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { useEffect, useMemo, useState } from "react";
+import { Reveal } from "@/components/ui/Reveal";
 
 function getLocalDateKey(d = new Date()) {
   const y = d.getFullYear();
@@ -47,11 +48,11 @@ export default function Motivation() {
         keywords="daily motivation India, inspiration quotes, AKM motivation, workplace motivation"
         canonical="/motivation"
       />
-      <section className="section-padding bg-warm-beige">
-        <div className="container-premium text-center max-w-3xl">
+      <section className="section-padding section-shell bg-warm-beige">
+        <Reveal className="container-premium text-center max-w-3xl">
           <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl mb-6">Daily Motivation</h1>
           <p className="text-lg text-muted-foreground">Start your day with inspiration and purpose</p>
-        </div>
+        </Reveal>
       </section>
 
       <section className="section-padding">
@@ -63,7 +64,7 @@ export default function Motivation() {
             className={`rounded-2xl p-8 sm:p-12 card-shadow text-center mb-14 ${
               today.source === "Phil Jackson"
                 ? "bg-gradient-to-br from-primary/10 via-warm-beige to-amber-100/80 ring-2 ring-primary/25"
-                : "bg-warm-beige"
+                : "bg-warm-beige premium-surface"
             }`}
           >
             <div className="text-sm font-medium text-primary mb-4">Today's Quote</div>
@@ -80,7 +81,7 @@ export default function Motivation() {
             {archive.map((q) => (
               <div
                 key={q.id}
-                className={`rounded-2xl p-6 card-shadow ${
+                className={`premium-card rounded-2xl p-6 card-shadow ${
                   q.source === "Phil Jackson"
                     ? "bg-gradient-to-br from-primary/5 to-warm-beige ring-1 ring-primary/20"
                     : "bg-card"

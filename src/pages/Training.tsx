@@ -35,6 +35,13 @@ export default function Training() {
 
       <section className="section-padding">
         <div className="container-premium">
+          <img
+            src="https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1600&q=80"
+            alt="Professional training classroom session"
+            loading="lazy"
+            decoding="async"
+            className="w-full h-52 sm:h-64 object-cover rounded-2xl border border-border/60 card-shadow mb-8"
+          />
           <div className="grid sm:grid-cols-2 gap-5">
             {trainingCategories.map((cat) => {
               const Icon = iconMap[cat.icon] || MessageSquare;

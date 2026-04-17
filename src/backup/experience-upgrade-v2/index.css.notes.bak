@@ -1,0 +1,2 @@
+Pre-upgrade style baseline backup marker.
+Use git/local history to restore the exact full stylesheet snapshot if needed.

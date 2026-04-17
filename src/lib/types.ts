@@ -1,4 +1,4 @@
-export type ServiceCategory = "training" | "hr" | "logistics" | "compliance" | "other";
+export type ServiceCategory = "training" | "hr" | "compliance" | "other";
 export type ProductStatus = "sold_out" | "available";
 
 export interface ServiceItem {

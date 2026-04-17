@@ -1,34 +1,162 @@
 import { Play, ExternalLink } from "lucide-react";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { CHANNEL_VIDEOS, YOUTUBE_CHANNEL_HANDLE_URL } from "@/data/youtubeChannelVideos";
+import { gsap, ScrollTrigger } from "@/lib/gsapRegister";
+import { prefersReducedMotion } from "@/lib/motion";
 
 const preview = CHANNEL_VIDEOS.slice(0, 5);
 
 export default function YouTubeCarousel() {
   const [activeVideo, setActiveVideo] = useState<string | null>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const rowRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const section = sectionRef.current;
+    const header = headerRef.current;
+    const row = rowRef.current;
+    if (!section || !header || !row) return;
+
+    const cta = section.querySelector<HTMLElement>("[data-yt-cta]");
+
+    if (prefersReducedMotion()) {
+      gsap.set(
+        [...header.querySelectorAll("[data-yt-reveal]"), ...row.querySelectorAll("[data-yt-card]"), cta].filter(
+          Boolean,
+        ),
+        { clearProps: "all", opacity: 1, y: 0, x: 0 },
+      );
+      return;
+    }
+
+    const ctx = gsap.context(() => {
+      const mm = gsap.matchMedia();
+
+      mm.add("(min-width: 1024px)", () => {
+        const maxX = () => Math.max(0, row.scrollWidth - row.clientWidth);
+
+        gsap.set(header.querySelectorAll("[data-yt-reveal]"), { opacity: 0, y: 32 });
+        gsap.set(row.querySelectorAll("[data-yt-card]"), { opacity: 0, y: 40 });
+        if (cta) gsap.set(cta, { opacity: 0, y: 24 });
+
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: "top top",
+            end: () => `+=${1100 + maxX() * 1.15}`,
+            pin: true,
+            scrub: 0.85,
+            invalidateOnRefresh: true,
+            anticipatePin: 1,
+          },
+        });
+
+        tl.to(header.querySelectorAll("[data-yt-reveal]"), {
+          opacity: 1,
+          y: 0,
+          stagger: 0.05,
+          duration: 0.22,
+          ease: "none",
+        });
+        tl.to(
+          row.querySelectorAll("[data-yt-card]"),
+          { opacity: 1, y: 0, stagger: 0.04, duration: 0.2, ease: "none" },
+          0.08,
+        );
+        tl.fromTo(
+          row,
+          { x: 0 },
+          { x: () => -maxX(), duration: 0.55, ease: "none" },
+          0.18,
+        );
+        if (cta) {
+          tl.to(cta, { opacity: 1, y: 0, duration: 0.2, ease: "none" }, 0.62);
+        }
+
+        return () => {
+          tl.scrollTrigger?.kill();
+          tl.kill();
+        };
+      });
+
+      mm.add("(max-width: 1023px)", () => {
+        gsap.set(header.querySelectorAll("[data-yt-reveal]"), { opacity: 0, y: 28 });
+        gsap.set(row.querySelectorAll("[data-yt-card]"), { opacity: 0, y: 32 });
+        if (cta) gsap.set(cta, { opacity: 0, y: 20 });
+
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: "top 78%",
+            toggleActions: "play none none reverse",
+          },
+        });
+
+        tl.to(header.querySelectorAll("[data-yt-reveal]"), {
+          opacity: 1,
+          y: 0,
+          duration: 0.72,
+          stagger: 0.06,
+          ease: "power3.out",
+        }).to(
+          row.querySelectorAll("[data-yt-card]"),
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.62,
+            stagger: 0.07,
+            ease: "power3.out",
+          },
+          "-=0.45",
+        );
+        if (cta) {
+          tl.to(cta, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, "-=0.35");
+        }
+
+        return () => {
+          tl.scrollTrigger?.kill();
+          tl.kill();
+        };
+      });
+
+      return () => mm.revert();
+    }, section);
+
+    requestAnimationFrame(() => ScrollTrigger.refresh());
+
+    return () => ctx.revert();
+  }, []);
 
   return (
-    <section className="section-padding relative overflow-hidden">
+    <section ref={sectionRef} className="section-padding section-shell min-h-0">
       <div className="absolute inset-0 bg-gradient-to-b from-background via-warm-beige/80 to-background pointer-events-none" />
       <div className="container-premium relative z-10">
-        <div className="text-center mb-12 max-w-2xl mx-auto">
-          <p className="text-xs font-semibold tracking-[0.25em] uppercase text-primary mb-3">From our channel</p>
-          <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl mb-3">Stories & Sessions</h2>
-          <p className="text-muted-foreground text-base sm:text-lg">
+        <div ref={headerRef} className="text-center mb-14 max-w-2xl mx-auto">
+          <p data-yt-reveal className="text-xs font-semibold tracking-[0.25em] uppercase text-primary mb-3">
+            From our channel
+          </p>
+          <h2 data-yt-reveal className="font-heading text-3xl sm:text-4xl lg:text-5xl mb-3">
+            Stories & Sessions
+          </h2>
+          <p data-yt-reveal className="text-muted-foreground text-base sm:text-lg">
             Training, motivation, and values — every video from{" "}
             <span className="text-foreground font-medium">@akmcare1309</span>
           </p>
         </div>
 
-        <div className="flex gap-5 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide -mx-2 px-2">
+        <div
+          ref={rowRef}
+          className="flex gap-5 overflow-x-auto lg:overflow-visible pb-4 snap-x snap-mandatory scrollbar-hide -mx-2 px-2 will-change-transform"
+        >
           {preview.map((video) => (
-            <div key={video.id} className="flex-shrink-0 w-[280px] sm:w-[300px] snap-start">
+            <div key={video.id} data-yt-card className="flex-shrink-0 w-[280px] sm:w-[300px] snap-start">
               <button
                 type="button"
                 className="w-full text-left group"
                 onClick={() => setActiveVideo(video.videoId)}
               >
-                <div className="relative aspect-video rounded-2xl overflow-hidden bg-muted border border-border/60 shadow-lg shadow-primary/5 ring-1 ring-primary/5 transition-all duration-300 group-hover:ring-primary/20 group-hover:shadow-xl group-hover:-translate-y-1">
+                <div className="relative aspect-video rounded-2xl overflow-hidden bg-muted border border-border/60 shadow-lg shadow-primary/5 ring-1 ring-primary/5 transition-all duration-500 ease-in-out group-hover:ring-primary/20 group-hover:shadow-xl group-hover:-translate-y-1">
                   <img
                     src={`https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`}
                     alt={video.title}
@@ -53,7 +181,7 @@ export default function YouTubeCarousel() {
           ))}
         </div>
 
-        <div className="text-center mt-10">
+        <div data-yt-cta className="text-center mt-10">
           <a
             href={YOUTUBE_CHANNEL_HANDLE_URL}
             target="_blank"

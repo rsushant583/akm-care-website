@@ -1,7 +1,9 @@
 import { Quote } from "lucide-react";
 import { useMotivation } from "@/hooks/useMotivation";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { gsap } from "@/lib/gsapRegister";
+import { prefersReducedMotion } from "@/lib/motion";
 
 function getLocalDateKey(d = new Date()) {
   const y = d.getFullYear();
@@ -17,6 +19,7 @@ function msUntilNextLocalMidnight(d = new Date()) {
 }
 
 export default function DailyMotivation() {
+  const sectionRef = useRef<HTMLElement>(null);
   const { data: motivationQuotes, loading } = useMotivation();
   const [dayKey, setDayKey] = useState(() => getLocalDateKey());
 
@@ -36,29 +39,41 @@ export default function DailyMotivation() {
     return pool[days % pool.length];
   }, [motivationQuotes, dayKey]);
 
-  const popupQuote = useMemo(() => {
-    return quote;
-  }, [quote]);
 
-  const [open, setOpen] = useState(false);
+  useLayoutEffect(() => {
+    const root = sectionRef.current;
+    if (!root || loading || !quote || prefersReducedMotion()) return;
 
-  useEffect(() => {
-    try {
-      const k = "akm_inspiration_shown_for";
-      const shownFor = localStorage.getItem(k);
-      if (shownFor !== dayKey) {
-        setOpen(true);
-        localStorage.setItem(k, dayKey);
-      }
-    } catch {
-      setOpen(true);
-    }
-  }, [dayKey]);
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: root,
+          start: "top 80%",
+          toggleActions: "play none none reverse",
+        },
+      });
+
+      tl.from(root.querySelectorAll("[data-daily-reveal]"), {
+        opacity: 0,
+        y: 40,
+        duration: 0.85,
+        stagger: 0.08,
+        ease: "power3.out",
+      }).fromTo(
+        root.querySelector("[data-daily-card]"),
+        { opacity: 0, scale: 0.96, y: 28 },
+        { opacity: 1, scale: 1, y: 0, duration: 0.95, ease: "power3.out" },
+        "-=0.55",
+      );
+    }, root);
+
+    return () => ctx.revert();
+  }, [loading, quote]);
 
   return (
-    <section className="section-padding">
+    <section ref={sectionRef} className="section-padding">
       <div className="container-premium">
-        <h2 className="font-heading text-3xl sm:text-4xl text-center mb-10">
+        <h2 data-daily-reveal className="font-heading text-3xl sm:text-4xl text-center mb-10">
           Today's Inspiration
         </h2>
 
@@ -66,6 +81,7 @@ export default function DailyMotivation() {
           <Skeleton className="max-w-3xl mx-auto h-56 rounded-2xl" />
         ) : (
         <div
+          data-daily-card
           className={`max-w-3xl mx-auto rounded-2xl p-8 sm:p-12 card-shadow text-center ${
             quote.source === "Phil Jackson"
               ? "bg-gradient-to-br from-primary/10 via-warm-beige to-amber-100/80 ring-2 ring-primary/25"
@@ -81,33 +97,6 @@ export default function DailyMotivation() {
         )}
       </div>
 
-      {open && !loading && popupQuote && (
-        <div className="fixed inset-0 z-[120] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setOpen(false)}>
-          <div
-            className={`relative w-full max-w-3xl rounded-2xl p-8 sm:p-12 card-shadow text-center ${
-              popupQuote.source === "Phil Jackson"
-                ? "bg-gradient-to-br from-primary/10 via-warm-beige to-amber-100/80 ring-2 ring-primary/25"
-                : "bg-warm-beige"
-            }`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              aria-label="Close"
-              onClick={() => setOpen(false)}
-              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-card/70 border border-border/60 text-foreground font-semibold hover:bg-card transition-all"
-            >
-              ×
-            </button>
-            <h3 className="font-heading text-2xl sm:text-3xl mb-6">Today's Inspiration</h3>
-            <Quote size={40} className="text-primary/30 mx-auto mb-4" />
-            <blockquote className="font-heading text-xl sm:text-2xl lg:text-3xl italic leading-relaxed mb-6 text-foreground">
-              "{popupQuote.quote}"
-            </blockquote>
-            <p className="text-muted-foreground font-medium">— {popupQuote.source}</p>
-          </div>
-        </div>
-      )}
     </section>
   );
 }

@@ -31,8 +31,8 @@ export default function Contact() {
     <>
       <SEO
         title="Contact Us — Get In Touch with AKM Care"
-        description="Contact AKM Care & AKM Freight. Reach us via phone, email, or WhatsApp. Headquartered in Ahmedabad, Gujarat. Available for partnerships, training enquiries, and business collaborations."
-        keywords="contact AKM Care, AKM Freight contact, Ahmedabad industrial company contact, Gujarat HR company"
+        description="Contact AKM Care. Reach us via phone, email, or WhatsApp. Headquartered in Ahmedabad, Gujarat. Available for partnerships, training enquiries, and business collaborations."
+        keywords="contact AKM Care, Ahmedabad industrial company contact, Gujarat HR company"
         canonical="/contact"
       />
       <section className="section-padding bg-warm-beige">
@@ -49,7 +49,7 @@ export default function Contact() {
             <div className="space-y-5">
               {[
                 { icon: Phone, label: "Phone", value: "+91-8200224226", action: "tel:+918200224226", cta: "Call Now" },
-                { icon: Mail, label: "Email", value: "contact@akmctr.com, akmcare108@gmail.com", action: "mailto:contact@akmctr.com", cta: "Send Email" },
+                { icon: Mail, label: "Email", value: "contact@akmcare.in, akmcare108@gmail.com", action: "mailto:contact@akmcare.in", cta: "Send Email" },
                 { icon: MessageCircle, label: "WhatsApp", value: "+91-8200224226", action: "https://wa.me/918200224226", cta: "Chat on WhatsApp" },
                 { icon: MapPin, label: "Location", value: "Ahmedabad, Gujarat, India", action: "", cta: "" },
               ].map((item) => (

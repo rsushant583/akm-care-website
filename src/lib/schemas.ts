@@ -1,12 +1,12 @@
 export const organizationSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  name: "AKM Care & AKM Freight",
+  name: "AKM Care",
   alternateName: "AKM Care",
-  url: "https://akmcare.com",
-  logo: "https://akmcare.com/logo.png",
+  url: "https://akmcare.in",
+  logo: "https://akmcare.in/logo.png",
   description:
-    "Industrial training, HR solutions, logistics, compliance consulting and rural e-commerce platform serving pan-India.",
+    "Industrial training, HR solutions, compliance consulting and rural e-commerce platform serving pan-India.",
   address: {
     "@type": "PostalAddress",
     addressLocality: "Ahmedabad",
@@ -34,7 +34,7 @@ export const servicesSchema = {
   serviceType: "Industrial Training & HR Solutions",
   provider: {
     "@type": "Organization",
-    name: "AKM Care & AKM Freight",
+    name: "AKM Care",
   },
   areaServed: {
     "@type": "Country",
@@ -47,7 +47,6 @@ export const servicesSchema = {
       { "@type": "Offer", itemOffered: { "@type": "Service", name: "Industrial Training" } },
       { "@type": "Offer", itemOffered: { "@type": "Service", name: "Placement Services" } },
       { "@type": "Offer", itemOffered: { "@type": "Service", name: "Manpower Deployment" } },
-      { "@type": "Offer", itemOffered: { "@type": "Service", name: "Logistics & Freight" } },
       { "@type": "Offer", itemOffered: { "@type": "Service", name: "Compliance Consulting" } },
       { "@type": "Offer", itemOffered: { "@type": "Service", name: "Policy Formation" } },
       { "@type": "Offer", itemOffered: { "@type": "Service", name: "Employment Verification" } },
@@ -75,6 +74,6 @@ export const breadcrumbSchema = (items: { name: string; url: string }[]) => ({
     "@type": "ListItem",
     position: i + 1,
     name: item.name,
-    item: `https://akmcare.com${item.url}`,
+    item: `https://akmcare.in${item.url}`,
   })),
 });

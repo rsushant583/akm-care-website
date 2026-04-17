@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SEO } from "@/components/SEO";
 import { servicesSchema } from "@/lib/schemas";
 
-const categories = ["All", "Training", "HR", "Logistics", "Compliance", "Others"];
+const categories = ["All", "Training", "HR", "Compliance", "Others"];
 
 export default function Services() {
   const [filter, setFilter] = useState("All");
@@ -20,13 +20,13 @@ export default function Services() {
   return (
     <>
       <SEO
-        title="Our Services — Training, HR, Logistics, Compliance & More"
-        description="Comprehensive industrial services including placement, manpower deployment, compliance consulting, policy formation, logistics, employment verification, and customized business solutions across India."
-        keywords="placement services India, manpower deployment, industrial compliance, policy formation India, logistics freight Gujarat, employment verification services, customized industrial solutions"
+        title="Our Services — Training, HR, Compliance & More"
+        description="Comprehensive industrial services including placement, manpower deployment, compliance consulting, policy formation, employment verification, and customized business solutions across India."
+        keywords="placement services India, manpower deployment, industrial compliance, policy formation India, employment verification services, customized industrial solutions"
         canonical="/services"
         schema={servicesSchema}
       />
-      <section className="section-padding relative overflow-hidden">
+      <section className="section-padding section-shell">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.06] via-warm-beige to-background pointer-events-none" />
         <div className="container-premium text-center max-w-3xl relative z-10">
           <p className="text-xs font-semibold tracking-[0.25em] uppercase text-primary mb-4">What we deliver</p>
@@ -39,6 +39,13 @@ export default function Services() {
 
       <section className="section-padding">
         <div className="container-premium">
+          <img
+            src="https://images.unsplash.com/photo-1581092921461-eab62e97a780?auto=format&fit=crop&w=1600&q=80"
+            alt="Industrial workforce and services operations"
+            loading="lazy"
+            decoding="async"
+            className="w-full h-52 sm:h-64 object-cover rounded-2xl border border-border/60 card-shadow mb-8"
+          />
           <div className="flex gap-2 overflow-x-auto pb-4 mb-10 scrollbar-hide -mx-1 px-1">
             {categories.map((cat) => (
               <button
@@ -69,7 +76,7 @@ export default function Services() {
               return (
                 <div
                   key={service.id}
-                  className="group bg-card/90 backdrop-blur-sm rounded-2xl p-6 border border-border/60 card-shadow hover:card-shadow-hover hover:-translate-y-1.5 hover:border-primary/20 transition-all duration-300"
+                  className="group premium-card bg-card/90 backdrop-blur-sm rounded-2xl p-6 border border-border/60 card-shadow hover:card-shadow-hover hover:-translate-y-1.5 hover:border-primary/20 transition-all duration-500 ease-in-out"
                 >
                   <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 ring-1 ring-primary/10 group-hover:bg-primary/15 transition-colors">
                     <Icon size={22} className="text-primary" />

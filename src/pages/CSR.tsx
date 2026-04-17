@@ -1,6 +1,7 @@
 import { Heart, Users, Target, HandHeart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { SEO } from "@/components/SEO";
+import { Reveal } from "@/components/ui/Reveal";
 
 const initiatives = [
   { title: "Free Soft Skills Training", desc: "Complimentary soft skill and motivational training for schools, colleges, and NGOs in nearby communities." },
@@ -17,8 +18,8 @@ export default function CSR() {
         description="AKM Care's corporate social responsibility initiatives. Contributing to community development, skill enhancement, and sustainable industrial practices across India."
         canonical="/csr"
       />
-      <section className="section-padding bg-warm-beige">
-        <div className="container-premium text-center max-w-3xl">
+      <section className="section-padding section-shell bg-warm-beige">
+        <Reveal className="container-premium text-center max-w-3xl">
           <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl mb-6">Corporate Social Responsibility</h1>
           <p className="text-lg text-muted-foreground">
             We strongly believe that boosting the morale of people through extra awareness as well as assistance to the needy is the best contribution for society, country, and the entire universe.
@@ -31,20 +32,20 @@ export default function CSR() {
           >
             View our CSR activities on Facebook
           </a>
-        </div>
+        </Reveal>
       </section>
 
       <section className="section-padding">
         <div className="container-premium">
           <div className="grid sm:grid-cols-2 gap-6 mb-16">
-            <div className="bg-card rounded-2xl p-8 card-shadow">
+            <div className="premium-card bg-card rounded-2xl p-8 card-shadow">
               <HandHeart size={32} className="text-primary mb-4" />
               <h2 className="font-heading text-2xl mb-3">Our Purpose</h2>
               <p className="text-muted-foreground leading-relaxed">
                 AKM Care considers its responsibility for society. Through our CSR program, we provide free training through our expert faculty to communities, schools, colleges, and NGOs.
               </p>
             </div>
-            <div className="bg-card rounded-2xl p-8 card-shadow">
+            <div className="premium-card bg-card rounded-2xl p-8 card-shadow">
               <Target size={32} className="text-primary mb-4" />
               <h2 className="font-heading text-2xl mb-3">Execution Model</h2>
               <p className="text-muted-foreground leading-relaxed">
@@ -56,7 +57,7 @@ export default function CSR() {
           <h2 className="font-heading text-3xl text-center mb-10">Key Initiatives</h2>
           <div className="grid sm:grid-cols-2 gap-5 mb-16">
             {initiatives.map((item, i) => (
-              <div key={i} className="bg-warm-beige rounded-2xl p-6 card-shadow">
+              <div key={i} className="premium-card bg-warm-beige rounded-2xl p-6 card-shadow">
                 <h3 className="font-heading text-lg mb-2">{item.title}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
               </div>
@@ -78,7 +79,7 @@ export default function CSR() {
             ))}
           </div>
 
-          <div className="bg-primary rounded-2xl p-8 sm:p-12 text-center">
+          <div className="bg-primary rounded-2xl p-8 sm:p-12 text-center card-shadow">
             <h2 className="font-heading text-3xl text-primary-foreground mb-4">Want to Organize a CSR Session?</h2>
             <p className="text-primary-foreground/80 mb-6">Contact us to arrange free training for your community or organization.</p>
             <Link to="/contact" className="inline-flex items-center px-8 py-3.5 rounded-full bg-card text-primary font-semibold hover:scale-[1.02] transition-all">

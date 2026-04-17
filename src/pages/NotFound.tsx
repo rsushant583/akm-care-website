@@ -13,7 +13,7 @@ const NotFound = () => {
     <>
       <SEO
         title="Page Not Found"
-        description="The page you requested could not be found. Return to AKM Care & AKM Freight home."
+        description="The page you requested could not be found. Return to AKM Care home."
         robots="noindex, nofollow"
       />
     <div className="flex min-h-screen items-center justify-center bg-muted">

@@ -1,23 +1,65 @@
 import { Link } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useFAQ } from "@/hooks/useFAQ";
 import { Skeleton } from "@/components/ui/skeleton";
+import { gsap } from "@/lib/gsapRegister";
+import { prefersReducedMotion } from "@/lib/motion";
 
 export default function FAQPreview() {
+  const rootRef = useRef<HTMLElement>(null);
   const [open, setOpen] = useState<string | null>(null);
   const { data: faqs, loading } = useFAQ();
   const previewFaqs = faqs.slice(0, 4);
 
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root || loading || previewFaqs.length === 0 || prefersReducedMotion()) return;
+
+    const ctx = gsap.context(() => {
+      gsap
+        .timeline({
+          scrollTrigger: {
+            trigger: root,
+            start: "top 82%",
+            toggleActions: "play none none reverse",
+          },
+        })
+        .from(root.querySelectorAll("[data-faq-reveal]"), {
+          opacity: 0,
+          y: 36,
+          duration: 0.8,
+          stagger: 0.07,
+          ease: "power3.out",
+        })
+        .from(
+          root.querySelectorAll("[data-faq-item]"),
+          {
+            opacity: 0,
+            y: 28,
+            duration: 0.65,
+            stagger: 0.06,
+            ease: "power3.out",
+          },
+          "-=0.5",
+        );
+    }, root);
+
+    return () => ctx.revert();
+  }, [loading, previewFaqs.length]);
+
   return (
-    <section className="section-padding bg-gradient-to-b from-warm-beige to-background">
+    <section ref={rootRef} className="section-padding bg-gradient-to-b from-warm-beige to-background">
       <div className="container-premium max-w-3xl">
         <div className="text-center">
-          <div className="inline-flex items-center rounded-full bg-primary/10 text-primary px-4 py-1.5 text-sm font-semibold mb-4">
+          <div
+            data-faq-reveal
+            className="inline-flex items-center rounded-full bg-primary/10 text-primary px-4 py-1.5 text-sm font-semibold mb-4"
+          >
             Need Help?
           </div>
         </div>
-        <h2 className="font-heading text-3xl sm:text-4xl text-center mb-10">
+        <h2 data-faq-reveal className="font-heading text-3xl sm:text-4xl text-center mb-10">
           Common Questions
         </h2>
 
@@ -30,7 +72,7 @@ export default function FAQPreview() {
         ) : (
         <div className="space-y-3">
           {previewFaqs.map((faq) => (
-            <div key={faq.id} className="bg-card rounded-2xl card-shadow overflow-hidden">
+            <div key={faq.id} data-faq-item className="bg-card rounded-2xl card-shadow overflow-hidden">
               <button
                 onClick={() => setOpen(open === faq.id ? null : faq.id)}
                 className="w-full flex items-center justify-between p-5 text-left"
@@ -60,7 +102,7 @@ export default function FAQPreview() {
           <div className="text-center text-muted-foreground">FAQs are being updated. Please check again shortly.</div>
         )}
 
-        <div className="text-center mt-8">
+        <div data-faq-reveal className="text-center mt-8">
           <Link
             to="/faq"
             className="inline-flex items-center gap-2 text-primary font-medium hover:underline"

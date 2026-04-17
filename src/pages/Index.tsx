@@ -14,9 +14,9 @@ export default function Index() {
   return (
     <>
       <SEO
-        title="Industrial Training, HR, Logistics & Rural E-Commerce"
-        description="AKM Care & AKM Freight — India's trusted platform for industrial training, placement, manpower, logistics, compliance consulting, and authentic village products. Pan-India operations."
-        keywords="industrial training India, HR services Ahmedabad, manpower deployment, compliance consulting, logistics freight India, makhana buy online, sattu powder buy, rural products India, AKM Care"
+        title="Industrial Training, HR & Rural E-Commerce"
+        description="AKM Care — India's trusted platform for industrial training, placement, manpower, compliance consulting, and authentic village products. Pan-India operations."
+        keywords="industrial training India, HR services Ahmedabad, manpower deployment, compliance consulting, makhana buy online, sattu powder buy, rural products India, AKM Care"
         canonical="/"
         schema={organizationSchema}
       />

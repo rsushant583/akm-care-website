@@ -227,7 +227,7 @@ export default function Shop() {
           ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
             {products.map((product) => (
-              <div key={product.id} className="bg-card rounded-2xl overflow-hidden card-shadow premium-card fade-up">
+              <div className="bg-card rounded-2xl overflow-hidden card-shadow premium-card">
                 <div className="aspect-square bg-gradient-to-br from-saffron-light to-accent flex items-center justify-center relative">
                   {product.image_url ? (
                     <img

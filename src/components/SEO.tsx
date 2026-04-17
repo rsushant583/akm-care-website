@@ -12,9 +12,9 @@ interface SEOProps {
   robots?: string;
 }
 
-const SITE_URL = "https://akmcare.com";
+const SITE_URL = "https://akmcare.in";
 const DEFAULT_IMAGE = `${SITE_URL}/og-image.jpg`;
-const ORG_NAME = "AKM Care & AKM Freight";
+const ORG_NAME = "AKM Care";
 
 export function SEO({
   title,

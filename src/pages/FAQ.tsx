@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SEO } from "@/components/SEO";
 import { faqSchema } from "@/lib/schemas";
 
-const categories = ["All", "General", "Training", "Services", "Products", "Logistics"];
+const categories = ["All", "General", "Training", "Services", "Products"];
 
 export default function FAQ() {
   const [open, setOpen] = useState<string | null>(null);
@@ -20,8 +20,8 @@ export default function FAQ() {
     <>
       <SEO
         title="Frequently Asked Questions"
-        description="Get answers to commonly asked questions about AKM Care & AKM Freight services, training, logistics, products, and support."
-        keywords="AKM Care FAQ, training faq, logistics faq, products faq, HR services faq"
+        description="Get answers to commonly asked questions about AKM Care services, training, products, and support."
+        keywords="AKM Care FAQ, training faq, products faq, HR services faq"
         canonical="/faq"
         schema={faqSchema(faqs.slice(0, 12).map((f) => ({ question: f.question, answer: f.answer })))}
       />

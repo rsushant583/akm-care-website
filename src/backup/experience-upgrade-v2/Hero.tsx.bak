@@ -1,0 +1,19 @@
+import { Link } from "react-router-dom";
+import { ArrowRight, Play } from "lucide-react";
+import { Reveal } from "@/components/ui/Reveal";
+
+export default function Hero() {
+  return (
+    <section className="relative min-h-[92vh] lg:min-h-screen flex items-center overflow-hidden grain-overlay">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,hsl(25_95%_53%/0.18),transparent)]" />
+      <div className="absolute inset-0 bg-gradient-to-br from-saffron-light/40 via-background to-background" />
+      <div className="absolute top-24 right-[10%] w-[420px] h-[420px] rounded-full bg-primary/[0.07] blur-3xl animate-pulse" />
+      <div className="absolute bottom-20 left-[5%] w-[320px] h-[320px] rounded-full bg-amber-400/10 blur-3xl animate-pulse" />
+      <div className="container-premium relative z-10 py-12 lg:py-0">
+        <div className="grid lg:grid-cols-2 gap-14 lg:gap-20 items-center">
+          <div className="max-w-xl">{/* backup snapshot */}</div>
+        </div>
+      </div>
+    </section>
+  );
+}

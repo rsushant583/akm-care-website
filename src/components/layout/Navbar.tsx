@@ -35,7 +35,7 @@ export default function Navbar() {
       <nav
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b ${
           isScrolled
-            ? "bg-background/85 backdrop-blur-2xl shadow-sm shadow-black/[0.03] border-border/60"
+            ? "bg-background/85 backdrop-blur-2xl shadow-[0_10px_40px_rgba(10,10,10,0.06)] border-border/60"
             : "bg-background/70 backdrop-blur-xl border-transparent"
         }`}
       >
@@ -63,7 +63,7 @@ export default function Navbar() {
           <div className="hidden lg:block">
             <Link
               to="/contact"
-              className="inline-flex items-center px-6 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 hover:brightness-105 hover:-translate-y-0.5 transition-all duration-300"
+              className="inline-flex items-center px-6 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 hover:brightness-105 hover:-translate-y-0.5 transition-all duration-500 ease-in-out"
             >
               Get In Touch
             </Link>

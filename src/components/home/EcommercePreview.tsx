@@ -1,6 +1,7 @@
 import { ShoppingCart } from "lucide-react";
-import { useState } from "react";
-import { useScrollAnimation } from "@/hooks/useScrollAnimation";
+import { useLayoutEffect, useRef, useState } from "react";
+import { gsap, ScrollTrigger } from "@/lib/gsapRegister";
+import { prefersReducedMotion } from "@/lib/motion";
 import { useProducts } from "@/hooks/useProducts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/sonner";
@@ -8,7 +9,10 @@ import { createRazorpayOrder, loadRazorpayScript, verifyRazorpayPayment } from "
 import { isValidIndianPincode, mockDeliveryAvailable } from "@/lib/pincodeDelivery";
 
 export default function EcommercePreview() {
-  const { ref, isVisible } = useScrollAnimation();
+  const sectionRef = useRef<HTMLElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
   const { data: products, loading } = useProducts();
   const [selectedBuyProduct, setSelectedBuyProduct] = useState<any>(null);
   const [checkout, setCheckout] = useState({ name: "", email: "", phone: "" });
@@ -16,6 +20,115 @@ export default function EcommercePreview() {
   const [paymentError, setPaymentError] = useState("");
   const [pinInput, setPinInput] = useState("");
   const [pinStatus, setPinStatus] = useState<"idle" | "invalid" | "ok" | "no">("idle");
+
+  useLayoutEffect(() => {
+    const section = sectionRef.current;
+    const header = headerRef.current;
+    const panel = panelRef.current;
+    const grid = gridRef.current;
+    if (!section || !header || !panel || !grid || loading) return;
+
+    const cards = grid.querySelectorAll<HTMLElement>(".ecom-card");
+    if (!cards.length) return;
+
+    if (prefersReducedMotion()) {
+      gsap.set([...header.querySelectorAll("[data-ecom-head]"), panel, ...cards], {
+        clearProps: "all",
+        opacity: 1,
+        y: 0,
+        scale: 1,
+      });
+      return;
+    }
+
+    const ctx = gsap.context(() => {
+      const mm = gsap.matchMedia();
+
+      mm.add("(min-width: 1024px)", () => {
+        gsap.set(header.querySelectorAll("[data-ecom-head]"), { opacity: 0, y: 36 });
+        gsap.set(panel, { opacity: 0, y: 28 });
+        gsap.set(cards, { opacity: 0, y: 56, scale: 0.95 });
+
+        const scrollDistance = Math.min(3200, 900 + cards.length * 340);
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: "top top",
+            end: `+=${scrollDistance}`,
+            pin: true,
+            scrub: 0.75,
+            anticipatePin: 1,
+          },
+        });
+
+        tl.to(header.querySelectorAll("[data-ecom-head]"), {
+          opacity: 1,
+          y: 0,
+          stagger: 0.05,
+          duration: 0.32,
+          ease: "none",
+        });
+        tl.to(panel, { opacity: 1, y: 0, duration: 0.35, ease: "none" }, 0.12);
+        cards.forEach((card, i) => {
+          tl.to(
+            card,
+            { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: "none" },
+            0.28 + i * 0.32,
+          );
+        });
+
+        return () => {
+          tl.scrollTrigger?.kill();
+          tl.kill();
+        };
+      });
+
+      mm.add("(max-width: 1023px)", () => {
+        gsap.set(header.querySelectorAll("[data-ecom-head]"), { opacity: 0, y: 28 });
+        gsap.set(panel, { opacity: 0, y: 24 });
+        gsap.set(cards, { opacity: 0, y: 40 });
+
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: "top 78%",
+            toggleActions: "play none none reverse",
+          },
+        });
+
+        tl.to(header.querySelectorAll("[data-ecom-head]"), {
+          opacity: 1,
+          y: 0,
+          duration: 0.72,
+          stagger: 0.06,
+          ease: "power3.out",
+        })
+          .to(panel, { opacity: 1, y: 0, duration: 0.65, ease: "power3.out" }, "-=0.4")
+          .to(
+            cards,
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.62,
+              stagger: 0.06,
+              ease: "power3.out",
+            },
+            "-=0.45",
+          );
+
+        return () => {
+          tl.scrollTrigger?.kill();
+          tl.kill();
+        };
+      });
+
+      return () => mm.revert();
+    }, section);
+
+    requestAnimationFrame(() => ScrollTrigger.refresh());
+
+    return () => ctx.revert();
+  }, [loading, products]);
 
   const checkPincode = () => {
     const p = pinInput.trim();
@@ -115,21 +228,27 @@ export default function EcommercePreview() {
   };
 
   return (
-    <section className="section-padding bg-gradient-to-b from-background to-warm-beige/40">
+    <section
+      ref={sectionRef}
+      className="section-padding section-shell bg-gradient-to-b from-background to-warm-beige/40 min-h-0"
+    >
       <div className="container-premium">
-        <div className="text-center mb-14">
-          <div className="inline-flex items-center rounded-full bg-primary/10 text-primary px-4 py-1.5 text-sm font-semibold mb-4">
+        <div ref={headerRef} className="text-center mb-16">
+          <div
+            data-ecom-head
+            className="inline-flex items-center rounded-full bg-primary/10 text-primary px-4 py-1.5 text-sm font-semibold mb-4"
+          >
             Village Store
           </div>
-          <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl mb-4">
+          <h2 data-ecom-head className="font-heading text-3xl sm:text-4xl lg:text-5xl mb-4">
             From the Heart of India's Villages
           </h2>
-          <p className="text-muted-foreground text-lg">
+          <p data-ecom-head className="text-muted-foreground text-lg">
             Authentic rural products, coming to your doorstep
           </p>
         </div>
 
-        <div className="max-w-xl mx-auto mb-12 bg-card rounded-2xl border border-border p-5 sm:p-6 card-shadow">
+        <div ref={panelRef} className="max-w-xl mx-auto mb-14 premium-surface p-5 sm:p-6">
           <h3 className="font-heading text-base sm:text-lg mb-1 text-center">Check Delivery Availability by Pincode</h3>
           <p className="text-xs sm:text-sm text-muted-foreground text-center mb-4">Enter your 6-digit Indian pincode</p>
           <div className="flex flex-col sm:flex-row gap-3">
@@ -164,18 +283,15 @@ export default function EcommercePreview() {
           )}
         </div>
 
-        <div ref={ref} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+        <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
           {loading ? Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-72 rounded-2xl" />
-          )) : products.map((product, i) => (
+          )) : products.map((product) => (
             <div
               key={product.id}
-              className={`group bg-card border border-border/60 rounded-2xl overflow-hidden card-shadow hover:card-shadow-hover hover:-translate-y-1.5 hover:border-primary/30 transition-all duration-200 ${
-                isVisible ? "animate-fade-up" : "opacity-0"
-              }`}
-              style={{ animationDelay: `${i * 60}ms` }}
+              className="ecom-card group bg-card border border-border/60 rounded-2xl overflow-hidden card-shadow transition-all duration-500 ease-in-out hover:-translate-y-2 hover:border-primary/35 hover:shadow-xl hover:shadow-primary/10"
             >
-              <div className="aspect-square bg-gradient-to-br from-saffron-light to-accent flex items-center justify-center relative">
+              <div className="aspect-square bg-gradient-to-br from-saffron-light to-accent flex items-center justify-center relative overflow-hidden">
                 {product.image_url ? (
                   <img
                     src={product.image_url}
@@ -183,7 +299,8 @@ export default function EcommercePreview() {
                     width={400}
                     height={400}
                     loading="lazy"
-                    className="w-full h-full object-cover"
+                    decoding="async"
+                    className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
                   />
                 ) : (
                   <span className="text-4xl">
