@@ -1,79 +1,168 @@
 import { Link } from "react-router-dom";
-import { useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { ArrowRight, Briefcase } from "lucide-react";
 import { iconMap } from "@/lib/iconMap";
 import { useServices } from "@/hooks/useServices";
 import { Skeleton } from "@/components/ui/skeleton";
-import { motion, useInView } from "framer-motion";
-import { fadeUp, stagger } from "@/lib/animations";
+import { gsap, ScrollTrigger } from "@/lib/gsapRegister";
+import { prefersReducedMotion } from "@/lib/motion";
 
 export default function ServicesOverview() {
   const sectionRef = useRef<HTMLElement>(null);
-  const isInView = useInView(sectionRef, { once: true, margin: "-80px" });
+  const headerRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
   const { data: services, loading } = useServices();
 
+  useLayoutEffect(() => {
+    const section = sectionRef.current;
+    const header = headerRef.current;
+    const grid = gridRef.current;
+    if (!section || !header || !grid || loading) return;
+
+    const cards = grid.querySelectorAll<HTMLElement>(".service-card");
+    if (!cards.length) return;
+
+    if (prefersReducedMotion()) {
+      gsap.set([...header.querySelectorAll("[data-svc-head]"), ...cards], {
+        clearProps: "all",
+        opacity: 1,
+        y: 0,
+        scale: 1,
+      });
+      return;
+    }
+
+    const ctx = gsap.context(() => {
+      const mm = gsap.matchMedia();
+
+      mm.add("(min-width: 1024px)", () => {
+        gsap.set(header.querySelectorAll("[data-svc-head]"), { opacity: 0, y: 40 });
+        gsap.set(cards, { opacity: 0, y: 72, scale: 0.94 });
+
+        const scrollDistance = Math.min(4200, 1400 + cards.length * 380);
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: "top top",
+            end: `+=${scrollDistance}`,
+            pin: true,
+            scrub: 0.85,
+            anticipatePin: 1,
+          },
+        });
+
+        tl.to(header.querySelectorAll("[data-svc-head]"), {
+          opacity: 1,
+          y: 0,
+          stagger: 0.06,
+          duration: 0.35,
+          ease: "none",
+        });
+
+        cards.forEach((card, i) => {
+          tl.to(
+            card,
+            { opacity: 1, y: 0, scale: 1, duration: 0.42, ease: "none" },
+            0.22 + i * 0.38,
+          );
+        });
+
+        return () => {
+          tl.scrollTrigger?.kill();
+          tl.kill();
+        };
+      });
+
+      mm.add("(max-width: 1023px)", () => {
+        gsap.set(header.querySelectorAll("[data-svc-head]"), { opacity: 0, y: 32 });
+        gsap.set(cards, { opacity: 0, y: 48 });
+
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: "top 78%",
+            toggleActions: "play none none reverse",
+          },
+        });
+
+        tl.to(header.querySelectorAll("[data-svc-head]"), {
+          opacity: 1,
+          y: 0,
+          duration: 0.75,
+          stagger: 0.07,
+          ease: "power3.out",
+        }).to(
+          cards,
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.65,
+            stagger: 0.07,
+            ease: "power3.out",
+          },
+          "-=0.45",
+        );
+
+        return () => {
+          tl.scrollTrigger?.kill();
+          tl.kill();
+        };
+      });
+
+      return () => mm.revert();
+    }, section);
+
+    requestAnimationFrame(() => ScrollTrigger.refresh());
+
+    return () => ctx.revert();
+  }, [loading, services]);
+
   return (
-    <section ref={sectionRef} className="section-padding section-shell min-h-0 bg-[var(--surface-cream)]">
+    <section ref={sectionRef} className="section-padding section-shell min-h-0">
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-warm-beige/60 to-background pointer-events-none" />
       <div className="container-premium relative z-10">
-        <motion.div variants={fadeUp} initial="hidden" animate={isInView ? "visible" : "hidden"} className="mb-16 max-w-3xl">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="h-8 w-[3px] rounded-full bg-primary" />
-            <p className="label-kicker text-primary">Core Services</p>
+        <div ref={headerRef} className="text-center mb-16 max-w-2xl mx-auto">
+          <div
+            data-svc-head
+            className="inline-flex items-center rounded-full bg-primary/10 text-primary px-4 py-1.5 text-xs font-bold tracking-widest uppercase mb-4 border border-primary/15"
+          >
+            Core Services
           </div>
-          <h2 className="text-[var(--size-h2)] mb-4 text-[#0A0A0A]">
+          <h2 data-svc-head className="font-heading text-3xl sm:text-4xl lg:text-5xl mb-4">
             Everything Your Business Needs
           </h2>
-          <p className="text-[18px] leading-[1.7] text-[#787878]">
+          <p data-svc-head className="text-muted-foreground text-lg leading-relaxed">
             A complete ecosystem of industrial and human capital solutions
           </p>
-        </motion.div>
+        </div>
 
-        <motion.div
-          variants={stagger}
-          initial="hidden"
-          animate={isInView ? "visible" : "hidden"}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4"
-        >
+        <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {loading
             ? Array.from({ length: 6 }).map((_, i) => (
                 <Skeleton key={i} className="h-52 rounded-2xl" />
               ))
-            : services.map((service, idx) => {
+            : services.map((service) => {
                 const Icon = iconMap[service.icon] || Briefcase;
-                const spanClass =
-                  idx % 6 === 0 ? "lg:col-span-5" :
-                  idx % 6 === 1 ? "lg:col-span-4" :
-                  idx % 6 === 2 ? "lg:col-span-3" :
-                  idx % 6 === 3 ? "lg:col-span-3" :
-                  idx % 6 === 4 ? "lg:col-span-5" : "lg:col-span-4";
                 return (
-                  <motion.div
+                  <div
                     key={service.id}
-                    variants={fadeUp}
-                    className={`${spanClass} group relative bg-white border border-black/5 rounded-[var(--radius-lg)] p-7 min-h-[160px] overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:bg-primary hover:shadow-[var(--shadow-saffron)]`}
+                    className="service-card group premium-card bg-card/90 backdrop-blur-sm border border-border/60 rounded-2xl p-6 card-shadow hover:card-shadow-hover hover:-translate-y-1.5 hover:border-primary/25 hover:shadow-lg hover:shadow-primary/5 transition-all duration-500 ease-in-out"
                   >
-                    <div className="w-10 h-10 rounded-[10px] bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-white/20 transition-colors">
-                      <Icon size={20} className="text-primary group-hover:text-white transition-colors" />
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 ring-1 ring-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/15 transition-colors">
+                      <Icon size={22} className="text-primary" />
                     </div>
-                    <h3 className="text-[22px] mb-2 text-[#0A0A0A] group-hover:text-white transition-colors">{service.title}</h3>
-                    <p className="text-sm text-[#787878] leading-relaxed mb-4 line-clamp-2 group-hover:text-white/85 transition-colors">{service.description}</p>
+                    <h3 className="font-heading text-lg mb-2 group-hover:text-primary transition-colors">{service.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-4">{service.description}</p>
                     <Link
                       to="/services"
-                      className="inline-flex items-center gap-1 text-sm font-medium text-primary group-hover:text-white transition-all"
+                      className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:gap-2 transition-all"
                     >
                       Learn More <ArrowRight size={14} />
                     </Link>
-                  </motion.div>
+                  </div>
                 );
               })}
-          <motion.div variants={fadeUp} className="lg:col-span-5 rounded-[var(--radius-lg)] bg-[#0A0A0A] p-7 text-white flex flex-col justify-center">
-            <p className="text-white/70 mb-2 label-kicker">Premium Support</p>
-            <h3 className="text-[30px] mb-3">Explore All Services</h3>
-            <Link to="/services" className="inline-flex items-center gap-2 text-primary">
-              Explore All Services <ArrowRight size={16} />
-            </Link>
-          </motion.div>
-        </motion.div>
+        </div>
         {!loading && services.length === 0 && (
           <div className="text-center mt-8 text-muted-foreground">
             Services are being updated. Please check again shortly.

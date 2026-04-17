@@ -1,5 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap");
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -35,37 +33,6 @@
     --ring: 25 95% 53%;
 
     --radius: 1rem;
-    --font-display: "Cormorant Garamond", Georgia, serif;
-    --font-body: "Plus Jakarta Sans", system-ui, sans-serif;
-    --size-hero: clamp(52px, 9vw, 96px);
-    --size-h1: clamp(36px, 6vw, 72px);
-    --size-h2: clamp(28px, 4vw, 48px);
-    --size-h3: clamp(20px, 2.5vw, 28px);
-    --size-body: 16px;
-    --size-small: 14px;
-    --size-label: 11px;
-    --leading-hero: 1;
-    --leading-heading: 1.15;
-    --leading-body: 1.75;
-    --tracking-hero: -0.04em;
-    --tracking-heading: -0.025em;
-    --tracking-label: 0.12em;
-    --saffron-hex: #f97316;
-    --surface-white: #ffffff;
-    --surface-warm: #fdfaf7;
-    --surface-cream: #faf6f1;
-    --surface-dark: #0f0f0f;
-    --border-ghost: rgba(0, 0, 0, 0.06);
-    --border-light: rgba(0, 0, 0, 0.1);
-    --border-medium: rgba(0, 0, 0, 0.16);
-    --radius-sm: 8px;
-    --radius-md: 14px;
-    --radius-lg: 20px;
-    --radius-xl: 28px;
-    --radius-pill: 9999px;
-    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 16px rgba(0, 0, 0, 0.06);
-    --shadow-card-hover: 0 4px 8px rgba(0, 0, 0, 0.06), 0 16px 48px rgba(0, 0, 0, 0.1);
-    --shadow-saffron: 0 8px 32px rgba(249, 115, 22, 0.25);
 
     --saffron: 25 95% 53%;
     --saffron-light: 30 90% 96%;
@@ -92,55 +59,32 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
-    font-family: var(--font-body);
+    @apply bg-background text-foreground font-body antialiased;
     scroll-behavior: smooth;
     text-rendering: geometricPrecision;
-    font-size: var(--size-body);
-    line-height: var(--leading-body);
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-display);
-    line-height: var(--leading-heading);
-    letter-spacing: var(--tracking-heading);
+    @apply font-heading;
   }
 }
 
 @layer utilities {
-  .label-kicker {
-    font-size: var(--size-label);
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
-    font-weight: 500;
-  }
-
-  .cta-breathe {
-    animation: ctaBreathe 2.8s ease-in-out infinite;
-  }
-
-  @keyframes ctaBreathe {
-    0%,
-    100% {
-      transform: translateY(0);
-      box-shadow: var(--shadow-saffron);
-    }
-    50% {
-      transform: translateY(-1px);
-      box-shadow: 0 10px 35px rgba(249, 115, 22, 0.33);
-    }
-  }
-
   .text-gradient-saffron {
     @apply bg-gradient-to-r from-primary to-amber-500 bg-clip-text text-transparent;
   }
 
   .section-padding {
-    @apply px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-28;
+    @apply px-4 sm:px-6 lg:px-8 py-20 sm:py-24 lg:py-32;
   }
 
-  .card-shadow { box-shadow: var(--shadow-card); }
-  .card-shadow-hover { box-shadow: var(--shadow-card-hover); }
+  .card-shadow {
+    box-shadow: 0 14px 44px rgba(15, 15, 15, 0.07);
+  }
+
+  .card-shadow-hover {
+    box-shadow: 0 24px 64px rgba(15, 15, 15, 0.12);
+  }
 
   .container-premium {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;

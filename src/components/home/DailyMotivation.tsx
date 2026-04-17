@@ -1,9 +1,9 @@
 import { Quote } from "lucide-react";
 import { useMotivation } from "@/hooks/useMotivation";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { motion, useInView } from "framer-motion";
-import { fadeUp, stagger } from "@/lib/animations";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { gsap } from "@/lib/gsapRegister";
+import { prefersReducedMotion } from "@/lib/motion";
 
 function getLocalDateKey(d = new Date()) {
   const y = d.getFullYear();
@@ -20,7 +20,6 @@ function msUntilNextLocalMidnight(d = new Date()) {
 
 export default function DailyMotivation() {
   const sectionRef = useRef<HTMLElement>(null);
-  const isInView = useInView(sectionRef, { once: true, margin: "-80px" });
   const { data: motivationQuotes, loading } = useMotivation();
   const [dayKey, setDayKey] = useState(() => getLocalDateKey());
 
@@ -40,41 +39,61 @@ export default function DailyMotivation() {
     return pool[days % pool.length];
   }, [motivationQuotes, dayKey]);
 
-  const words = quote?.quote.split(" ") ?? [];
+
+  useLayoutEffect(() => {
+    const root = sectionRef.current;
+    if (!root || loading || !quote || prefersReducedMotion()) return;
+
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: root,
+          start: "top 80%",
+          toggleActions: "play none none reverse",
+        },
+      });
+
+      tl.from(root.querySelectorAll("[data-daily-reveal]"), {
+        opacity: 0,
+        y: 40,
+        duration: 0.85,
+        stagger: 0.08,
+        ease: "power3.out",
+      }).fromTo(
+        root.querySelector("[data-daily-card]"),
+        { opacity: 0, scale: 0.96, y: 28 },
+        { opacity: 1, scale: 1, y: 0, duration: 0.95, ease: "power3.out" },
+        "-=0.55",
+      );
+    }, root);
+
+    return () => ctx.revert();
+  }, [loading, quote]);
 
   return (
-    <section ref={sectionRef} className="section-padding bg-[#0F0F0F]">
+    <section ref={sectionRef} className="section-padding">
       <div className="container-premium">
-        <motion.h2 variants={fadeUp} initial="hidden" animate={isInView ? "visible" : "hidden"} className="text-3xl sm:text-4xl text-center mb-10 text-white">
+        <h2 data-daily-reveal className="font-heading text-3xl sm:text-4xl text-center mb-10">
           Today's Inspiration
-        </motion.h2>
+        </h2>
 
         {loading || !quote ? (
           <Skeleton className="max-w-3xl mx-auto h-56 rounded-2xl" />
         ) : (
-          <div className="max-w-4xl mx-auto text-center py-8 px-4 bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.04)_0%,transparent_70%)]">
-            <motion.div variants={fadeUp} initial="hidden" animate={isInView ? "visible" : "hidden"} className="text-[160px] leading-[0.5] text-primary/20 mb-10 font-['Cormorant_Garamond']">
-              "
-            </motion.div>
-            <motion.blockquote
-              variants={stagger}
-              initial="hidden"
-              animate={isInView ? "visible" : "hidden"}
-              className="text-[clamp(24px,4vw,42px)] italic leading-[1.5] text-white/90 max-w-[800px] mx-auto mb-8 font-['Cormorant_Garamond']"
-            >
-              {words.map((word, i) => (
-                <motion.span key={`${word}-${i}`} variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }} transition={{ duration: 0.2, delay: i * 0.03 }}>
-                  {word}{" "}
-                </motion.span>
-              ))}
-            </motion.blockquote>
-            <motion.div variants={fadeUp} initial="hidden" animate={isInView ? "visible" : "hidden"} className="flex items-center justify-center gap-4">
-              <span className="h-px w-12 bg-primary/40" />
-              <p className="text-[13px] uppercase tracking-[0.1em] text-primary font-medium">{quote.source}</p>
-              <span className="h-px w-12 bg-primary/40" />
-            </motion.div>
-            <p className="mt-5 text-[11px] tracking-[0.08em] text-white/35 uppercase">Daily Reflection</p>
-          </div>
+        <div
+          data-daily-card
+          className={`max-w-3xl mx-auto rounded-2xl p-8 sm:p-12 card-shadow text-center ${
+            quote.source === "Phil Jackson"
+              ? "bg-gradient-to-br from-primary/10 via-warm-beige to-amber-100/80 ring-2 ring-primary/25"
+              : "bg-warm-beige"
+          }`}
+        >
+          <Quote size={40} className="text-primary/30 mx-auto mb-4" />
+          <blockquote className="font-heading text-xl sm:text-2xl lg:text-3xl italic leading-relaxed mb-6 text-foreground">
+            "{quote.quote}"
+          </blockquote>
+          <p className="text-muted-foreground font-medium">— {quote.source}</p>
+        </div>
         )}
       </div>
 
