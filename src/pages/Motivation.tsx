@@ -2,11 +2,42 @@ import { useMotivation } from "@/hooks/useMotivation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Quote } from "lucide-react";
 import { SEO } from "@/components/SEO";
+import { useEffect, useMemo, useState } from "react";
+
+function getLocalDateKey(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function msUntilNextLocalMidnight(d = new Date()) {
+  const next = new Date(d);
+  next.setHours(24, 0, 0, 0);
+  return next.getTime() - d.getTime();
+}
 
 export default function Motivation() {
   const { data: motivationQuotes, loading } = useMotivation();
-  const today = motivationQuotes[0];
-  const archive = motivationQuotes.slice(1);
+  const [dayKey, setDayKey] = useState(() => getLocalDateKey());
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setDayKey(getLocalDateKey()), msUntilNextLocalMidnight());
+    return () => window.clearTimeout(t);
+  }, [dayKey]);
+
+  const { today, archive } = useMemo(() => {
+    const pool = [...motivationQuotes].sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+    );
+    if (pool.length === 0) return { today: null, archive: [] as typeof pool };
+    const start = new Date("2026-01-01T00:00:00").getTime();
+    const now = new Date(`${dayKey}T00:00:00`).getTime();
+    const idx = Math.max(0, Math.floor((now - start) / 86400000)) % pool.length;
+    const todayQuote = pool[idx];
+    const rest = [...pool.slice(0, idx), ...pool.slice(idx + 1)].reverse();
+    return { today: todayQuote, archive: rest };
+  }, [motivationQuotes, dayKey]);
 
   return (
     <>

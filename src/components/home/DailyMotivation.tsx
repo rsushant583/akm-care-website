@@ -3,28 +3,42 @@ import { useMotivation } from "@/hooks/useMotivation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useMemo, useState } from "react";
 
+function getLocalDateKey(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function msUntilNextLocalMidnight(d = new Date()) {
+  const next = new Date(d);
+  next.setHours(24, 0, 0, 0);
+  return next.getTime() - d.getTime();
+}
+
 export default function DailyMotivation() {
   const { data: motivationQuotes, loading } = useMotivation();
-  const quote = motivationQuotes[0];
+  const [dayKey, setDayKey] = useState(() => getLocalDateKey());
 
-  const dayKey = useMemo(() => {
-    const now = new Date();
-    const pivot = new Date(now);
-    pivot.setHours(5, 0, 0, 0);
-    if (now < pivot) {
-      pivot.setDate(pivot.getDate() - 1);
-    }
-    return pivot.toISOString().slice(0, 10);
-  }, []);
+  useEffect(() => {
+    const t = window.setTimeout(() => setDayKey(getLocalDateKey()), msUntilNextLocalMidnight());
+    return () => window.clearTimeout(t);
+  }, [dayKey]);
+
+  const quote = useMemo(() => {
+    if (!motivationQuotes || motivationQuotes.length === 0) return null;
+    const pool = [...motivationQuotes].sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+    );
+    const start = new Date("2026-01-01T00:00:00").getTime();
+    const today = new Date(`${dayKey}T00:00:00`).getTime();
+    const days = Math.max(0, Math.floor((today - start) / 86400000));
+    return pool[days % pool.length];
+  }, [motivationQuotes, dayKey]);
 
   const popupQuote = useMemo(() => {
-    if (!motivationQuotes || motivationQuotes.length === 0) return null;
-    const sorted = [...motivationQuotes].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-    const start = new Date("2026-01-01T05:00:00.000Z").getTime();
-    const today = new Date(`${dayKey}T05:00:00.000Z`).getTime();
-    const days = Math.max(0, Math.floor((today - start) / 86400000));
-    return sorted[days % sorted.length];
-  }, [motivationQuotes, dayKey]);
+    return quote;
+  }, [quote]);
 
   const [open, setOpen] = useState(false);
 

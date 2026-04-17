@@ -1,5 +1,7 @@
+import { thoughts } from "./thoughts";
+
 export const services = [
-  { id: "1", title: "Training & Education", description: "Comprehensive industrial training programs including soft skills, technical, behavioral, commercial and Health Safety and Enviroment training  across India.", icon: "GraduationCap", category: "Training" },
+  { id: "1", title: "Training & Education", description: "Comprehensive industrial training programs including soft skills, technical, behavioral, commercial and Health Safety and Enviroment related training across India.", icon: "GraduationCap", category: "Training" },
   { id: "2", title: "Placement Services", description: "End-to-end job placement and recruitment consultancy connecting talent with the right opportunities.", icon: "Briefcase", category: "HR" },
   { id: "3", title: "Manpower Deployment", description: "Contractual manpower solutions tailored to your operational needs with verified and skilled workforce.", icon: "Users", category: "HR" },
   { id: "4", title: "Industrial Compliance Consulting", description: "Expert guidance on regulatory compliance, statutory alignment, audits, and industrial standards adherence.", icon: "ShieldCheck", category: "Compliance" },
@@ -22,13 +24,12 @@ export const products = [
   { id: "5", name: "Roasted Chana", price: 149, quantity: "500g", stock_quantity: 28, status: "available" as const, image_url: "/products/roasted-chana.png", description: "Crunchy roasted chickpeas, a healthy and delicious snack." },
 ];
 
-export const motivationQuotes = [
-  { id: "1", quote: "Success is not final, failure is not fatal — it is the courage to continue that counts.", source: "Winston Churchill", created_at: new Date().toISOString() },
-  { id: "2", quote: "The only way to do great work is to love what you do.", source: "Steve Jobs", created_at: new Date(Date.now() - 86400000).toISOString() },
-  { id: "3", quote: "In the middle of every difficulty lies opportunity.", source: "Albert Einstein", created_at: new Date(Date.now() - 172800000).toISOString() },
-  { id: "4", quote: "It does not matter how slowly you go, as long as you do not stop.", source: "Confucius", created_at: new Date(Date.now() - 259200000).toISOString() },
-  { id: "5", quote: "The strength of the team is each individual member. The strength of each member is the team.", source: "Phil Jackson", created_at: new Date(Date.now() - 345600000).toISOString() },
-];
+export const motivationQuotes = thoughts.map((t, idx) => ({
+  id: String(idx + 1),
+  quote: t.quote,
+  source: t.source,
+  created_at: new Date(Date.UTC(2026, 0, 1 + idx)).toISOString(),
+}));
 
 export const faqs = [
   { id: "1", question: "What services does AKM Care provide?", answer: "AKM Care provides a comprehensive range of industrial solutions including corporate training, placement services, manpower deployment, compliance consulting, logistics through AKM Freight, IT solutions (websites, apps, software development), catering & facility management, tours & travel, maintenance services, and customized need-based solutions. We serve industries Pan India.", category: "General" },
