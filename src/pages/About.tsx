@@ -1,6 +1,7 @@
 import { Heart, Lightbulb, Award, Zap } from "lucide-react";
 import { SEO } from "@/components/SEO";
-import { Reveal } from "@/components/ui/Reveal";
+import { motion } from "framer-motion";
+import { fadeUp, stagger } from "@/lib/animations";
 
 const values = [
   { icon: Heart, title: "Ethics", desc: "Conducting every engagement with honesty and moral principles." },
@@ -29,19 +30,21 @@ export default function About() {
       {/* Hero */}
       <section className="section-padding section-shell">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.06] via-warm-beige to-background pointer-events-none" />
-        <Reveal className="container-premium text-center max-w-3xl relative z-10">
+        <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="container-premium text-center max-w-3xl relative z-10">
           <p className="text-xs font-semibold tracking-[0.25em] uppercase text-primary mb-4">Who we are</p>
           <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl mb-6">About AKM Care</h1>
           <p className="text-lg text-muted-foreground leading-relaxed">
             AKM Care provides integrated solutions on a single platform with ethics and integrity within a benchmarking value frame.
           </p>
-        </Reveal>
+        </motion.div>
       </section>
 
       {/* Vision & Mission */}
       <section className="section-padding">
         <div className="container-premium">
-          <div className="grid sm:grid-cols-2 gap-6">
+          <div className="grid lg:grid-cols-[55%_45%] gap-8 items-start">
+            <div>
+            <div className="grid sm:grid-cols-2 gap-6">
             <div className="premium-card bg-card/90 backdrop-blur-sm rounded-2xl p-8 border border-border/60 card-shadow hover:border-primary/15 transition-all duration-500 ease-in-out">
               <h2 className="font-heading text-2xl mb-4 text-primary">Our Vision</h2>
               <p className="text-muted-foreground leading-relaxed">
@@ -55,6 +58,21 @@ export default function About() {
               </p>
             </div>
           </div>
+            </div>
+            <div className="relative lg:-ml-10">
+              <img
+                src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1600&q=80"
+                alt="AKM Care professional team collaboration"
+                loading="lazy"
+                decoding="async"
+                className="w-full h-[380px] object-cover rounded-[var(--radius-xl)] shadow-[var(--shadow-card-hover)]"
+              />
+              <div className="absolute -bottom-5 -left-5 bg-white rounded-[var(--radius-md)] shadow-[var(--shadow-card)] px-5 py-4 border border-black/5">
+                <span className="block text-primary text-xs uppercase tracking-[0.1em]">Founded in Gujarat</span>
+                <span className="text-[#0F0F0F]">Est. 2020</span>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -62,17 +80,17 @@ export default function About() {
       <section className="section-padding bg-warm-beige">
         <div className="container-premium">
           <h2 className="font-heading text-3xl sm:text-4xl text-center mb-12">Our Core Values</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+          <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid grid-cols-2 lg:grid-cols-4 gap-5">
             {values.map((v) => (
-              <div key={v.title} className="premium-card bg-card/90 backdrop-blur-sm rounded-2xl p-6 text-center border border-border/60 card-shadow hover:border-primary/20 hover:-translate-y-1 transition-all duration-500 ease-in-out">
+              <motion.div variants={fadeUp} key={v.title} className="premium-card bg-card/90 backdrop-blur-sm rounded-2xl p-6 text-center border border-border/60 card-shadow hover:border-primary/20 hover:-translate-y-1 transition-all duration-500 ease-in-out">
                 <div className="w-14 h-14 rounded-xl bg-primary/10 ring-1 ring-primary/10 flex items-center justify-center mx-auto mb-4">
                   <v.icon size={24} className="text-primary" />
                 </div>
                 <h3 className="font-heading text-lg mb-2">{v.title}</h3>
                 <p className="text-sm text-muted-foreground">{v.desc}</p>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -83,15 +101,6 @@ export default function About() {
           <p className="text-muted-foreground leading-relaxed text-lg">
             Our team comprises experienced professionals from diverse industries — training, HR, compliance, and sales. Together, we bring decades of collective expertise to deliver holistic solutions that transform businesses and uplift communities.
           </p>
-        </div>
-        <div className="container-premium mt-10">
-          <img
-            src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1600&q=80"
-            alt="AKM Care professional team collaboration"
-            loading="lazy"
-            decoding="async"
-            className="w-full max-w-4xl mx-auto h-64 sm:h-80 object-cover rounded-2xl border border-border/60 card-shadow"
-          />
         </div>
       </section>
 

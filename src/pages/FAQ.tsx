@@ -4,6 +4,8 @@ import { useFAQ } from "@/hooks/useFAQ";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SEO } from "@/components/SEO";
 import { faqSchema } from "@/lib/schemas";
+import { motion } from "framer-motion";
+import { fadeUp } from "@/lib/animations";
 
 const categories = ["All", "General", "Training", "Services", "Products"];
 
@@ -33,7 +35,7 @@ export default function FAQ() {
       </section>
 
       <section className="section-padding">
-        <div className="container-premium max-w-3xl">
+        <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} className="container-premium max-w-3xl">
           <div className="flex gap-2 overflow-x-auto pb-4 mb-8">
             {categories.map((cat) => (
               <button key={cat} onClick={() => setFilter(cat)} className={`px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${filter === cat ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}>
@@ -49,21 +51,21 @@ export default function FAQ() {
               ))}
             </div>
           ) : (
-          <div className="space-y-3">
+          <div className="space-y-0">
             {filtered.map((faq) => (
-              <div key={faq.id} className="bg-card rounded-2xl card-shadow overflow-hidden">
-                <button onClick={() => setOpen(open === faq.id ? null : faq.id)} className="w-full flex items-center justify-between p-5 text-left">
-                  <span className="font-heading text-base sm:text-lg pr-4">{faq.question}</span>
-                  <ChevronDown size={20} className={`text-muted-foreground shrink-0 transition-transform duration-200 ${open === faq.id ? "rotate-180" : ""}`} />
+              <div key={faq.id} className={`border-b border-black/10 py-6 px-4 -mx-4 rounded-[var(--radius-sm)] transition-all ${open === faq.id ? "bg-primary/[0.06]" : ""}`}>
+                <button onClick={() => setOpen(open === faq.id ? null : faq.id)} className="w-full flex items-center justify-between text-left">
+                  <span className={`text-[17px] font-medium pr-4 ${open === faq.id ? "text-primary" : "text-[#0F0F0F]"}`}>{faq.question}</span>
+                  <ChevronDown size={20} className={`text-primary shrink-0 transition-transform duration-300 ${open === faq.id ? "rotate-180" : ""}`} />
                 </button>
-                <div className={`overflow-hidden transition-all duration-200 ${open === faq.id ? "max-h-60" : "max-h-0"}`}>
-                  <p className="px-5 pb-5 text-muted-foreground leading-relaxed">{faq.answer}</p>
+                <div className={`overflow-hidden transition-all duration-300 ${open === faq.id ? "max-h-[500px]" : "max-h-0"}`}>
+                  <p className="pt-3 text-[15px] font-light text-muted-foreground leading-[1.7]">{faq.answer}</p>
                 </div>
               </div>
             ))}
           </div>
           )}
-        </div>
+        </motion.div>
       </section>
     </>
   );

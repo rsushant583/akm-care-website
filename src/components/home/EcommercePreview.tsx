@@ -1,18 +1,14 @@
 import { ShoppingCart } from "lucide-react";
-import { useLayoutEffect, useRef, useState } from "react";
-import { gsap, ScrollTrigger } from "@/lib/gsapRegister";
-import { prefersReducedMotion } from "@/lib/motion";
+import { useState } from "react";
 import { useProducts } from "@/hooks/useProducts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/sonner";
 import { createRazorpayOrder, loadRazorpayScript, verifyRazorpayPayment } from "@/lib/paymentService";
 import { isValidIndianPincode, mockDeliveryAvailable } from "@/lib/pincodeDelivery";
+import { motion } from "framer-motion";
+import { fadeUp, stagger } from "@/lib/animations";
 
 export default function EcommercePreview() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const headerRef = useRef<HTMLDivElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const gridRef = useRef<HTMLDivElement>(null);
   const { data: products, loading } = useProducts();
   const [selectedBuyProduct, setSelectedBuyProduct] = useState<any>(null);
   const [checkout, setCheckout] = useState({ name: "", email: "", phone: "" });
@@ -20,115 +16,6 @@ export default function EcommercePreview() {
   const [paymentError, setPaymentError] = useState("");
   const [pinInput, setPinInput] = useState("");
   const [pinStatus, setPinStatus] = useState<"idle" | "invalid" | "ok" | "no">("idle");
-
-  useLayoutEffect(() => {
-    const section = sectionRef.current;
-    const header = headerRef.current;
-    const panel = panelRef.current;
-    const grid = gridRef.current;
-    if (!section || !header || !panel || !grid || loading) return;
-
-    const cards = grid.querySelectorAll<HTMLElement>(".ecom-card");
-    if (!cards.length) return;
-
-    if (prefersReducedMotion()) {
-      gsap.set([...header.querySelectorAll("[data-ecom-head]"), panel, ...cards], {
-        clearProps: "all",
-        opacity: 1,
-        y: 0,
-        scale: 1,
-      });
-      return;
-    }
-
-    const ctx = gsap.context(() => {
-      const mm = gsap.matchMedia();
-
-      mm.add("(min-width: 1024px)", () => {
-        gsap.set(header.querySelectorAll("[data-ecom-head]"), { opacity: 0, y: 36 });
-        gsap.set(panel, { opacity: 0, y: 28 });
-        gsap.set(cards, { opacity: 0, y: 56, scale: 0.95 });
-
-        const scrollDistance = Math.min(3200, 900 + cards.length * 340);
-        const tl = gsap.timeline({
-          scrollTrigger: {
-            trigger: section,
-            start: "top top",
-            end: `+=${scrollDistance}`,
-            pin: true,
-            scrub: 0.75,
-            anticipatePin: 1,
-          },
-        });
-
-        tl.to(header.querySelectorAll("[data-ecom-head]"), {
-          opacity: 1,
-          y: 0,
-          stagger: 0.05,
-          duration: 0.32,
-          ease: "none",
-        });
-        tl.to(panel, { opacity: 1, y: 0, duration: 0.35, ease: "none" }, 0.12);
-        cards.forEach((card, i) => {
-          tl.to(
-            card,
-            { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: "none" },
-            0.28 + i * 0.32,
-          );
-        });
-
-        return () => {
-          tl.scrollTrigger?.kill();
-          tl.kill();
-        };
-      });
-
-      mm.add("(max-width: 1023px)", () => {
-        gsap.set(header.querySelectorAll("[data-ecom-head]"), { opacity: 0, y: 28 });
-        gsap.set(panel, { opacity: 0, y: 24 });
-        gsap.set(cards, { opacity: 0, y: 40 });
-
-        const tl = gsap.timeline({
-          scrollTrigger: {
-            trigger: section,
-            start: "top 78%",
-            toggleActions: "play none none reverse",
-          },
-        });
-
-        tl.to(header.querySelectorAll("[data-ecom-head]"), {
-          opacity: 1,
-          y: 0,
-          duration: 0.72,
-          stagger: 0.06,
-          ease: "power3.out",
-        })
-          .to(panel, { opacity: 1, y: 0, duration: 0.65, ease: "power3.out" }, "-=0.4")
-          .to(
-            cards,
-            {
-              opacity: 1,
-              y: 0,
-              duration: 0.62,
-              stagger: 0.06,
-              ease: "power3.out",
-            },
-            "-=0.45",
-          );
-
-        return () => {
-          tl.scrollTrigger?.kill();
-          tl.kill();
-        };
-      });
-
-      return () => mm.revert();
-    }, section);
-
-    requestAnimationFrame(() => ScrollTrigger.refresh());
-
-    return () => ctx.revert();
-  }, [loading, products]);
 
   const checkPincode = () => {
     const p = pinInput.trim();
@@ -228,27 +115,27 @@ export default function EcommercePreview() {
   };
 
   return (
-    <section
-      ref={sectionRef}
-      className="section-padding section-shell bg-gradient-to-b from-background to-warm-beige/40 min-h-0"
-    >
+    <section className="section-padding section-shell bg-[var(--surface-cream)] min-h-0">
       <div className="container-premium">
-        <div ref={headerRef} className="text-center mb-16">
+        <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} className="grid lg:grid-cols-[60%_1px_1fr] gap-6 items-center mb-14">
+          <div>
           <div
-            data-ecom-head
-            className="inline-flex items-center rounded-full bg-primary/10 text-primary px-4 py-1.5 text-sm font-semibold mb-4"
+            className="inline-flex items-center rounded-full bg-primary/10 text-primary px-4 py-1.5 text-sm font-semibold mb-4 label-kicker"
           >
             Village Store
           </div>
-          <h2 data-ecom-head className="font-heading text-3xl sm:text-4xl lg:text-5xl mb-4">
+          <h2 className="text-[var(--size-h2)] mb-4">
             From the Heart of India's Villages
           </h2>
-          <p data-ecom-head className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-lg">
             Authentic rural products, coming to your doorstep
           </p>
-        </div>
+          </div>
+          <div className="hidden lg:block h-20 w-px bg-black/10" />
+          <p className="hidden lg:block text-[#787878] italic text-lg font-['Cormorant_Garamond']">From the heart of India's villages to your doorstep. Authentic. Unprocessed. Pure.</p>
+        </motion.div>
 
-        <div ref={panelRef} className="max-w-xl mx-auto mb-14 premium-surface p-5 sm:p-6">
+        <div className="max-w-xl mx-auto mb-14 premium-surface p-5 sm:p-6">
           <h3 className="font-heading text-base sm:text-lg mb-1 text-center">Check Delivery Availability by Pincode</h3>
           <p className="text-xs sm:text-sm text-muted-foreground text-center mb-4">Enter your 6-digit Indian pincode</p>
           <div className="flex flex-col sm:flex-row gap-3">
@@ -283,15 +170,16 @@ export default function EcommercePreview() {
           )}
         </div>
 
-        <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+        <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
           {loading ? Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-72 rounded-2xl" />
           )) : products.map((product) => (
-            <div
+            <motion.div
               key={product.id}
-              className="ecom-card group bg-card border border-border/60 rounded-2xl overflow-hidden card-shadow transition-all duration-500 ease-in-out hover:-translate-y-2 hover:border-primary/35 hover:shadow-xl hover:shadow-primary/10"
+              variants={fadeUp}
+              className="ecom-card group bg-white border border-black/5 rounded-[var(--radius-xl)] overflow-hidden shadow-[var(--shadow-card)] transition-all duration-500 ease-in-out hover:-translate-y-2 hover:shadow-[var(--shadow-card-hover)]"
             >
-              <div className="aspect-square bg-gradient-to-br from-saffron-light to-accent flex items-center justify-center relative overflow-hidden">
+              <div className="h-60 bg-[var(--surface-cream)] flex items-center justify-center relative overflow-hidden">
                 {product.image_url ? (
                   <img
                     src={product.image_url}
@@ -300,7 +188,7 @@ export default function EcommercePreview() {
                     height={400}
                     loading="lazy"
                     decoding="async"
-                    className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+                    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
                   />
                 ) : (
                   <span className="text-4xl">
@@ -310,19 +198,21 @@ export default function EcommercePreview() {
                      product.name.includes("Ghee") ? "🧈" : "🫘"}
                   </span>
                 )}
-                <span className={`absolute top-3 right-3 text-xs font-semibold px-3 py-1 rounded-full ${
+                <span className={`absolute top-3 right-3 text-[11px] font-semibold uppercase tracking-[0.06em] px-3 py-1 rounded-full ${
                   (product.stock_quantity ?? 0) === 0
-                    ? "bg-destructive/10 text-destructive"
-                    : "bg-emerald-100 text-emerald-700"
+                    ? "bg-gray-100 text-gray-500 border border-gray-200"
+                    : (product.stock_quantity ?? 0) <= 10
+                      ? "bg-amber-100 text-amber-800 border border-amber-200"
+                      : "bg-emerald-100 text-emerald-700 border border-emerald-200"
                 }`}>
                   {(product.stock_quantity ?? 0) > 0 ? `In Stock (${product.stock_quantity})` : "Out of Stock"}
                 </span>
               </div>
-              <div className="p-4">
-                <h3 className="font-heading text-base mb-0.5">{product.name}</h3>
-                <p className="text-xs text-muted-foreground mb-2">{product.quantity}</p>
+              <div className="p-5">
+                <h3 className="text-[17px] font-medium mb-0.5">{product.name}</h3>
+                <p className="text-[13px] text-muted-foreground mb-3">{product.quantity}</p>
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-lg">₹{product.price}</span>
+                  <span className="text-[26px] leading-none text-primary font-['Cormorant_Garamond']">₹{product.price}</span>
                   <button
                     onClick={() => {
                       setPaymentError("");
@@ -338,6 +228,10 @@ export default function EcommercePreview() {
                     <ShoppingCart size={16} />
                   </button>
                 </div>
+                <div className="mt-3 mb-3">
+                  <p className="text-[12px] text-muted-foreground mb-1">{(product.stock_quantity ?? 0)} of 50 available</p>
+                  <div className="h-1 rounded-full bg-black/10"><div className="h-full bg-primary rounded-full transition-all duration-700" style={{ width: `${Math.min(((product.stock_quantity ?? 0) / 50) * 100, 100)}%` }} /></div>
+                </div>
                 <button
                   onClick={() =>
                     (product.stock_quantity ?? 0) > 0
@@ -348,18 +242,18 @@ export default function EcommercePreview() {
                       : null
                   }
                   disabled={(product.stock_quantity ?? 0) === 0}
-                  className={`mt-3 w-full py-2 rounded-full text-sm font-semibold transition-all ${
+                  className={`w-full h-[50px] rounded-[var(--radius-md)] text-sm font-semibold transition-all ${
                     (product.stock_quantity ?? 0) > 0
-                      ? "bg-primary text-primary-foreground hover:brightness-110"
+                      ? "bg-[#0A0A0A] text-primary-foreground hover:bg-primary"
                       : "bg-primary/10 text-primary cursor-not-allowed"
                   }`}
                 >
                   {(product.stock_quantity ?? 0) > 0 ? "Buy Now" : "Notify me when available"}
                 </button>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
         {!loading && products.length === 0 && (
           <div className="text-center mt-8 text-muted-foreground">Products are being updated. Please check again shortly.</div>
         )}

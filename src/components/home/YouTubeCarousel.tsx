@@ -1,162 +1,60 @@
 import { Play, ExternalLink } from "lucide-react";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { CHANNEL_VIDEOS, YOUTUBE_CHANNEL_HANDLE_URL } from "@/data/youtubeChannelVideos";
-import { gsap, ScrollTrigger } from "@/lib/gsapRegister";
-import { prefersReducedMotion } from "@/lib/motion";
+import { motion } from "framer-motion";
+import { fadeUp } from "@/lib/animations";
 
 const preview = CHANNEL_VIDEOS.slice(0, 5);
 
 export default function YouTubeCarousel() {
   const [activeVideo, setActiveVideo] = useState<string | null>(null);
-  const sectionRef = useRef<HTMLElement>(null);
-  const headerRef = useRef<HTMLDivElement>(null);
   const rowRef = useRef<HTMLDivElement>(null);
+  const [dragging, setDragging] = useState(false);
+  const dragState = useRef({ startX: 0, scrollLeft: 0 });
 
-  useLayoutEffect(() => {
-    const section = sectionRef.current;
-    const header = headerRef.current;
-    const row = rowRef.current;
-    if (!section || !header || !row) return;
-
-    const cta = section.querySelector<HTMLElement>("[data-yt-cta]");
-
-    if (prefersReducedMotion()) {
-      gsap.set(
-        [...header.querySelectorAll("[data-yt-reveal]"), ...row.querySelectorAll("[data-yt-card]"), cta].filter(
-          Boolean,
-        ),
-        { clearProps: "all", opacity: 1, y: 0, x: 0 },
-      );
-      return;
-    }
-
-    const ctx = gsap.context(() => {
-      const mm = gsap.matchMedia();
-
-      mm.add("(min-width: 1024px)", () => {
-        const maxX = () => Math.max(0, row.scrollWidth - row.clientWidth);
-
-        gsap.set(header.querySelectorAll("[data-yt-reveal]"), { opacity: 0, y: 32 });
-        gsap.set(row.querySelectorAll("[data-yt-card]"), { opacity: 0, y: 40 });
-        if (cta) gsap.set(cta, { opacity: 0, y: 24 });
-
-        const tl = gsap.timeline({
-          scrollTrigger: {
-            trigger: section,
-            start: "top top",
-            end: () => `+=${1100 + maxX() * 1.15}`,
-            pin: true,
-            scrub: 0.85,
-            invalidateOnRefresh: true,
-            anticipatePin: 1,
-          },
-        });
-
-        tl.to(header.querySelectorAll("[data-yt-reveal]"), {
-          opacity: 1,
-          y: 0,
-          stagger: 0.05,
-          duration: 0.22,
-          ease: "none",
-        });
-        tl.to(
-          row.querySelectorAll("[data-yt-card]"),
-          { opacity: 1, y: 0, stagger: 0.04, duration: 0.2, ease: "none" },
-          0.08,
-        );
-        tl.fromTo(
-          row,
-          { x: 0 },
-          { x: () => -maxX(), duration: 0.55, ease: "none" },
-          0.18,
-        );
-        if (cta) {
-          tl.to(cta, { opacity: 1, y: 0, duration: 0.2, ease: "none" }, 0.62);
-        }
-
-        return () => {
-          tl.scrollTrigger?.kill();
-          tl.kill();
-        };
-      });
-
-      mm.add("(max-width: 1023px)", () => {
-        gsap.set(header.querySelectorAll("[data-yt-reveal]"), { opacity: 0, y: 28 });
-        gsap.set(row.querySelectorAll("[data-yt-card]"), { opacity: 0, y: 32 });
-        if (cta) gsap.set(cta, { opacity: 0, y: 20 });
-
-        const tl = gsap.timeline({
-          scrollTrigger: {
-            trigger: section,
-            start: "top 78%",
-            toggleActions: "play none none reverse",
-          },
-        });
-
-        tl.to(header.querySelectorAll("[data-yt-reveal]"), {
-          opacity: 1,
-          y: 0,
-          duration: 0.72,
-          stagger: 0.06,
-          ease: "power3.out",
-        }).to(
-          row.querySelectorAll("[data-yt-card]"),
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.62,
-            stagger: 0.07,
-            ease: "power3.out",
-          },
-          "-=0.45",
-        );
-        if (cta) {
-          tl.to(cta, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, "-=0.35");
-        }
-
-        return () => {
-          tl.scrollTrigger?.kill();
-          tl.kill();
-        };
-      });
-
-      return () => mm.revert();
-    }, section);
-
-    requestAnimationFrame(() => ScrollTrigger.refresh());
-
-    return () => ctx.revert();
-  }, []);
+  const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!rowRef.current) return;
+    setDragging(true);
+    dragState.current = { startX: e.pageX - rowRef.current.offsetLeft, scrollLeft: rowRef.current.scrollLeft };
+  };
+  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!dragging || !rowRef.current) return;
+    const x = e.pageX - rowRef.current.offsetLeft;
+    rowRef.current.scrollLeft = dragState.current.scrollLeft - (x - dragState.current.startX);
+  };
 
   return (
-    <section ref={sectionRef} className="section-padding section-shell min-h-0">
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-warm-beige/80 to-background pointer-events-none" />
+    <section className="section-padding bg-white">
       <div className="container-premium relative z-10">
-        <div ref={headerRef} className="text-center mb-14 max-w-2xl mx-auto">
-          <p data-yt-reveal className="text-xs font-semibold tracking-[0.25em] uppercase text-primary mb-3">
+        <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} className="mb-10 max-w-2xl">
+          <p className="label-kicker text-primary mb-3">
             From our channel
           </p>
-          <h2 data-yt-reveal className="font-heading text-3xl sm:text-4xl lg:text-5xl mb-3">
+          <h2 className="text-[var(--size-h2)] mb-3">
             Stories & Sessions
           </h2>
-          <p data-yt-reveal className="text-muted-foreground text-base sm:text-lg">
+          <p className="text-muted-foreground text-base sm:text-lg">
             Training, motivation, and values — every video from{" "}
             <span className="text-foreground font-medium">@akmcare1309</span>
           </p>
-        </div>
+        </motion.div>
 
         <div
           ref={rowRef}
-          className="flex gap-5 overflow-x-auto lg:overflow-visible pb-4 snap-x snap-mandatory scrollbar-hide -mx-2 px-2 will-change-transform"
+          onMouseDown={onMouseDown}
+          onMouseMove={onMouseMove}
+          onMouseUp={() => setDragging(false)}
+          onMouseLeave={() => setDragging(false)}
+          className={`flex gap-5 overflow-x-auto pb-6 snap-x snap-mandatory scrollbar-hide -mx-2 px-2 ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
         >
           {preview.map((video) => (
-            <div key={video.id} data-yt-card className="flex-shrink-0 w-[280px] sm:w-[300px] snap-start">
+            <motion.div key={video.id} className="flex-shrink-0 w-[280px] sm:w-[340px] snap-start">
               <button
                 type="button"
                 className="w-full text-left group"
                 onClick={() => setActiveVideo(video.videoId)}
               >
-                <div className="relative aspect-video rounded-2xl overflow-hidden bg-muted border border-border/60 shadow-lg shadow-primary/5 ring-1 ring-primary/5 transition-all duration-500 ease-in-out group-hover:ring-primary/20 group-hover:shadow-xl group-hover:-translate-y-1">
+                <div className="relative aspect-video rounded-[var(--radius-lg)] overflow-hidden bg-muted border border-black/5 shadow-[var(--shadow-card)] transition-all duration-300 group-hover:-translate-y-1.5 group-hover:shadow-[var(--shadow-card-hover)]">
                   <img
                     src={`https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`}
                     alt={video.title}
@@ -166,27 +64,36 @@ export default function YouTubeCarousel() {
                     loading="lazy"
                     decoding="async"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-90 group-hover:via-black/20 transition-colors" />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors flex items-center justify-center">
+                    <div className="w-[52px] h-[52px] rounded-full bg-white shadow-lg flex items-center justify-center scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100 transition-all">
+                      <span className="w-0 h-0 border-l-[20px] border-l-primary border-y-[12px] border-y-transparent ml-1" />
+                    </div>
+                  </div>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center shadow-lg shadow-primary/40 scale-95 group-hover:scale-100 transition-transform">
+                    <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center shadow-lg shadow-primary/40 scale-95 group-hover:opacity-0 transition-all">
                       <Play size={22} className="text-primary-foreground ml-0.5" fill="currentColor" />
                     </div>
                   </div>
                 </div>
-                <h3 className="font-medium text-sm mt-3 line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+                <div className="p-4">
+                  <p className="inline-flex items-center gap-2 text-[11px] tracking-[0.08em] uppercase text-primary font-medium mb-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" /> AKM Care
+                  </p>
+                <h3 className="font-medium text-[15px] line-clamp-2 leading-snug group-hover:text-primary transition-colors">
                   {video.title}
                 </h3>
+                </div>
               </button>
-            </div>
+            </motion.div>
           ))}
         </div>
 
-        <div data-yt-cta className="text-center mt-10">
+        <div className="text-right mt-2">
           <a
             href={YOUTUBE_CHANNEL_HANDLE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-6 py-3 text-sm font-semibold text-primary hover:bg-primary/10 hover:border-primary/30 transition-all"
+            className="inline-flex items-center gap-2 text-primary hover:gap-3 transition-all"
           >
             View all on YouTube <ExternalLink size={16} />
           </a>
