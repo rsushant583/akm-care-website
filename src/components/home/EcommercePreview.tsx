@@ -45,37 +45,38 @@ export default function EcommercePreview() {
       const mm = gsap.matchMedia();
 
       mm.add("(min-width: 1024px)", () => {
-        gsap.set(header.querySelectorAll("[data-ecom-head]"), { opacity: 0, y: 36 });
-        gsap.set(panel, { opacity: 0, y: 28 });
-        gsap.set(cards, { opacity: 0, y: 56, scale: 0.95 });
+        gsap.set(header.querySelectorAll("[data-ecom-head]"), { opacity: 0, y: 30 });
+        gsap.set(panel, { opacity: 0, y: 24 });
+        gsap.set(cards, { opacity: 0, y: 46, scale: 0.97 });
 
-        const scrollDistance = Math.min(3200, 900 + cards.length * 340);
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: section,
-            start: "top top",
-            end: `+=${scrollDistance}`,
-            pin: true,
-            scrub: 0.75,
-            anticipatePin: 1,
+            start: "top 72%",
+            toggleActions: "play none none reverse",
           },
         });
 
         tl.to(header.querySelectorAll("[data-ecom-head]"), {
           opacity: 1,
           y: 0,
-          stagger: 0.05,
-          duration: 0.32,
-          ease: "none",
-        });
-        tl.to(panel, { opacity: 1, y: 0, duration: 0.35, ease: "none" }, 0.12);
-        cards.forEach((card, i) => {
-          tl.to(
-            card,
-            { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: "none" },
-            0.28 + i * 0.32,
+          stagger: 0.06,
+          duration: 0.72,
+          ease: "power3.out",
+        })
+          .to(panel, { opacity: 1, y: 0, duration: 0.65, ease: "power3.out" }, "-=0.45")
+          .to(
+            cards,
+            {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              duration: 0.65,
+              stagger: 0.06,
+              ease: "power3.out",
+            },
+            "-=0.45",
           );
-        });
 
         return () => {
           tl.scrollTrigger?.kill();

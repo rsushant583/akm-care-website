@@ -36,18 +36,14 @@ export default function ServicesOverview() {
       const mm = gsap.matchMedia();
 
       mm.add("(min-width: 1024px)", () => {
-        gsap.set(header.querySelectorAll("[data-svc-head]"), { opacity: 0, y: 40 });
-        gsap.set(cards, { opacity: 0, y: 72, scale: 0.94 });
+        gsap.set(header.querySelectorAll("[data-svc-head]"), { opacity: 0, y: 32 });
+        gsap.set(cards, { opacity: 0, y: 48, scale: 0.97 });
 
-        const scrollDistance = Math.min(4200, 1400 + cards.length * 380);
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: section,
-            start: "top top",
-            end: `+=${scrollDistance}`,
-            pin: true,
-            scrub: 0.85,
-            anticipatePin: 1,
+            start: "top 72%",
+            toggleActions: "play none none reverse",
           },
         });
 
@@ -55,17 +51,20 @@ export default function ServicesOverview() {
           opacity: 1,
           y: 0,
           stagger: 0.06,
-          duration: 0.35,
-          ease: "none",
-        });
-
-        cards.forEach((card, i) => {
-          tl.to(
-            card,
-            { opacity: 1, y: 0, scale: 1, duration: 0.42, ease: "none" },
-            0.22 + i * 0.38,
-          );
-        });
+          duration: 0.7,
+          ease: "power3.out",
+        }).to(
+          cards,
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.65,
+            stagger: 0.06,
+            ease: "power3.out",
+          },
+          "-=0.45",
+        );
 
         return () => {
           tl.scrollTrigger?.kill();

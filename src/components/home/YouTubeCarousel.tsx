@@ -34,44 +34,37 @@ export default function YouTubeCarousel() {
       const mm = gsap.matchMedia();
 
       mm.add("(min-width: 1024px)", () => {
-        const maxX = () => Math.max(0, row.scrollWidth - row.clientWidth);
-
-        gsap.set(header.querySelectorAll("[data-yt-reveal]"), { opacity: 0, y: 32 });
-        gsap.set(row.querySelectorAll("[data-yt-card]"), { opacity: 0, y: 40 });
-        if (cta) gsap.set(cta, { opacity: 0, y: 24 });
+        gsap.set(header.querySelectorAll("[data-yt-reveal]"), { opacity: 0, y: 28 });
+        gsap.set(row.querySelectorAll("[data-yt-card]"), { opacity: 0, y: 32 });
+        if (cta) gsap.set(cta, { opacity: 0, y: 20 });
 
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: section,
-            start: "top top",
-            end: () => `+=${1100 + maxX() * 1.15}`,
-            pin: true,
-            scrub: 0.85,
-            invalidateOnRefresh: true,
-            anticipatePin: 1,
+            start: "top 72%",
+            toggleActions: "play none none reverse",
           },
         });
 
         tl.to(header.querySelectorAll("[data-yt-reveal]"), {
           opacity: 1,
           y: 0,
-          stagger: 0.05,
-          duration: 0.22,
-          ease: "none",
-        });
-        tl.to(
+          stagger: 0.06,
+          duration: 0.72,
+          ease: "power3.out",
+        }).to(
           row.querySelectorAll("[data-yt-card]"),
-          { opacity: 1, y: 0, stagger: 0.04, duration: 0.2, ease: "none" },
-          0.08,
-        );
-        tl.fromTo(
-          row,
-          { x: 0 },
-          { x: () => -maxX(), duration: 0.55, ease: "none" },
-          0.18,
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.62,
+            stagger: 0.06,
+            ease: "power3.out",
+          },
+          "-=0.45",
         );
         if (cta) {
-          tl.to(cta, { opacity: 1, y: 0, duration: 0.2, ease: "none" }, 0.62);
+          tl.to(cta, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, "-=0.35");
         }
 
         return () => {
