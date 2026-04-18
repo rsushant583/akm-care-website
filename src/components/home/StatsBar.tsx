@@ -1,6 +1,7 @@
-import { useLayoutEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { gsap } from "@/lib/gsapRegister";
 import { prefersReducedMotion } from "@/lib/motion";
+import { runRevealWhenVisible } from "@/lib/runRevealWhenVisible";
 
 const stats = [
   { value: 500, suffix: "+", label: "Industries Served" },
@@ -12,7 +13,7 @@ const stats = [
 export default function StatsBar() {
   const rootRef = useRef<HTMLElement>(null);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
 
@@ -26,54 +27,58 @@ export default function StatsBar() {
       return;
     }
 
-    const ctx = gsap.context(() => {
-      const items = gsap.utils.toArray<HTMLElement>(root.querySelectorAll("[data-stat-item]"));
+    let ctx: gsap.Context | null = null;
+    const disconnect = runRevealWhenVisible(root, () => {
+      ctx?.revert();
+      ctx = gsap.context(() => {
+        const items = gsap.utils.toArray<HTMLElement>(root.querySelectorAll("[data-stat-item]"));
 
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: root,
-          start: "top 82%",
-          toggleActions: "play none none reverse",
-        },
-        defaults: { ease: "power2.out" },
-      });
+        const tl = gsap.timeline({
+          defaults: { ease: "power2.out" },
+        });
 
-      items.forEach((item, i) => {
-        const valueEl = item.querySelector<HTMLElement>("[data-stat-value]");
-        if (!valueEl) return;
+        items.forEach((item, i) => {
+          const valueEl = item.querySelector<HTMLElement>("[data-stat-value]");
+          if (!valueEl) return;
 
-        const target = Number(valueEl.dataset.target ?? "0");
-        const suffix = valueEl.dataset.suffix ?? "";
-        const display = valueEl.dataset.display;
+          const target = Number(valueEl.dataset.target ?? "0");
+          const suffix = valueEl.dataset.suffix ?? "";
+          const display = valueEl.dataset.display;
 
-        tl.from(
-          valueEl,
-          { scale: 0.88, opacity: 0.5, duration: 0.55, ease: "back.out(1.35)" },
-          i * 0.06,
-        );
+          tl.from(
+            valueEl,
+            { scale: 0.88, opacity: 0.5, duration: 0.55, ease: "back.out(1.35)" },
+            i * 0.06,
+          );
 
-        if (display) {
-          valueEl.textContent = display;
-          return;
-        }
+          if (display) {
+            valueEl.textContent = display;
+            return;
+          }
 
-        const proxy = { n: 0 };
-        tl.to(
-          proxy,
-          {
-            n: target,
-            duration: 2.1,
-            ease: "power2.out",
-            onUpdate: () => {
-              valueEl.textContent = `${Math.round(proxy.n).toLocaleString("en-IN")}${suffix}`;
+          const proxy = { n: 0 };
+          tl.to(
+            proxy,
+            {
+              n: target,
+              duration: 2.1,
+              ease: "power2.out",
+              onUpdate: () => {
+                valueEl.textContent = `${Math.round(proxy.n).toLocaleString("en-IN")}${suffix}`;
+              },
             },
-          },
-          i * 0.06,
-        );
-      });
-    }, root);
+            i * 0.06,
+          );
+        });
 
-    return () => ctx.revert();
+        tl.play(0);
+      }, root);
+    });
+
+    return () => {
+      disconnect();
+      ctx?.revert();
+    };
   }, []);
 
   return (

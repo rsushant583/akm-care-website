@@ -1,8 +1,9 @@
 import { Play, ExternalLink } from "lucide-react";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CHANNEL_VIDEOS, YOUTUBE_CHANNEL_HANDLE_URL } from "@/data/youtubeChannelVideos";
-import { gsap, ScrollTrigger } from "@/lib/gsapRegister";
+import { gsap } from "@/lib/gsapRegister";
 import { prefersReducedMotion } from "@/lib/motion";
+import { runRevealWhenVisible } from "@/lib/runRevealWhenVisible";
 
 const preview = CHANNEL_VIDEOS.slice(0, 5);
 
@@ -12,7 +13,7 @@ export default function YouTubeCarousel() {
   const headerRef = useRef<HTMLDivElement>(null);
   const rowRef = useRef<HTMLDivElement>(null);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const section = sectionRef.current;
     const header = headerRef.current;
     const row = rowRef.current;
@@ -30,95 +31,31 @@ export default function YouTubeCarousel() {
       return;
     }
 
-    const ctx = gsap.context(() => {
-      const mm = gsap.matchMedia();
-
-      mm.add("(min-width: 1024px)", () => {
-        gsap.set(header.querySelectorAll("[data-yt-reveal]"), { opacity: 0, y: 28 });
-        gsap.set(row.querySelectorAll("[data-yt-card]"), { opacity: 0, y: 32 });
-        if (cta) gsap.set(cta, { opacity: 0, y: 20 });
-
-        const tl = gsap.timeline({
-          scrollTrigger: {
-            trigger: section,
-            start: "top 72%",
-            toggleActions: "play none none reverse",
-          },
-        });
-
-        tl.to(header.querySelectorAll("[data-yt-reveal]"), {
-          opacity: 1,
-          y: 0,
-          stagger: 0.06,
-          duration: 0.72,
-          ease: "power3.out",
-        }).to(
+    let ctx: gsap.Context | null = null;
+    const disconnect = runRevealWhenVisible(section, () => {
+      ctx?.revert();
+      ctx = gsap.context(() => {
+        const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+        tl.fromTo(
+          header.querySelectorAll("[data-yt-reveal]"),
+          { opacity: 0, y: 28 },
+          { opacity: 1, y: 0, stagger: 0.06, duration: 0.72 },
+        ).fromTo(
           row.querySelectorAll("[data-yt-card]"),
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.62,
-            stagger: 0.06,
-            ease: "power3.out",
-          },
+          { opacity: 0, y: 32 },
+          { opacity: 1, y: 0, duration: 0.62, stagger: 0.06 },
           "-=0.45",
         );
         if (cta) {
-          tl.to(cta, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, "-=0.35");
+          tl.fromTo(cta, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.55 }, "-=0.35");
         }
+      }, section);
+    });
 
-        return () => {
-          tl.scrollTrigger?.kill();
-          tl.kill();
-        };
-      });
-
-      mm.add("(max-width: 1023px)", () => {
-        gsap.set(header.querySelectorAll("[data-yt-reveal]"), { opacity: 0, y: 28 });
-        gsap.set(row.querySelectorAll("[data-yt-card]"), { opacity: 0, y: 32 });
-        if (cta) gsap.set(cta, { opacity: 0, y: 20 });
-
-        const tl = gsap.timeline({
-          scrollTrigger: {
-            trigger: section,
-            start: "top 78%",
-            toggleActions: "play none none reverse",
-          },
-        });
-
-        tl.to(header.querySelectorAll("[data-yt-reveal]"), {
-          opacity: 1,
-          y: 0,
-          duration: 0.72,
-          stagger: 0.06,
-          ease: "power3.out",
-        }).to(
-          row.querySelectorAll("[data-yt-card]"),
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.62,
-            stagger: 0.07,
-            ease: "power3.out",
-          },
-          "-=0.45",
-        );
-        if (cta) {
-          tl.to(cta, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, "-=0.35");
-        }
-
-        return () => {
-          tl.scrollTrigger?.kill();
-          tl.kill();
-        };
-      });
-
-      return () => mm.revert();
-    }, section);
-
-    requestAnimationFrame(() => ScrollTrigger.refresh());
-
-    return () => ctx.revert();
+    return () => {
+      disconnect();
+      ctx?.revert();
+    };
   }, []);
 
   return (

@@ -1,7 +1,8 @@
 import { ShoppingCart } from "lucide-react";
-import { useLayoutEffect, useRef, useState } from "react";
-import { gsap, ScrollTrigger } from "@/lib/gsapRegister";
+import { useEffect, useRef, useState } from "react";
+import { gsap } from "@/lib/gsapRegister";
 import { prefersReducedMotion } from "@/lib/motion";
+import { runRevealWhenVisible } from "@/lib/runRevealWhenVisible";
 import { useProducts } from "@/hooks/useProducts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/sonner";
@@ -21,7 +22,7 @@ export default function EcommercePreview() {
   const [pinInput, setPinInput] = useState("");
   const [pinStatus, setPinStatus] = useState<"idle" | "invalid" | "ok" | "no">("idle");
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const section = sectionRef.current;
     const header = headerRef.current;
     const panel = panelRef.current;
@@ -41,94 +42,38 @@ export default function EcommercePreview() {
       return;
     }
 
-    const ctx = gsap.context(() => {
-      const mm = gsap.matchMedia();
-
-      mm.add("(min-width: 1024px)", () => {
-        gsap.set(header.querySelectorAll("[data-ecom-head]"), { opacity: 0, y: 30 });
-        gsap.set(panel, { opacity: 0, y: 24 });
-        gsap.set(cards, { opacity: 0, y: 46, scale: 0.97 });
-
-        const tl = gsap.timeline({
-          scrollTrigger: {
-            trigger: section,
-            start: "top 72%",
-            toggleActions: "play none none reverse",
-          },
-        });
-
-        tl.to(header.querySelectorAll("[data-ecom-head]"), {
-          opacity: 1,
-          y: 0,
-          stagger: 0.06,
-          duration: 0.72,
-          ease: "power3.out",
-        })
-          .to(panel, { opacity: 1, y: 0, duration: 0.65, ease: "power3.out" }, "-=0.45")
-          .to(
+    let ctx: gsap.Context | null = null;
+    const disconnect = runRevealWhenVisible(section, () => {
+      ctx?.revert();
+      const desktop = window.matchMedia("(min-width: 1024px)").matches;
+      const heads = header.querySelectorAll("[data-ecom-head]");
+      ctx = gsap.context(() => {
+        const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+        tl.fromTo(
+          heads,
+          { opacity: 0, y: desktop ? 30 : 28 },
+          { opacity: 1, y: 0, stagger: 0.06, duration: 0.72 },
+        )
+          .fromTo(panel, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.65 }, "-=0.45")
+          .fromTo(
             cards,
+            { opacity: 0, y: desktop ? 46 : 40, scale: desktop ? 0.97 : 1 },
             {
               opacity: 1,
               y: 0,
               scale: 1,
-              duration: 0.65,
+              duration: desktop ? 0.65 : 0.62,
               stagger: 0.06,
-              ease: "power3.out",
             },
             "-=0.45",
           );
+      }, section);
+    });
 
-        return () => {
-          tl.scrollTrigger?.kill();
-          tl.kill();
-        };
-      });
-
-      mm.add("(max-width: 1023px)", () => {
-        gsap.set(header.querySelectorAll("[data-ecom-head]"), { opacity: 0, y: 28 });
-        gsap.set(panel, { opacity: 0, y: 24 });
-        gsap.set(cards, { opacity: 0, y: 40 });
-
-        const tl = gsap.timeline({
-          scrollTrigger: {
-            trigger: section,
-            start: "top 78%",
-            toggleActions: "play none none reverse",
-          },
-        });
-
-        tl.to(header.querySelectorAll("[data-ecom-head]"), {
-          opacity: 1,
-          y: 0,
-          duration: 0.72,
-          stagger: 0.06,
-          ease: "power3.out",
-        })
-          .to(panel, { opacity: 1, y: 0, duration: 0.65, ease: "power3.out" }, "-=0.4")
-          .to(
-            cards,
-            {
-              opacity: 1,
-              y: 0,
-              duration: 0.62,
-              stagger: 0.06,
-              ease: "power3.out",
-            },
-            "-=0.45",
-          );
-
-        return () => {
-          tl.scrollTrigger?.kill();
-          tl.kill();
-        };
-      });
-
-      return () => mm.revert();
-    }, section);
-
-    requestAnimationFrame(() => ScrollTrigger.refresh());
-
-    return () => ctx.revert();
+    return () => {
+      disconnect();
+      ctx?.revert();
+    };
   }, [loading, products]);
 
   const checkPincode = () => {

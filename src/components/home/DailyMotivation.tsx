@@ -1,9 +1,10 @@
 import { Quote } from "lucide-react";
 import { useMotivation } from "@/hooks/useMotivation";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { gsap } from "@/lib/gsapRegister";
 import { prefersReducedMotion } from "@/lib/motion";
+import { runRevealWhenVisible } from "@/lib/runRevealWhenVisible";
 
 function getLocalDateKey(d = new Date()) {
   const y = d.getFullYear();
@@ -40,34 +41,35 @@ export default function DailyMotivation() {
   }, [motivationQuotes, dayKey]);
 
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const root = sectionRef.current;
     if (!root || loading || !quote || prefersReducedMotion()) return;
 
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: root,
-          start: "top 80%",
-          toggleActions: "play none none reverse",
-        },
-      });
+    let ctx: gsap.Context | null = null;
+    const disconnect = runRevealWhenVisible(root, () => {
+      ctx?.revert();
+      ctx = gsap.context(() => {
+        const tl = gsap.timeline();
+        tl.from(root.querySelectorAll("[data-daily-reveal]"), {
+          opacity: 0,
+          y: 40,
+          duration: 0.85,
+          stagger: 0.08,
+          ease: "power3.out",
+        }).fromTo(
+          root.querySelector("[data-daily-card]"),
+          { opacity: 0, scale: 0.96, y: 28 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.95, ease: "power3.out" },
+          "-=0.55",
+        );
+        tl.play(0);
+      }, root);
+    });
 
-      tl.from(root.querySelectorAll("[data-daily-reveal]"), {
-        opacity: 0,
-        y: 40,
-        duration: 0.85,
-        stagger: 0.08,
-        ease: "power3.out",
-      }).fromTo(
-        root.querySelector("[data-daily-card]"),
-        { opacity: 0, scale: 0.96, y: 28 },
-        { opacity: 1, scale: 1, y: 0, duration: 0.95, ease: "power3.out" },
-        "-=0.55",
-      );
-    }, root);
-
-    return () => ctx.revert();
+    return () => {
+      disconnect();
+      ctx?.revert();
+    };
   }, [loading, quote]);
 
   return (

@@ -85,7 +85,11 @@ function AnimatedRoutes() {
   }, [displayLocation]);
 
   return (
-    <div ref={wrapperRef} className="flex-1 w-full will-change-[opacity,transform]">
+    <div
+      ref={wrapperRef}
+      data-route-transition-root
+      className="flex-1 w-full will-change-[opacity,transform]"
+    >
       <Suspense fallback={<div className="min-h-[100vh]" aria-hidden />}>
         <Routes location={displayLocation}>
           <Route path="/" element={<Index />} />

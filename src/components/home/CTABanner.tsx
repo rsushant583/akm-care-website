@@ -1,31 +1,34 @@
 import { Link } from "react-router-dom";
-import { useLayoutEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { gsap } from "@/lib/gsapRegister";
 import { prefersReducedMotion } from "@/lib/motion";
+import { runRevealWhenVisible } from "@/lib/runRevealWhenVisible";
 
 export default function CTABanner() {
   const rootRef = useRef<HTMLElement>(null);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const root = rootRef.current;
     if (!root || prefersReducedMotion()) return;
 
-    const ctx = gsap.context(() => {
-      gsap.from(root.querySelectorAll("[data-cta-reveal]"), {
-        opacity: 0,
-        y: 32,
-        duration: 0.85,
-        stagger: 0.1,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: root,
-          start: "top 85%",
-          toggleActions: "play none none reverse",
-        },
-      });
-    }, root);
+    let ctx: gsap.Context | null = null;
+    const disconnect = runRevealWhenVisible(root, () => {
+      ctx?.revert();
+      ctx = gsap.context(() => {
+        gsap.from(root.querySelectorAll("[data-cta-reveal]"), {
+          opacity: 0,
+          y: 32,
+          duration: 0.85,
+          stagger: 0.1,
+          ease: "power3.out",
+        });
+      }, root);
+    });
 
-    return () => ctx.revert();
+    return () => {
+      disconnect();
+      ctx?.revert();
+    };
   }, []);
 
   return (

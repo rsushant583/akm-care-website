@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
-import { useLayoutEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { ArrowRight, Briefcase } from "lucide-react";
 import { iconMap } from "@/lib/iconMap";
 import { useServices } from "@/hooks/useServices";
 import { Skeleton } from "@/components/ui/skeleton";
-import { gsap, ScrollTrigger } from "@/lib/gsapRegister";
+import { gsap } from "@/lib/gsapRegister";
 import { prefersReducedMotion } from "@/lib/motion";
+import { runRevealWhenVisible } from "@/lib/runRevealWhenVisible";
 
 export default function ServicesOverview() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -13,7 +14,7 @@ export default function ServicesOverview() {
   const gridRef = useRef<HTMLDivElement>(null);
   const { data: services, loading } = useServices();
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const section = sectionRef.current;
     const header = headerRef.current;
     const grid = gridRef.current;
@@ -32,88 +33,36 @@ export default function ServicesOverview() {
       return;
     }
 
-    const ctx = gsap.context(() => {
-      const mm = gsap.matchMedia();
-
-      mm.add("(min-width: 1024px)", () => {
-        gsap.set(header.querySelectorAll("[data-svc-head]"), { opacity: 0, y: 32 });
-        gsap.set(cards, { opacity: 0, y: 48, scale: 0.97 });
-
-        const tl = gsap.timeline({
-          scrollTrigger: {
-            trigger: section,
-            start: "top 72%",
-            toggleActions: "play none none reverse",
-          },
-        });
-
-        tl.to(header.querySelectorAll("[data-svc-head]"), {
-          opacity: 1,
-          y: 0,
-          stagger: 0.06,
-          duration: 0.7,
-          ease: "power3.out",
-        }).to(
+    let ctx: gsap.Context | null = null;
+    const disconnect = runRevealWhenVisible(section, () => {
+      ctx?.revert();
+      const desktop = window.matchMedia("(min-width: 1024px)").matches;
+      const heads = header.querySelectorAll("[data-svc-head]");
+      ctx = gsap.context(() => {
+        const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+        tl.fromTo(
+          heads,
+          { opacity: 0, y: 32 },
+          { opacity: 1, y: 0, stagger: desktop ? 0.06 : 0.07, duration: desktop ? 0.7 : 0.75 },
+        ).fromTo(
           cards,
+          { opacity: 0, y: 48, scale: desktop ? 0.97 : 1 },
           {
             opacity: 1,
             y: 0,
             scale: 1,
             duration: 0.65,
-            stagger: 0.06,
-            ease: "power3.out",
+            stagger: desktop ? 0.06 : 0.07,
           },
           "-=0.45",
         );
+      }, section);
+    });
 
-        return () => {
-          tl.scrollTrigger?.kill();
-          tl.kill();
-        };
-      });
-
-      mm.add("(max-width: 1023px)", () => {
-        gsap.set(header.querySelectorAll("[data-svc-head]"), { opacity: 0, y: 32 });
-        gsap.set(cards, { opacity: 0, y: 48 });
-
-        const tl = gsap.timeline({
-          scrollTrigger: {
-            trigger: section,
-            start: "top 78%",
-            toggleActions: "play none none reverse",
-          },
-        });
-
-        tl.to(header.querySelectorAll("[data-svc-head]"), {
-          opacity: 1,
-          y: 0,
-          duration: 0.75,
-          stagger: 0.07,
-          ease: "power3.out",
-        }).to(
-          cards,
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.65,
-            stagger: 0.07,
-            ease: "power3.out",
-          },
-          "-=0.45",
-        );
-
-        return () => {
-          tl.scrollTrigger?.kill();
-          tl.kill();
-        };
-      });
-
-      return () => mm.revert();
-    }, section);
-
-    requestAnimationFrame(() => ScrollTrigger.refresh());
-
-    return () => ctx.revert();
+    return () => {
+      disconnect();
+      ctx?.revert();
+    };
   }, [loading, services]);
 
   return (

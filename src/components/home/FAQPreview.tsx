@@ -1,10 +1,11 @@
 import { Link } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFAQ } from "@/hooks/useFAQ";
 import { Skeleton } from "@/components/ui/skeleton";
 import { gsap } from "@/lib/gsapRegister";
 import { prefersReducedMotion } from "@/lib/motion";
+import { runRevealWhenVisible } from "@/lib/runRevealWhenVisible";
 
 export default function FAQPreview() {
   const rootRef = useRef<HTMLElement>(null);
@@ -12,27 +13,22 @@ export default function FAQPreview() {
   const { data: faqs, loading } = useFAQ();
   const previewFaqs = faqs.slice(0, 4);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const root = rootRef.current;
     if (!root || loading || previewFaqs.length === 0 || prefersReducedMotion()) return;
 
-    const ctx = gsap.context(() => {
-      gsap
-        .timeline({
-          scrollTrigger: {
-            trigger: root,
-            start: "top 82%",
-            toggleActions: "play none none reverse",
-          },
-        })
-        .from(root.querySelectorAll("[data-faq-reveal]"), {
+    let ctx: gsap.Context | null = null;
+    const disconnect = runRevealWhenVisible(root, () => {
+      ctx?.revert();
+      ctx = gsap.context(() => {
+        const tl = gsap.timeline();
+        tl.from(root.querySelectorAll("[data-faq-reveal]"), {
           opacity: 0,
           y: 36,
           duration: 0.8,
           stagger: 0.07,
           ease: "power3.out",
-        })
-        .from(
+        }).from(
           root.querySelectorAll("[data-faq-item]"),
           {
             opacity: 0,
@@ -43,9 +39,14 @@ export default function FAQPreview() {
           },
           "-=0.5",
         );
-    }, root);
+        tl.play(0);
+      }, root);
+    });
 
-    return () => ctx.revert();
+    return () => {
+      disconnect();
+      ctx?.revert();
+    };
   }, [loading, previewFaqs.length]);
 
   return (

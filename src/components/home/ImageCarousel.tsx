@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback, useLayoutEffect, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { carouselSlides } from "@/data/carousel";
 import { gsap } from "@/lib/gsapRegister";
 import { prefersReducedMotion } from "@/lib/motion";
+import { runRevealWhenVisible } from "@/lib/runRevealWhenVisible";
 
 function slideAlt(slide: (typeof carouselSlides)[number]): string {
   return `${slide.title} — ${slide.subtitle}`;
@@ -22,47 +23,44 @@ export default function ImageCarousel() {
     return () => clearInterval(timer);
   }, [isPaused, next]);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const root = rootRef.current;
     if (!root || prefersReducedMotion()) return;
 
-    const ctx = gsap.context(() => {
-      const parts = root.querySelectorAll("[data-carousel-reveal]");
-      gsap.from(parts, {
-        opacity: 0,
-        y: 44,
-        duration: 0.9,
-        stagger: 0.1,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: root,
-          start: "top 80%",
-          toggleActions: "play none none reverse",
-        },
-      });
+    let ctx: gsap.Context | null = null;
+    const disconnect = runRevealWhenVisible(root, () => {
+      ctx?.revert();
+      ctx = gsap.context(() => {
+        const parts = root.querySelectorAll("[data-carousel-reveal]");
+        gsap.from(parts, {
+          opacity: 0,
+          y: 44,
+          duration: 0.9,
+          stagger: 0.1,
+          ease: "power3.out",
+        });
 
-      const frame = root.querySelector("[data-carousel-frame]");
-      if (frame) {
-        gsap.fromTo(
-          frame,
-          { opacity: 0, scale: 0.97, y: 24 },
-          {
-            opacity: 1,
-            scale: 1,
-            y: 0,
-            duration: 1,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: root,
-              start: "top 78%",
-              toggleActions: "play none none reverse",
+        const frame = root.querySelector("[data-carousel-frame]");
+        if (frame) {
+          gsap.fromTo(
+            frame,
+            { opacity: 0, scale: 0.97, y: 24 },
+            {
+              opacity: 1,
+              scale: 1,
+              y: 0,
+              duration: 1,
+              ease: "power3.out",
             },
-          },
-        );
-      }
-    }, root);
+          );
+        }
+      }, root);
+    });
 
-    return () => ctx.revert();
+    return () => {
+      disconnect();
+      ctx?.revert();
+    };
   }, []);
 
   return (
