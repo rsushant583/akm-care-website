@@ -69,7 +69,7 @@ export default function ImageCarousel() {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(90vw,720px)] h-[min(90vw,720px)] rounded-full bg-primary/[0.04] blur-3xl pointer-events-none" />
 
       <div className="container-premium relative z-10">
-        <div className="text-center mb-10 max-w-2xl mx-auto">
+        <div className="text-center mb-6 sm:mb-8 max-w-2xl mx-auto">
           <p data-carousel-reveal className="text-xs font-semibold tracking-[0.25em] uppercase text-primary mb-3">
             Dharma · Work · Purpose
           </p>
@@ -86,7 +86,7 @@ export default function ImageCarousel() {
 
         <div
           data-carousel-frame
-          className="relative w-full min-h-[280px] h-[min(72vh,640px)] sm:min-h-[360px] sm:h-[min(75vh,680px)] lg:min-h-[440px] lg:h-[min(78vh,720px)] rounded-[1.75rem] overflow-hidden border border-primary/10 shadow-[0_24px_80px_-24px_rgba(249,115,22,0.25),0_0_0_1px_rgba(0,0,0,0.03)] bg-gradient-to-br from-stone-100/90 via-card to-amber-50/40 backdrop-blur-sm"
+          className="relative w-full min-h-[220px] h-[min(48vh,480px)] sm:min-h-[280px] sm:h-[min(52vh,520px)] lg:min-h-[320px] lg:h-[min(56vh,560px)] rounded-[1.35rem] overflow-hidden border border-primary/10 shadow-[0_24px_80px_-24px_rgba(232,98,26,0.18),0_0_0_1px_rgba(0,0,0,0.03)] bg-gradient-to-br from-stone-100/90 via-card to-amber-50/40 backdrop-blur-sm"
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
         >

@@ -82,21 +82,21 @@ export default function StatsBar() {
   }, []);
 
   return (
-    <section ref={rootRef} className="section-padding">
-      <div className="container-premium">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-4">
+    <section ref={rootRef} className="relative z-10 border-t border-[#E8621A]/15 bg-white/90 backdrop-blur-sm">
+      <div className="container-premium py-6 sm:py-7">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-0 lg:divide-x lg:divide-[#E8621A]/25">
           {stats.map((stat) => (
-            <div key={stat.label} data-stat-item className="text-center">
+            <div key={stat.label} data-stat-item className="text-center px-2 lg:px-4">
               <div
                 data-stat-value
                 data-target={stat.value}
                 data-suffix={stat.suffix}
                 data-display={stat.display ?? ""}
-                className="font-heading text-3xl sm:text-4xl lg:text-5xl text-primary mb-1 tabular-nums"
+                className="font-heading text-2xl sm:text-3xl lg:text-4xl text-[#E8621A] mb-1 tabular-nums"
               >
                 {stat.display ?? `0${stat.suffix}`}
               </div>
-              <div className="text-sm sm:text-base text-muted-foreground">{stat.label}</div>
+              <div className="text-xs sm:text-sm text-[#6B6B6B] font-medium">{stat.label}</div>
             </div>
           ))}
         </div>

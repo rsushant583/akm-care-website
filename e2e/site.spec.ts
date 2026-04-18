@@ -28,13 +28,14 @@ async function expectRouteStageVisible(page: Page) {
 
 async function expectHeadingVisible(page: Page, name: RegExp) {
   const h = page.getByRole("heading", { name });
-  await expect(h).toBeVisible({ timeout: 20_000 });
-  await h.evaluate((el) => el.scrollIntoView({ block: "center", inline: "nearest" }));
+  await expect(h).toHaveCount(1, { timeout: 20_000 });
+  const target = h.first();
+  await target.scrollIntoViewIfNeeded();
+  await expect(target).toBeVisible({ timeout: 20_000 });
   await expect
     .poll(
       async () => {
-        const loc = page.getByRole("heading", { name });
-        const o = await loc.evaluate((el) => parseFloat(getComputedStyle(el).opacity));
+        const o = await target.evaluate((el) => parseFloat(getComputedStyle(el).opacity));
         return o;
       },
       { timeout: 15_000 },
@@ -82,6 +83,8 @@ test("mobile: bottom navigation and home sections", async ({ page }) => {
 
   await nav.getByRole("link", { name: "Home" }).click();
   await expect(page).toHaveURL(/\/$/);
+  // Ensure the home bundle is fully active before asserting on below-the-fold sections (mobile + route transitions).
+  await page.goto("/", { waitUntil: "domcontentloaded" });
   await page.waitForLoadState("domcontentloaded");
   await expect(page.locator("main")).toBeVisible();
   await expectRouteStageVisible(page);

@@ -1,4 +1,3 @@
-import { Quote } from "lucide-react";
 import { useMotivation } from "@/hooks/useMotivation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -40,7 +39,6 @@ export default function DailyMotivation() {
     return pool[days % pool.length];
   }, [motivationQuotes, dayKey]);
 
-
   useEffect(() => {
     const root = sectionRef.current;
     if (!root || loading || !quote || prefersReducedMotion()) return;
@@ -52,15 +50,15 @@ export default function DailyMotivation() {
         const tl = gsap.timeline();
         tl.from(root.querySelectorAll("[data-daily-reveal]"), {
           opacity: 0,
-          y: 40,
-          duration: 0.85,
-          stagger: 0.08,
+          y: 32,
+          duration: 0.75,
+          stagger: 0.07,
           ease: "power3.out",
         }).fromTo(
           root.querySelector("[data-daily-card]"),
-          { opacity: 0, scale: 0.96, y: 28 },
-          { opacity: 1, scale: 1, y: 0, duration: 0.95, ease: "power3.out" },
-          "-=0.55",
+          { opacity: 0, scale: 0.98, y: 20 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.8, ease: "power3.out" },
+          "-=0.45",
         );
         tl.play(0);
       }, root);
@@ -73,32 +71,36 @@ export default function DailyMotivation() {
   }, [loading, quote]);
 
   return (
-    <section ref={sectionRef} className="section-padding">
-      <div className="container-premium">
-        <h2 data-daily-reveal className="font-heading text-3xl sm:text-4xl text-center mb-10">
-          Today's Inspiration
+    <section
+      ref={sectionRef}
+      className="relative py-12 sm:py-14 lg:py-16 overflow-hidden bg-gradient-to-br from-[#F5A623]/18 via-[#FAF8F5] to-[#E8621A]/12"
+    >
+      <div className="pointer-events-none absolute inset-0 opacity-[0.07] text-[#E8621A] font-heading text-[clamp(6rem,22vw,14rem)] leading-none select-none pl-4 sm:pl-10 -translate-y-4">
+        “
+      </div>
+      <div className="container-premium relative z-10">
+        <h2 data-daily-reveal className="font-heading text-3xl sm:text-4xl text-center mb-8 text-[#1A1A1A]">
+          Today&apos;s Inspiration
         </h2>
 
         {loading || !quote ? (
           <Skeleton className="max-w-3xl mx-auto h-56 rounded-2xl" />
         ) : (
-        <div
-          data-daily-card
-          className={`max-w-3xl mx-auto rounded-2xl p-8 sm:p-12 card-shadow text-center ${
-            quote.source === "Phil Jackson"
-              ? "bg-gradient-to-br from-primary/10 via-warm-beige to-amber-100/80 ring-2 ring-primary/25"
-              : "bg-warm-beige"
-          }`}
-        >
-          <Quote size={40} className="text-primary/30 mx-auto mb-4" />
-          <blockquote className="font-heading text-xl sm:text-2xl lg:text-3xl italic leading-relaxed mb-6 text-foreground">
-            "{quote.quote}"
-          </blockquote>
-          <p className="text-muted-foreground font-medium">— {quote.source}</p>
-        </div>
+          <div
+            data-daily-card
+            className={`max-w-3xl mx-auto rounded-2xl p-8 sm:p-12 text-center border border-white/50 shadow-[0_20px_60px_rgba(26,26,26,0.08)] ${
+              quote.source === "Phil Jackson"
+                ? "bg-white/85 backdrop-blur-md ring-1 ring-[#E8621A]/20"
+                : "bg-white/80 backdrop-blur-md"
+            }`}
+          >
+            <blockquote className="font-heading text-xl sm:text-2xl lg:text-3xl italic leading-relaxed mb-6 text-[#1A1A1A]">
+              &ldquo;{quote.quote}&rdquo;
+            </blockquote>
+            <p className="text-sm sm:text-base text-[#6B6B6B] font-medium font-body">— {quote.source}</p>
+          </div>
         )}
       </div>
-
     </section>
   );
 }

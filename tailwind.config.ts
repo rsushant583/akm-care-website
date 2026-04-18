@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ['"DM Serif Display"', 'Georgia', 'serif'],
+        heading: ['"Playfair Display"', 'Georgia', 'serif'],
         body: ['"DM Sans"', 'system-ui', 'sans-serif'],
       },
       colors: {

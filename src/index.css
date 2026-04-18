@@ -13,7 +13,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 6%;
 
-    --primary: 25 95% 53%;
+    --primary: 20 84% 51%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 35 30% 96%;
@@ -75,7 +75,7 @@
   }
 
   .section-padding {
-    @apply px-4 sm:px-6 lg:px-8 py-20 sm:py-24 lg:py-32;
+    @apply px-4 sm:px-6 lg:px-8 pt-12 pb-14 sm:pt-14 sm:pb-16 lg:pt-16 lg:pb-20;
   }
 
   .card-shadow {

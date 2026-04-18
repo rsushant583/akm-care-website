@@ -174,27 +174,33 @@ export default function EcommercePreview() {
   };
 
   return (
-    <section
-      ref={sectionRef}
-      className="section-padding section-shell bg-gradient-to-b from-background to-warm-beige/40 min-h-0"
-    >
-      <div className="container-premium">
-        <div ref={headerRef} className="text-center mb-16">
+    <section ref={sectionRef} className="section-padding section-shell relative min-h-0 overflow-hidden">
+      <div
+        className="absolute inset-0 bg-cover bg-center scale-105"
+        style={{
+          backgroundImage:
+            "url(https://images.unsplash.com/photo-1595855759920-86582396756a?auto=format&fit=crop&w=2000&q=80)",
+        }}
+        aria-hidden
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#1A1A1A]/88 via-[#1A1A1A]/82 to-[#1A1A1A]/92" aria-hidden />
+      <div className="container-premium relative z-10">
+        <div ref={headerRef} className="text-center mb-10 max-w-2xl mx-auto">
           <div
             data-ecom-head
-            className="inline-flex items-center rounded-full bg-primary/10 text-primary px-4 py-1.5 text-sm font-semibold mb-4"
+            className="inline-flex items-center rounded-full bg-white/10 text-white px-4 py-1.5 text-xs font-semibold tracking-wide mb-4 border border-white/15"
           >
             Village Store
           </div>
-          <h2 data-ecom-head className="font-heading text-3xl sm:text-4xl lg:text-5xl mb-4">
-            From the Heart of India's Villages
+          <h2 data-ecom-head className="font-heading text-3xl sm:text-4xl lg:text-[2.5rem] mb-3 text-white">
+            From the Heart of India&apos;s Villages
           </h2>
-          <p data-ecom-head className="text-muted-foreground text-lg">
+          <p data-ecom-head className="text-white/80 text-base sm:text-lg">
             Authentic rural products, coming to your doorstep
           </p>
         </div>
 
-        <div ref={panelRef} className="max-w-xl mx-auto mb-14 premium-surface p-5 sm:p-6">
+        <div ref={panelRef} className="max-w-xl mx-auto mb-10 rounded-2xl bg-white/95 backdrop-blur-md border border-white/40 p-5 sm:p-6 shadow-xl">
           <h3 className="font-heading text-base sm:text-lg mb-1 text-center">Check Delivery Availability by Pincode</h3>
           <p className="text-xs sm:text-sm text-muted-foreground text-center mb-4">Enter your 6-digit Indian pincode</p>
           <div className="flex flex-col sm:flex-row gap-3">
@@ -229,13 +235,13 @@ export default function EcommercePreview() {
           )}
         </div>
 
-        <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+        <div ref={gridRef} className="flex gap-4 overflow-x-auto lg:grid lg:grid-cols-5 lg:overflow-visible pb-2 snap-x snap-mandatory scrollbar-hide -mx-1 px-1">
           {loading ? Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-72 rounded-2xl" />
           )) : products.map((product) => (
             <div
               key={product.id}
-              className="ecom-card group bg-card border border-border/60 rounded-2xl overflow-hidden card-shadow transition-all duration-500 ease-in-out hover:-translate-y-2 hover:border-primary/35 hover:shadow-xl hover:shadow-primary/10"
+              className="ecom-card group w-[min(260px,86vw)] shrink-0 snap-start lg:w-auto bg-white border border-white/30 rounded-2xl overflow-hidden shadow-xl transition-all duration-500 ease-in-out hover:-translate-y-2 hover:border-[#E8621A]/35"
             >
               <div className="aspect-square bg-gradient-to-br from-saffron-light to-accent flex items-center justify-center relative overflow-hidden">
                 {product.image_url ? (

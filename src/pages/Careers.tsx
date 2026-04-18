@@ -57,8 +57,9 @@ export default function Careers() {
           <div className="bg-accent rounded-2xl p-8 text-center mb-14">
             <h2 className="font-heading text-2xl mb-3">Current Openings</h2>
             <p className="text-muted-foreground">
-              No openings currently, but please share your recently updated CV for upcoming openings in future, based on our clients requirements, either directly through this website or on our email :- contact@akmcare.in 
-              or akmcare108@gmail.com
+            No openings currently, but please share your recently updated CV for upcoming openings in future, either directly through this  website or on our email :- 
+contact@akmcare.in & akmcare108@gmail.com
+Based on our clients requirements and your eligibility criteria & candidature, your CV shall be forwarded to our clients.
             </p>
           </div>
 

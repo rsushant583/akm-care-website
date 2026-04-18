@@ -1,14 +1,21 @@
 import { trainingCategories } from "@/data/fallback";
-import { MessageSquare, Cpu, Brain, TrendingUp, Crown, Target, Headphones, Shield } from "lucide-react";
+import { MessageSquare, Cpu, Brain, TrendingUp, Crown, Target, Headphones, Shield, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { SEO } from "@/components/SEO";
+import { motion, useReducedMotion } from "framer-motion";
+import { CardHover } from "@/components/ui/CardHover";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const iconMap: Record<string, any> = { MessageSquare, Cpu, Brain, TrendingUp, Crown, Target, Headphones, Shield };
 
+const trainingImg =
+  "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1400&q=80";
+
+const reasons = trainingCategories.slice(0, 5).map((c) => c.title);
+
 export default function Training() {
-  const [expanded, setExpanded] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: "", company: "", phone: "", type: "", message: "" });
+  const reduce = useReducedMotion();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,71 +31,156 @@ export default function Training() {
         keywords="industrial training programs, soft skills training India, technical training Gujarat, behavioral training, leadership development, safety compliance training"
         canonical="/training"
       />
-      <section className="section-padding bg-warm-beige">
-        <div className="container-premium text-center max-w-3xl">
-          <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl mb-6">Training & Education</h1>
-          <p className="text-lg text-muted-foreground">
-            All Kind of Training — Shaping Professionals, Transforming Organizations
-          </p>
+      <section className="section-padding bg-[#F5F0EB]">
+        <div className="container-premium grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 20 }}
+            whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
+            <h1 className="font-heading text-4xl sm:text-5xl lg:text-[2.75rem] text-[#1A1A1A] leading-tight mb-4">
+              Training & Education
+            </h1>
+            <p className="text-lg text-[#6B6B6B] mb-6">
+              All Kind of Training — Shaping Professionals, Transforming Organizations
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <span className="inline-flex items-center gap-2 rounded-full bg-white border border-[#E8621A]/20 px-4 py-2 text-sm font-semibold text-[#1A1A1A] shadow-sm">
+                10,000+ Professionals Trained
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full bg-white border border-[#E8621A]/20 px-4 py-2 text-sm font-semibold text-[#1A1A1A] shadow-sm">
+                500+ Industries Served
+              </span>
+            </div>
+          </motion.div>
+          <motion.div
+            initial={reduce ? false : { opacity: 0, x: 24 }}
+            whileInView={reduce ? undefined : { opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            className="relative w-full max-w-xl lg:max-w-none mx-auto"
+          >
+            <img
+              src={trainingImg}
+              alt="Professional training classroom session"
+              width={900}
+              height={600}
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
+              className="w-full h-[220px] sm:h-[280px] lg:h-[min(380px,42vh)] object-cover rounded-2xl border border-black/[0.06] shadow-xl"
+            />
+          </motion.div>
         </div>
       </section>
 
-      <section className="section-padding">
+      <section className="section-padding bg-white">
         <div className="container-premium">
-          <img
-            src="https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1600&q=80"
-            alt="Professional training classroom session"
-            loading="lazy"
-            decoding="async"
-            className="w-full h-52 sm:h-64 object-cover rounded-2xl border border-border/60 card-shadow mb-8"
-          />
-          <div className="grid sm:grid-cols-2 gap-5">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-5">
             {trainingCategories.map((cat) => {
               const Icon = iconMap[cat.icon] || MessageSquare;
-              const isOpen = expanded === cat.id;
               return (
-                <div key={cat.id} className="bg-card rounded-2xl card-shadow overflow-hidden">
-                  <button
-                    onClick={() => setExpanded(isOpen ? null : cat.id)}
-                    className="w-full p-6 flex items-start gap-4 text-left"
-                  >
-                    <div className="w-12 h-12 rounded-xl bg-accent flex items-center justify-center shrink-0">
-                      <Icon size={22} className="text-primary" />
+                <CardHover key={cat.id} className="rounded-2xl h-full">
+                  <div className="h-full rounded-2xl border border-black/[0.06] bg-[#FAF8F5] p-5 sm:p-6 shadow-sm flex gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-[#E8621A]/10 flex items-center justify-center shrink-0">
+                      <Icon size={22} className="text-[#E8621A]" />
                     </div>
-                    <div>
-                      <h3 className="font-heading text-lg">{cat.title}</h3>
-                      {!isOpen && <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{cat.description}</p>}
-                    </div>
-                  </button>
-                  <div className={`overflow-hidden transition-all duration-200 ${isOpen ? "max-h-60" : "max-h-0"}`}>
-                    <div className="px-6 pb-6">
-                      <p className="text-muted-foreground leading-relaxed mb-4">{cat.description}</p>
-                      <a href="#inquiry" className="text-primary font-medium hover:underline">Enquire Now →</a>
+                    <div className="min-w-0">
+                      <h3 className="font-heading text-lg text-[#1A1A1A] mb-1">{cat.title}</h3>
+                      <p className="text-sm text-[#6B6B6B] leading-relaxed line-clamp-3 mb-3">{cat.description}</p>
+                      <a href="#inquiry" className="text-sm font-semibold text-[#E8621A] hover:underline">
+                        Enquire Now →
+                      </a>
                     </div>
                   </div>
-                </div>
+                </CardHover>
               );
             })}
           </div>
         </div>
       </section>
 
-      <section id="inquiry" className="section-padding bg-warm-beige">
-        <div className="container-premium max-w-2xl">
-          <h2 className="font-heading text-3xl text-center mb-8">Training Inquiry</h2>
-          <form onSubmit={handleSubmit} className="bg-card rounded-2xl p-6 sm:p-8 card-shadow space-y-5">
-            <input type="text" placeholder="Your Name" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-border bg-background text-base focus:outline-none focus:ring-2 focus:ring-primary/20" />
-            <input type="text" placeholder="Company Name" value={formData.company} onChange={(e) => setFormData({ ...formData, company: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-border bg-background text-base focus:outline-none focus:ring-2 focus:ring-primary/20" />
-            <input type="tel" placeholder="Phone Number" required value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-border bg-background text-base focus:outline-none focus:ring-2 focus:ring-primary/20" />
-            <select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-border bg-background text-base focus:outline-none focus:ring-2 focus:ring-primary/20">
-              <option value="">Select Training Type</option>
-              {trainingCategories.map((c) => <option key={c.id} value={c.title}>{c.title}</option>)}
-            </select>
-            <textarea placeholder="Additional Message" rows={4} value={formData.message} onChange={(e) => setFormData({ ...formData, message: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-border bg-background text-base focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
-            <button type="submit" className="w-full py-3.5 rounded-full bg-primary text-primary-foreground font-semibold text-base hover:brightness-110 transition-all">
-              Submit Inquiry
-            </button>
-          </form>
+      <section id="inquiry" className="section-padding bg-[#F5F0EB]">
+        <div className="container-premium">
+          <h2 className="font-heading text-3xl sm:text-4xl text-center lg:text-left mb-6 text-[#1A1A1A]">Training Inquiry</h2>
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+            <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 sm:p-8 border border-black/[0.06] shadow-lg space-y-4">
+              <input
+                type="text"
+                placeholder="Your Name"
+                required
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl border border-border bg-background text-base focus:outline-none focus:ring-2 focus:ring-[#E8621A]/35"
+              />
+              <input
+                type="text"
+                placeholder="Company Name"
+                value={formData.company}
+                onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl border border-border bg-background text-base focus:outline-none focus:ring-2 focus:ring-[#E8621A]/35"
+              />
+              <input
+                type="tel"
+                placeholder="Phone Number"
+                required
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl border border-border bg-background text-base focus:outline-none focus:ring-2 focus:ring-[#E8621A]/35"
+              />
+              <select
+                value={formData.type}
+                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl border border-border bg-background text-base focus:outline-none focus:ring-2 focus:ring-[#E8621A]/35"
+              >
+                <option value="">Select Training Type</option>
+                {trainingCategories.map((c) => (
+                  <option key={c.id} value={c.title}>
+                    {c.title}
+                  </option>
+                ))}
+              </select>
+              <textarea
+                placeholder="Additional Message"
+                rows={4}
+                value={formData.message}
+                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl border border-border bg-background text-base focus:outline-none focus:ring-2 focus:ring-[#E8621A]/35 resize-none"
+              />
+              <button
+                type="submit"
+                className="w-full py-3.5 rounded-full bg-[#E8621A] text-white font-semibold text-base hover:brightness-105 transition-all"
+              >
+                Submit Inquiry
+              </button>
+            </form>
+
+            <div className="lg:sticky lg:top-28 space-y-4">
+              <div className="rounded-2xl overflow-hidden border border-black/[0.06] shadow-md">
+                <img
+                  src={trainingImg}
+                  alt=""
+                  width={800}
+                  height={480}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-40 object-cover"
+                  aria-hidden
+                />
+              </div>
+              <div className="bg-white rounded-2xl p-6 border border-black/[0.06] shadow-sm">
+                <ul className="space-y-3">
+                  {reasons.map((title) => (
+                    <li key={title} className="flex items-start gap-3 text-sm text-[#6B6B6B]">
+                      <CheckCircle2 className="text-[#E8621A] shrink-0 mt-0.5" size={18} />
+                      <span className="font-medium text-[#1A1A1A]">{title}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </>

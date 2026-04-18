@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Layout from "@/components/layout/Layout";
 import { HelmetProvider } from "react-helmet-async";
 import { lazy, Suspense, useLayoutEffect, useRef, useState } from "react";
-import { gsap } from "@/lib/gsapRegister";
+import { gsap, ScrollTrigger } from "@/lib/gsapRegister";
 import { prefersReducedMotion } from "@/lib/motion";
 
 const Index = lazy(() => import("./pages/Index"));
@@ -31,10 +31,16 @@ function AnimatedRoutes() {
   const [displayLocation, setDisplayLocation] = useState(location);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const bootRef = useRef(true);
+  const displayLocationRef = useRef(location);
+
+  useLayoutEffect(() => {
+    displayLocationRef.current = displayLocation;
+  }, [displayLocation]);
 
   useLayoutEffect(() => {
     if (bootRef.current) return;
-    if (location.pathname === displayLocation.pathname && location.search === displayLocation.search) return;
+    const shown = displayLocationRef.current;
+    if (location.pathname === shown.pathname && location.search === shown.search) return;
 
     const wrap = wrapperRef.current;
     if (!wrap) {
@@ -59,7 +65,7 @@ function AnimatedRoutes() {
         setDisplayLocation(location);
       },
     });
-  }, [location, displayLocation]);
+  }, [location]);
 
   useLayoutEffect(() => {
     const wrap = wrapperRef.current;
@@ -80,7 +86,20 @@ function AnimatedRoutes() {
     gsap.fromTo(
       wrap,
       { opacity: 0, y: 20, scale: 0.985 },
-      { opacity: 1, y: 0, scale: 1, duration: 0.52, ease: "power3.out" },
+      {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        duration: 0.52,
+        ease: "power3.out",
+        onComplete: () => {
+          try {
+            ScrollTrigger.refresh();
+          } catch {
+            /* ignore */
+          }
+        },
+      },
     );
   }, [displayLocation]);
 

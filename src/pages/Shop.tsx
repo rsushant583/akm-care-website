@@ -1,5 +1,6 @@
 import { ShoppingCart, Bell } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { useProducts } from "@/hooks/useProducts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/sonner";
@@ -7,6 +8,28 @@ import { submitProductInterest } from "@/lib/submissions";
 import { SEO } from "@/components/SEO";
 import { createRazorpayOrder, loadRazorpayScript, verifyRazorpayPayment } from "@/lib/paymentService";
 import { isValidIndianPincode, mockDeliveryAvailable } from "@/lib/pincodeDelivery";
+import type { ProductItem } from "@/lib/types";
+
+const CATEGORY_FILTERS = ["All", "Food", "Organic", "Local"] as const;
+
+function matchesProductFilter(cat: (typeof CATEGORY_FILTERS)[number], p: ProductItem): boolean {
+  if (cat === "All") return true;
+  const n = p.name.toLowerCase();
+  if (cat === "Organic") return n.includes("organic");
+  if (cat === "Food")
+    return (
+      n.includes("makhana") ||
+      n.includes("sattu") ||
+      n.includes("chana") ||
+      n.includes("ghee") ||
+      n.includes("honey")
+    );
+  if (cat === "Local") return true;
+  return true;
+}
+
+const shopHeroImg =
+  "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=80";
 
 export default function Shop() {
   const [showNotify, setShowNotify] = useState(false);
@@ -21,7 +44,14 @@ export default function Shop() {
   const [paymentError, setPaymentError] = useState("");
   const [pinInput, setPinInput] = useState("");
   const [pinStatus, setPinStatus] = useState<"idle" | "invalid" | "ok" | "no">("idle");
+  const [productFilter, setProductFilter] = useState<(typeof CATEGORY_FILTERS)[number]>("All");
   const { data: products, loading } = useProducts();
+  const reduce = useReducedMotion();
+
+  const filteredProducts = useMemo(
+    () => products.filter((p) => matchesProductFilter(productFilter, p)),
+    [products, productFilter],
+  );
 
   const checkPincode = () => {
     const p = pinInput.trim();
@@ -172,18 +202,58 @@ export default function Shop() {
         keywords="buy makhana online, sattu powder online, village products India, rural products buy, authentic makhana, Bihar products online, healthy snacks India"
         canonical="/shop"
       />
-      <section className="section-padding bg-warm-beige">
-        <div className="container-premium text-center max-w-3xl">
-          <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl mb-6">Authentic Village Products</h1>
-          <p className="text-lg text-muted-foreground">
-            We're preparing something special. Products will be available soon.
-          </p>
+      <section className="section-padding bg-[#F5F0EB]">
+        <div className="container-premium grid lg:grid-cols-2 gap-8 items-center">
+          <div>
+            <h1 className="font-heading text-4xl sm:text-5xl lg:text-[2.75rem] text-[#1A1A1A] leading-tight mb-4">
+              Authentic Village Products
+            </h1>
+            <p className="text-lg text-[#6B6B6B]">
+              We&apos;re preparing something special. Products will be available soon.
+            </p>
+          </div>
+          <motion.div
+            initial={reduce ? false : { opacity: 0, x: 24 }}
+            whileInView={reduce ? undefined : { opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="relative"
+          >
+            <img
+              src={shopHeroImg}
+              alt=""
+              width={900}
+              height={560}
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
+              className="w-full h-48 sm:h-56 lg:h-64 object-cover rounded-2xl border border-black/[0.06] shadow-lg"
+              aria-hidden
+            />
+          </motion.div>
         </div>
       </section>
 
-      <section className="section-padding">
+      <section className="section-padding bg-white">
         <div className="container-premium">
-          <div className="max-w-xl mx-auto mb-10 bg-card rounded-2xl border border-border p-6 card-shadow">
+          <div className="flex flex-wrap gap-2 justify-center sm:justify-start mb-6">
+            {CATEGORY_FILTERS.map((f) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setProductFilter(f)}
+                className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                  productFilter === f
+                    ? "bg-[#E8621A] text-white shadow-md"
+                    : "bg-[#FAF8F5] border border-black/[0.08] text-[#6B6B6B] hover:border-[#E8621A]/30"
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+
+          <div className="max-w-xl mx-auto lg:mx-0 mb-8 bg-white rounded-2xl border border-black/[0.08] p-5 sm:p-6 shadow-sm">
             <h2 className="font-heading text-lg sm:text-xl mb-1 text-center">Check Delivery Availability by Pincode</h2>
             <p className="text-sm text-muted-foreground text-center mb-4">Enter your 6-digit Indian pincode</p>
             <div className="flex flex-col sm:flex-row gap-3">
@@ -197,7 +267,7 @@ export default function Shop() {
                   setPinInput(e.target.value.replace(/\D/g, "").slice(0, 6));
                   setPinStatus("idle");
                 }}
-                className="flex-1 px-4 py-3 rounded-xl border border-border bg-background text-base"
+                className="flex-1 px-4 py-3 rounded-xl border border-border bg-background text-base focus:outline-none focus:ring-2 focus:ring-[#E8621A]/35"
               />
               <button
                 type="button"
@@ -219,15 +289,15 @@ export default function Shop() {
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
-              {Array.from({ length: 5 }).map((_, i) => (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+              {Array.from({ length: 4 }).map((_, i) => (
                 <Skeleton key={i} className="h-72 rounded-2xl" />
               ))}
             </div>
           ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
-            {products.map((product) => (
-              <div className="bg-card rounded-2xl overflow-hidden card-shadow premium-card">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+            {filteredProducts.map((product) => (
+              <div key={product.id} className="bg-card rounded-2xl overflow-hidden card-shadow premium-card">
                 <div className="aspect-square bg-gradient-to-br from-saffron-light to-accent flex items-center justify-center relative">
                   {product.image_url ? (
                     <img
@@ -252,7 +322,7 @@ export default function Shop() {
                   <p className="text-xs text-muted-foreground mb-1">{product.quantity}</p>
                   <p className="text-xs text-muted-foreground mb-3">{product.description}</p>
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold text-xl">₹{product.price}</span>
+                    <span className="font-semibold text-xl text-[#E8621A]">₹{product.price}</span>
                     <button
                       type="button"
                       onClick={() => openCart(product)}
