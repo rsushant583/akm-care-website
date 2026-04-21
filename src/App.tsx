@@ -109,7 +109,18 @@ function AnimatedRoutes() {
       data-route-transition-root
       className="flex-1 w-full will-change-[opacity,transform]"
     >
-      <Suspense fallback={<div className="min-h-[100vh]" aria-hidden />}>
+      <Suspense
+        fallback={
+          <div
+            className="min-h-[100vh] flex flex-col items-center justify-center gap-3 bg-[#FAF8F5] text-[#6B6B6B]"
+            role="status"
+            aria-live="polite"
+          >
+            <span className="h-9 w-9 rounded-full border-2 border-[#E8621A]/30 border-t-[#E8621A] animate-spin" />
+            <span className="text-sm font-medium">Loading…</span>
+          </div>
+        }
+      >
         <Routes location={displayLocation}>
           <Route path="/" element={<Index />} />
           <Route path="/about" element={<About />} />
@@ -137,7 +148,12 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <BrowserRouter
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true,
+          }}
+        >
           <Layout>
             <AnimatedRoutes />
           </Layout>

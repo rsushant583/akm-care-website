@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { motivationQuotes as fallbackQuotes } from "@/data/fallback";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { MotivationQuote } from "@/lib/types";
@@ -12,6 +12,7 @@ const emergencyFallback: MotivationQuote = {
 };
 
 export function useMotivation() {
+  const realtimeTopic = useId().replace(/:/g, "");
   const [data, setData] = useState<MotivationQuote[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +61,7 @@ export function useMotivation() {
     if (!client) return;
 
     const channel = client
-      .channel("motivation")
+      .channel(`motivation-quotes-${realtimeTopic}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "motivation_quotes" },
@@ -77,7 +78,7 @@ export function useMotivation() {
     return () => {
       client.removeChannel(channel);
     };
-  }, []);
+  }, [realtimeTopic]);
 
   return { data, loading, error };
 }

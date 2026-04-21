@@ -38,10 +38,11 @@ export default function Hero() {
     if (!root) return;
 
     if (prefersReducedMotion()) {
-      gsap.set(root.querySelectorAll("[data-hero-line], [data-hero-fade]"), {
+      gsap.set(root.querySelectorAll("[data-hero-line], [data-hero-fade], [data-hero-carousel]"), {
         clearProps: "all",
         opacity: 1,
         y: 0,
+        x: 0,
       });
       return;
     }
@@ -68,7 +69,7 @@ export default function Hero() {
   return (
     <section
       ref={rootRef}
-      className="relative min-h-[100dvh] lg:h-[100dvh] lg:max-h-[100dvh] flex flex-col justify-center overflow-hidden grain-overlay"
+      className="relative min-h-screen lg:min-h-screen lg:h-screen lg:max-h-screen flex flex-col justify-center overflow-hidden grain-overlay"
     >
       <motion.div
         ref={parallaxRef}
@@ -96,8 +97,8 @@ export default function Hero() {
       ) : null}
 
       <div className="container-premium relative z-10 w-full py-6 sm:py-8 lg:py-6 flex-1 flex flex-col justify-center min-h-0">
-        <div className="grid lg:grid-cols-2 gap-8 lg:gap-10 items-center min-h-0">
-          <div className="max-w-xl min-w-0">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-10 items-stretch min-h-0">
+          <div className="max-w-xl min-w-0 flex flex-col justify-center">
             <div data-hero-fade className="opacity-0">
               <div className="inline-flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 rounded-full bg-white/80 backdrop-blur-md border border-[#E8621A]/12 shadow-sm mb-5">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#E8621A]" />
@@ -156,9 +157,9 @@ export default function Hero() {
 
           <div
             data-hero-carousel
-            className="relative min-h-[220px] sm:min-h-[300px] lg:min-h-0 lg:h-[min(58dvh,520px)] w-full opacity-0"
+            className="relative w-full min-h-[260px] h-[min(42vh,400px)] sm:min-h-[300px] sm:h-[min(46vh,440px)] lg:min-h-[380px] lg:h-full lg:max-h-[min(58vh,520px)] opacity-0"
           >
-            <div className="relative h-full min-h-[inherit] rounded-2xl overflow-hidden border border-black/8 shadow-[0_24px_80px_-20px_rgba(26,26,26,0.25)] bg-[#F5F0EB]">
+            <div className="relative h-full min-h-[260px] lg:min-h-0 rounded-2xl overflow-hidden border border-black/8 shadow-[0_24px_80px_-20px_rgba(26,26,26,0.25)] bg-[#EDE8E2]">
               {carouselSlides.map((s, i) => (
                 <div
                   key={s.image}
@@ -166,16 +167,17 @@ export default function Hero() {
                     i === slide ? "opacity-100 z-[1]" : "opacity-0 z-0"
                   }`}
                 >
-                  <img
-                    src={s.image}
-                    alt={`${s.title} — ${s.subtitle}`}
-                    width={1200}
-                    height={720}
-                    className="w-full h-full object-cover"
-                    loading={i === 0 ? "eager" : "lazy"}
-                    decoding="async"
-                    fetchPriority={i === 0 ? "high" : undefined}
-                  />
+                  <div className="absolute inset-0 flex items-center justify-center p-2 sm:p-3 lg:p-5">
+                    <img
+                      src={s.image}
+                      alt={`${s.title} — ${s.subtitle}`}
+                      width={1200}
+                      height={720}
+                      className="max-h-full max-w-full w-auto h-auto object-contain object-center select-none"
+                      loading={i === 0 ? "eager" : "lazy"}
+                      decoding="async"
+                    />
+                  </div>
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/10" />
                 </div>
               ))}

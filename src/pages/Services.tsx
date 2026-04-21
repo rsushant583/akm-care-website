@@ -58,7 +58,6 @@ export default function Services() {
               height={560}
               loading="eager"
               decoding="async"
-              fetchPriority="high"
               className="w-full h-52 sm:h-64 lg:h-72 object-cover rounded-2xl border border-black/[0.06] shadow-xl"
             />
           </motion.div>
@@ -85,56 +84,96 @@ export default function Services() {
           </div>
 
           {loading ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-56 rounded-2xl" />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-2 gap-3 md:hidden">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={`m-${i}`} className="h-44 rounded-xl" />
+                ))}
+              </div>
+              <div className="hidden md:flex flex-col gap-6">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <Skeleton key={`d-${i}`} className="h-56 rounded-2xl" />
+                ))}
+              </div>
+            </>
+          ) : filtered.length === 0 ? (
+            <p className="py-12 text-center text-muted-foreground">No services in this category yet.</p>
           ) : (
-            <div className="flex flex-col gap-6 lg:gap-8">
-              {filtered.map((service, idx) => {
-                const Icon = iconMap[service.icon] || Briefcase;
-                const reverse = idx % 2 === 1;
-                return (
-                  <CardHover key={service.id} className="rounded-2xl">
-                    <div
-                      className={`grid md:grid-cols-2 gap-6 items-center rounded-2xl border border-black/[0.06] bg-[#FAF8F5] p-6 sm:p-8 shadow-sm ${
-                        reverse ? "md:[direction:rtl]" : ""
-                      }`}
-                    >
-                      <div className={`min-w-0 ${reverse ? "md:[direction:ltr]" : ""}`}>
-                        <div className="w-14 h-14 rounded-2xl bg-[#E8621A]/10 flex items-center justify-center mb-4 ring-1 ring-[#E8621A]/10">
-                          <Icon size={26} className="text-[#E8621A]" />
+            <>
+              <div className="md:hidden grid grid-cols-2 gap-3">
+                {filtered.map((service) => {
+                  const Icon = iconMap[service.icon] || Briefcase;
+                  return (
+                    <CardHover key={`compact-${service.id}`} className="h-full min-w-0 rounded-xl">
+                      <div className="flex h-full min-h-[10.5rem] flex-col items-center rounded-xl border border-black/[0.06] bg-[#FAF8F5] p-3 text-center shadow-sm">
+                        <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-[#E8621A]/10 ring-1 ring-[#E8621A]/10">
+                          <Icon size={18} className="text-[#E8621A]" />
                         </div>
-                        <h3 className="font-heading text-xl mb-2 text-[#1A1A1A]">{service.title}</h3>
-                        <p className="text-sm text-[#6B6B6B] leading-relaxed mb-5">{service.description}</p>
+                        <h3 className="font-heading text-[0.8125rem] font-semibold leading-snug text-[#1A1A1A] line-clamp-3">
+                          {service.title}
+                        </h3>
+                        <p className="mt-1 min-h-0 flex-1 text-[11px] leading-snug text-[#6B6B6B] line-clamp-4">
+                          {service.description}
+                        </p>
                         <Link
                           to="/contact"
-                          className="inline-flex items-center px-5 py-2.5 rounded-full bg-[#E8621A] text-white text-sm font-semibold shadow-md shadow-[#E8621A]/20 hover:brightness-105 transition-all"
+                          className="mt-2 text-[11px] font-semibold text-[#E8621A] hover:underline"
                         >
-                          Enquire Now
+                          Enquire →
                         </Link>
                       </div>
-                      <div className={`relative min-h-[180px] md:min-h-[220px] rounded-xl overflow-hidden border border-black/[0.06] bg-gradient-to-br from-[#E8621A]/10 to-[#F5F0EB] ${reverse ? "md:[direction:ltr]" : ""}`}>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <Icon size={72} className="text-[#E8621A]/35" strokeWidth={1.25} />
+                    </CardHover>
+                  );
+                })}
+              </div>
+
+              <div className="hidden md:flex flex-col gap-6 lg:gap-8">
+                {filtered.map((service, idx) => {
+                  const Icon = iconMap[service.icon] || Briefcase;
+                  const reverse = idx % 2 === 1;
+                  return (
+                    <CardHover key={service.id} className="rounded-2xl">
+                      <div
+                        className={`grid md:grid-cols-2 gap-6 items-center rounded-2xl border border-black/[0.06] bg-[#FAF8F5] p-6 sm:p-8 shadow-sm ${
+                          reverse ? "md:[direction:rtl]" : ""
+                        }`}
+                      >
+                        <div className={`min-w-0 ${reverse ? "md:[direction:ltr]" : ""}`}>
+                          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E8621A]/10 ring-1 ring-[#E8621A]/10">
+                            <Icon size={26} className="text-[#E8621A]" />
+                          </div>
+                          <h3 className="mb-2 font-heading text-xl text-[#1A1A1A]">{service.title}</h3>
+                          <p className="mb-5 text-sm leading-relaxed text-[#6B6B6B]">{service.description}</p>
+                          <Link
+                            to="/contact"
+                            className="inline-flex items-center rounded-full bg-[#E8621A] px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-[#E8621A]/20 transition-all hover:brightness-105"
+                          >
+                            Enquire Now
+                          </Link>
                         </div>
-                        <img
-                          src={heroImg}
-                          alt=""
-                          width={640}
-                          height={400}
-                          loading="lazy"
-                          decoding="async"
-                          className="absolute inset-0 w-full h-full object-cover opacity-25 mix-blend-multiply"
-                          aria-hidden
-                        />
+                        <div
+                          className={`relative min-h-[180px] overflow-hidden rounded-xl border border-black/[0.06] bg-gradient-to-br from-[#E8621A]/10 to-[#F5F0EB] md:min-h-[220px] ${reverse ? "md:[direction:ltr]" : ""}`}
+                        >
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <Icon size={72} className="text-[#E8621A]/35" strokeWidth={1.25} />
+                          </div>
+                          <img
+                            src={heroImg}
+                            alt=""
+                            width={640}
+                            height={400}
+                            loading="lazy"
+                            decoding="async"
+                            className="absolute inset-0 h-full w-full object-cover opacity-25 mix-blend-multiply"
+                            aria-hidden
+                          />
+                        </div>
                       </div>
-                    </div>
-                  </CardHover>
-                );
-              })}
-            </div>
+                    </CardHover>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
       </section>

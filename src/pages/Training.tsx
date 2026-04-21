@@ -68,7 +68,6 @@ export default function Training() {
               height={600}
               loading="eager"
               decoding="async"
-              fetchPriority="high"
               className="w-full h-[220px] sm:h-[280px] lg:h-[min(380px,42vh)] object-cover rounded-2xl border border-black/[0.06] shadow-xl"
             />
           </motion.div>
@@ -77,20 +76,26 @@ export default function Training() {
 
       <section className="section-padding bg-white">
         <div className="container-premium">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-5">
+          <div className="grid grid-cols-2 lg:grid-cols-2 gap-3 sm:gap-5">
             {trainingCategories.map((cat) => {
               const Icon = iconMap[cat.icon] || MessageSquare;
               return (
-                <CardHover key={cat.id} className="rounded-2xl h-full">
-                  <div className="h-full rounded-2xl border border-black/[0.06] bg-[#FAF8F5] p-5 sm:p-6 shadow-sm flex gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-[#E8621A]/10 flex items-center justify-center shrink-0">
-                      <Icon size={22} className="text-[#E8621A]" />
+                <CardHover key={cat.id} className="rounded-xl sm:rounded-2xl h-full min-w-0">
+                  <div className="flex h-full min-h-0 flex-col rounded-xl border border-black/[0.06] bg-[#FAF8F5] p-3 shadow-sm sm:flex-row sm:gap-4 sm:rounded-2xl sm:p-5 md:p-6">
+                    <div className="mx-auto mb-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#E8621A]/10 sm:mx-0 sm:mb-0 sm:h-12 sm:w-12 sm:rounded-xl">
+                      <Icon size={18} className="text-[#E8621A] sm:hidden" />
+                      <Icon size={22} className="text-[#E8621A] hidden sm:block" />
                     </div>
-                    <div className="min-w-0">
-                      <h3 className="font-heading text-lg text-[#1A1A1A] mb-1">{cat.title}</h3>
-                      <p className="text-sm text-[#6B6B6B] leading-relaxed line-clamp-3 mb-3">{cat.description}</p>
-                      <a href="#inquiry" className="text-sm font-semibold text-[#E8621A] hover:underline">
-                        Enquire Now →
+                    <div className="min-w-0 flex flex-1 flex-col text-center sm:text-left">
+                      <h3 className="font-heading text-[0.8125rem] font-semibold leading-snug text-[#1A1A1A] line-clamp-3 sm:mb-1 sm:text-lg sm:font-normal sm:line-clamp-none">
+                        {cat.title}
+                      </h3>
+                      <p className="mt-1 flex-1 text-[11px] leading-snug text-[#6B6B6B] line-clamp-4 sm:mt-0 sm:text-sm sm:leading-relaxed sm:line-clamp-3 sm:mb-3">
+                        {cat.description}
+                      </p>
+                      <a href="#inquiry" className="mt-2 text-[11px] font-semibold text-[#E8621A] hover:underline sm:mt-0 sm:text-sm">
+                        <span className="sm:hidden">Enquire →</span>
+                        <span className="hidden sm:inline">Enquire Now →</span>
                       </a>
                     </div>
                   </div>

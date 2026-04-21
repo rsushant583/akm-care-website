@@ -49,7 +49,7 @@ export default function FeedbackWidget() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-20 right-4 lg:bottom-6 z-40 rounded-full bg-primary text-primary-foreground p-4 shadow-lg hover:brightness-110 transition-all"
+        className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] right-4 z-40 rounded-full bg-primary p-4 text-primary-foreground shadow-lg transition-all hover:brightness-110 lg:bottom-6 lg:right-6"
         aria-label="Open feedback"
       >
         <MessageCircle size={20} />

@@ -226,7 +226,6 @@ export default function Shop() {
               height={560}
               loading="eager"
               decoding="async"
-              fetchPriority="high"
               className="w-full h-48 sm:h-56 lg:h-64 object-cover rounded-2xl border border-black/[0.06] shadow-lg"
               aria-hidden
             />

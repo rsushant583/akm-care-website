@@ -94,29 +94,33 @@ export default function ServicesOverview() {
           </p>
         </div>
 
-        <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+        <div ref={gridRef} className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
           {loading
             ? Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-52 rounded-2xl" />
+                <Skeleton key={i} className="h-[min(11rem,42vw)] sm:h-52 rounded-xl sm:rounded-2xl" />
               ))
             : services.map((service) => {
                 const Icon = iconMap[service.icon] || Briefcase;
                 return (
-                  <div key={service.id} className="service-card h-full">
-                    <CardHover className="h-full rounded-2xl">
-                      <div className="group h-full bg-white border border-black/[0.06] rounded-2xl p-6 shadow-[0_10px_40px_rgba(26,26,26,0.06)] transition-colors hover:border-[#E8621A]/25">
-                        <div className="w-12 h-12 rounded-xl bg-[#E8621A]/10 ring-1 ring-[#E8621A]/10 flex items-center justify-center mb-4 group-hover:bg-[#E8621A]/15 transition-colors">
-                          <Icon size={22} className="text-[#E8621A]" />
+                  <div key={service.id} className="service-card h-full min-w-0">
+                    <CardHover className="h-full rounded-xl sm:rounded-2xl">
+                      <div className="group flex h-full min-h-0 flex-col bg-white border border-black/[0.06] rounded-xl sm:rounded-2xl p-3.5 sm:p-6 shadow-[0_10px_40px_rgba(26,26,26,0.06)] transition-colors hover:border-[#E8621A]/25">
+                        <div className="mx-auto mb-2.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#E8621A]/10 ring-1 ring-[#E8621A]/10 sm:mx-0 sm:mb-4 sm:h-12 sm:w-12 sm:rounded-xl group-hover:bg-[#E8621A]/15 transition-colors">
+                          <Icon size={18} className="text-[#E8621A] sm:hidden" />
+                          <Icon size={22} className="text-[#E8621A] hidden sm:block" />
                         </div>
-                        <h3 className="font-heading text-lg mb-2 group-hover:text-[#E8621A] transition-colors text-[#1A1A1A]">
+                        <h3 className="font-heading text-center text-[0.8125rem] font-semibold leading-snug text-[#1A1A1A] line-clamp-3 sm:mb-2 sm:text-left sm:text-lg sm:font-normal sm:line-clamp-none group-hover:text-[#E8621A] transition-colors">
                           {service.title}
                         </h3>
-                        <p className="text-sm text-[#6B6B6B] leading-relaxed mb-4">{service.description}</p>
+                        <p className="mt-1 flex-1 text-center text-[11px] leading-snug text-[#6B6B6B] line-clamp-4 sm:mt-0 sm:mb-4 sm:text-left sm:text-sm sm:leading-relaxed sm:line-clamp-none">
+                          {service.description}
+                        </p>
                         <Link
                           to="/services"
-                          className="inline-flex items-center gap-1 text-sm font-semibold text-[#E8621A] hover:gap-2 transition-all"
+                          className="mt-2 inline-flex items-center justify-center gap-0.5 text-[11px] font-semibold text-[#E8621A] hover:gap-1.5 sm:justify-start sm:gap-1 sm:text-sm sm:hover:gap-2 transition-all"
                         >
-                          Learn More <ArrowRight size={14} />
+                          Learn More <ArrowRight className="shrink-0 sm:hidden" size={12} />
+                          <ArrowRight className="hidden shrink-0 sm:inline" size={14} />
                         </Link>
                       </div>
                     </CardHover>

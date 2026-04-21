@@ -104,12 +104,16 @@ export default function CSR() {
           </div>
 
           <h2 className="font-heading text-3xl text-center mb-8 text-[#1A1A1A]">Key Initiatives</h2>
-          <div className="grid sm:grid-cols-2 gap-5 mb-12">
+          <div className="mb-12 grid grid-cols-2 gap-3 sm:gap-5">
             {initiatives.map((item, i) => (
-              <CardHover key={i} className="rounded-2xl h-full">
-                <div className="h-full rounded-2xl bg-[#FAF8F5] p-6 border border-black/[0.06] shadow-sm">
-                  <h3 className="font-heading text-lg mb-2 text-[#1A1A1A]">{item.title}</h3>
-                  <p className="text-sm text-[#6B6B6B] leading-relaxed">{item.desc}</p>
+              <CardHover key={i} className="h-full min-w-0 rounded-xl sm:rounded-2xl">
+                <div className="h-full rounded-xl border border-black/[0.06] bg-[#FAF8F5] p-3.5 shadow-sm sm:rounded-2xl sm:p-6">
+                  <h3 className="mb-1.5 font-heading text-sm font-semibold leading-snug text-[#1A1A1A] line-clamp-3 sm:mb-2 sm:text-lg sm:font-normal sm:line-clamp-none">
+                    {item.title}
+                  </h3>
+                  <p className="text-[11px] leading-snug text-[#6B6B6B] line-clamp-5 sm:text-sm sm:leading-relaxed sm:line-clamp-none">
+                    {item.desc}
+                  </p>
                 </div>
               </CardHover>
             ))}

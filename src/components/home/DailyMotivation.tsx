@@ -4,19 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { gsap } from "@/lib/gsapRegister";
 import { prefersReducedMotion } from "@/lib/motion";
 import { runRevealWhenVisible } from "@/lib/runRevealWhenVisible";
-
-function getLocalDateKey(d = new Date()) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-function msUntilNextLocalMidnight(d = new Date()) {
-  const next = new Date(d);
-  next.setHours(24, 0, 0, 0);
-  return next.getTime() - d.getTime();
-}
+import { getDailyMotivationSlice, getLocalDateKey, msUntilNextLocalMidnight } from "@/lib/dailyMotivation";
 
 export default function DailyMotivation() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -28,16 +16,10 @@ export default function DailyMotivation() {
     return () => window.clearTimeout(t);
   }, [dayKey]);
 
-  const quote = useMemo(() => {
-    if (!motivationQuotes || motivationQuotes.length === 0) return null;
-    const pool = [...motivationQuotes].sort(
-      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
-    );
-    const start = new Date("2026-01-01T00:00:00").getTime();
-    const today = new Date(`${dayKey}T00:00:00`).getTime();
-    const days = Math.max(0, Math.floor((today - start) / 86400000));
-    return pool[days % pool.length];
-  }, [motivationQuotes, dayKey]);
+  const quote = useMemo(
+    () => getDailyMotivationSlice(motivationQuotes, dayKey).today,
+    [motivationQuotes, dayKey],
+  );
 
   useEffect(() => {
     const root = sectionRef.current;

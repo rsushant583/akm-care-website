@@ -38,7 +38,7 @@ export default function Navbar() {
   return (
     <>
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-300 ${navSurface}`}
+        className={`fixed top-0 left-0 right-0 z-50 pt-[env(safe-area-inset-top,0px)] transition-colors duration-300 ${navSurface}`}
       >
         <div
           className={`container-premium flex items-center justify-between mx-auto transition-[height] duration-300 ${
@@ -53,7 +53,6 @@ export default function Navbar() {
               height={56}
               loading="eager"
               decoding="async"
-              fetchPriority="high"
               className={`object-contain transition-all duration-300 ${isScrolled ? "h-9 lg:h-10" : "h-10 lg:h-12"}`}
             />
           </Link>

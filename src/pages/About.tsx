@@ -67,7 +67,6 @@ export default function About() {
               height={620}
               loading="eager"
               decoding="async"
-              fetchPriority="high"
               className="w-full max-h-[340px] lg:max-h-[380px] object-cover rounded-2xl border border-black/[0.06] shadow-[0_24px_60px_rgba(26,26,26,0.12)]"
             />
           </motion.div>
