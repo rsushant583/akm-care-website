@@ -1,27 +1,50 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { carouselSlides } from "@/data/carousel";
+import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from "react";
+import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { gsap } from "@/lib/gsapRegister";
 import { prefersReducedMotion } from "@/lib/motion";
 import { runRevealWhenVisible } from "@/lib/runRevealWhenVisible";
 
-function slideAlt(slide: (typeof carouselSlides)[number]): string {
-  return `${slide.title} — ${slide.subtitle}`;
-}
+const WISDOM_VIDEO = "/slides/You_are_extending_202604240022.mp4";
+
+/** Slight zoom past common cinematic / AI letterboxing baked into the file (black bars + corner marks). */
+const LETTERBOX_CROP = 1.12;
 
 export default function ImageCarousel() {
   const rootRef = useRef<HTMLElement>(null);
-  const [current, setCurrent] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const reduceMotion = useReducedMotion() === true;
+  const [frameAspect, setFrameAspect] = useState<string>("16 / 9");
+  const { scrollYProgress } = useScroll({
+    target: rootRef,
+    offset: ["start 0.85", "end 0.15"],
+  });
 
-  const next = useCallback(() => {
-    setCurrent((c) => (c + 1) % carouselSlides.length);
-  }, []);
+  const frameY = useTransform(
+    scrollYProgress,
+    [0, 0.5, 1],
+    reduceMotion ? [0, 0, 0] : [28, 0, -20],
+  );
+  const frameScale = useTransform(
+    scrollYProgress,
+    [0, 0.5, 1],
+    reduceMotion ? [1, 1, 1] : [0.96, 1, 0.98],
+  );
+  const frameOpacity = useTransform(scrollYProgress, [0, 0.2], reduceMotion ? [1, 1] : [0.85, 1]);
 
   useEffect(() => {
-    if (isPaused) return;
-    const timer = setInterval(next, 5200);
-    return () => clearInterval(timer);
-  }, [isPaused, next]);
+    const v = videoRef.current;
+    if (!v) return;
+    v.play().catch(() => {
+      /* autoplay may be blocked until user gesture; muted usually allows play */
+    });
+  }, []);
+
+  const onVideoMetadata = useCallback((e: SyntheticEvent<HTMLVideoElement>) => {
+    const v = e.currentTarget;
+    if (v.videoWidth > 0 && v.videoHeight > 0) {
+      setFrameAspect(`${v.videoWidth} / ${v.videoHeight}`);
+    }
+  }, []);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -39,21 +62,6 @@ export default function ImageCarousel() {
           stagger: 0.1,
           ease: "power3.out",
         });
-
-        const frame = root.querySelector("[data-carousel-frame]");
-        if (frame) {
-          gsap.fromTo(
-            frame,
-            { opacity: 0, scale: 0.97, y: 24 },
-            {
-              opacity: 1,
-              scale: 1,
-              y: 0,
-              duration: 1,
-              ease: "power3.out",
-            },
-          );
-        }
       }, root);
     });
 
@@ -84,48 +92,54 @@ export default function ImageCarousel() {
           </p>
         </div>
 
-        <div
+        <motion.div
           data-carousel-frame
-          className="relative w-full min-h-[220px] h-[min(48vh,480px)] sm:min-h-[280px] sm:h-[min(52vh,520px)] lg:min-h-[320px] lg:h-[min(56vh,560px)] rounded-[1.35rem] overflow-hidden border border-primary/10 shadow-[0_24px_80px_-24px_rgba(232,98,26,0.18),0_0_0_1px_rgba(0,0,0,0.03)] bg-gradient-to-br from-stone-100/90 via-card to-amber-50/40 backdrop-blur-sm"
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
+          style={{ y: frameY, scale: frameScale, opacity: frameOpacity }}
+          className="relative w-full will-change-transform"
         >
-          {carouselSlides.map((slide, i) => (
+          <div
+            className="relative w-full overflow-hidden rounded-[1.35rem] border border-primary/10 shadow-[0_24px_80px_-24px_rgba(232,98,26,0.18),0_0_0_1px_rgba(0,0,0,0.06)] bg-black"
+            style={{ aspectRatio: frameAspect }}
+          >
             <div
-              key={slide.image}
-              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                i === current ? "opacity-100 z-[1]" : "opacity-0 z-0"
-              }`}
+              className="absolute inset-0 overflow-hidden"
+              style={{
+                transform: `scale(${LETTERBOX_CROP})`,
+                transformOrigin: "center center",
+              }}
             >
-              <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-5">
-                <img
-                  src={slide.image}
-                  alt={slideAlt(slide)}
-                  width={1200}
-                  height={720}
-                  className="max-h-full max-w-full w-auto h-auto object-contain"
-                  loading={i === 0 ? "eager" : "lazy"}
-                  decoding="async"
-                />
-              </div>
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/20 to-transparent z-[2]" />
+              <video
+                ref={videoRef}
+                onLoadedMetadata={onVideoMetadata}
+                className="absolute inset-0 h-full w-full object-cover object-center select-none"
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="auto"
+                aria-label="AKM Care services and vision — motion graphic"
+              >
+                <source src={WISDOM_VIDEO} type="video/mp4" />
+              </video>
             </div>
-          ))}
-
-          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2 z-[3]">
-            {carouselSlides.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setCurrent(i)}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  i === current ? "w-8 bg-primary shadow-[0_0_12px_rgba(249,115,22,0.5)]" : "w-2 bg-card/80 hover:bg-card"
-                }`}
-                aria-label={`Go to slide ${i + 1}`}
-              />
-            ))}
+            {/* Radial + edge dim: softens light corner watermarks. Fully removing baked-in text requires a clean re-export. */}
+            <div
+              className="pointer-events-none absolute inset-0 z-[2]"
+              style={{
+                background:
+                  "radial-gradient(ellipse 55% 45% at 100% 100%, rgba(0,0,0,0.48) 0%, transparent 62%)",
+              }}
+              aria-hidden
+            />
+            <div
+              className="pointer-events-none absolute inset-0 z-[1]"
+              style={{
+                background: "linear-gradient(to top, rgba(0,0,0,0.1) 0%, transparent 38%)",
+              }}
+              aria-hidden
+            />
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
