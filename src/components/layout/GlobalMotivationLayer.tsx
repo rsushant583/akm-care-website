@@ -1,18 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
+import { Minus, X } from "lucide-react";
 import { useLocation } from "react-router-dom";
-import { X } from "lucide-react";
-import { useMotivation } from "@/hooks/useMotivation";
-import {
-  getDailyMotivationSlice,
-  getLocalDateKey,
-  msUntilNextLocalMidnight,
-} from "@/lib/dailyMotivation";
+import { dailyQuotes } from "@/data/dailyQuotes";
+import { getLocalDateKey, msUntilNextLocalMidnight } from "@/lib/dailyMotivation";
 
-const WELCOME_LS = "akm-care-daily-thought-welcome-v1";
-
-function chipDismissKey(dayKey: string) {
-  return `akm-care-daily-thought-chip-${dayKey}`;
-}
+const WELCOME_LS = "akm-care-daily-thought-welcome-v2";
+const QUOTE_HIDE_KEY = "akm-care-floating-quote-hide";
+const QUOTE_MINIMIZE_KEY = "akm-care-floating-quote-minimized";
 
 function storageGet(key: string): string | null {
   try {
@@ -26,36 +20,30 @@ function storageSet(key: string, value: string) {
   try {
     localStorage.setItem(key, value);
   } catch {
-    /* private mode / blocked */
+    /* ignore private mode storage failures */
   }
+}
+
+function getDayOfYear(date = new Date()) {
+  const start = new Date(date.getFullYear(), 0, 0);
+  const diff = date.getTime() - start.getTime();
+  return Math.floor(diff / 86400000);
 }
 
 export default function GlobalMotivationLayer() {
   const { pathname } = useLocation();
-  const { data, loading } = useMotivation();
   const [dayKey, setDayKey] = useState(() => getLocalDateKey());
   const [showWelcome, setShowWelcome] = useState(() => !storageGet(WELCOME_LS));
-  const [showChip, setShowChip] = useState(() => {
-    if (!storageGet(WELCOME_LS)) return false;
-    return !storageGet(chipDismissKey(getLocalDateKey()));
-  });
+  const [hiddenForDay, setHiddenForDay] = useState(() => storageGet(QUOTE_HIDE_KEY) === getLocalDateKey());
+  const [minimized, setMinimized] = useState(() => storageGet(QUOTE_MINIMIZE_KEY) === "1");
 
   useEffect(() => {
     const t = window.setTimeout(() => setDayKey(getLocalDateKey()), msUntilNextLocalMidnight());
     return () => window.clearTimeout(t);
   }, [dayKey]);
 
-  const quote = useMemo(() => getDailyMotivationSlice(data, dayKey).today, [data, dayKey]);
-
   useEffect(() => {
-    const welcomeSeen = storageGet(WELCOME_LS);
-    if (!welcomeSeen) {
-      setShowWelcome(true);
-      setShowChip(false);
-      return;
-    }
-    setShowWelcome(false);
-    setShowChip(!storageGet(chipDismissKey(dayKey)));
+    setHiddenForDay(storageGet(QUOTE_HIDE_KEY) === dayKey);
   }, [dayKey]);
 
   useEffect(() => {
@@ -67,23 +55,28 @@ export default function GlobalMotivationLayer() {
     };
   }, [showWelcome]);
 
+  const quote = useMemo(() => {
+    const idx = getDayOfYear(new Date(`${dayKey}T00:00:00`)) % dailyQuotes.length;
+    return dailyQuotes[idx];
+  }, [dayKey]);
+
   const dismissWelcome = () => {
     storageSet(WELCOME_LS, "1");
     setShowWelcome(false);
-    if (!storageGet(chipDismissKey(dayKey))) {
-      setShowChip(true);
-    }
   };
 
-  const dismissChip = () => {
-    storageSet(chipDismissKey(dayKey), "1");
-    setShowChip(false);
+  const hideForToday = () => {
+    storageSet(QUOTE_HIDE_KEY, dayKey);
+    setHiddenForDay(true);
   };
 
-  const ready = !loading && quote;
+  const toggleMinimize = () => {
+    const next = !minimized;
+    setMinimized(next);
+    storageSet(QUOTE_MINIMIZE_KEY, next ? "1" : "0");
+  };
 
   if (pathname.startsWith("/admin")) return null;
-  if (!showWelcome && !showChip) return null;
 
   return (
     <>
@@ -97,10 +90,9 @@ export default function GlobalMotivationLayer() {
           <button
             type="button"
             onClick={dismissWelcome}
-            className="absolute inset-0 bg-[#1A1A1A]/50 backdrop-blur-[3px] transition-opacity hover:bg-[#1A1A1A]/55"
+            className="absolute inset-0 bg-[#1A1A1A]/50 backdrop-blur-[3px]"
             aria-label="Close thought of the day and return to the site"
           />
-
           <div className="relative z-10 w-full max-w-[min(100%,36rem)] max-h-[min(88vh,640px)] overflow-y-auto rounded-3xl border border-white/60 bg-[#FAF8F5]/95 shadow-[0_32px_90px_-24px_rgba(26,26,26,0.35)] text-[#1A1A1A] ring-1 ring-black/[0.06]">
             <button
               type="button"
@@ -110,7 +102,6 @@ export default function GlobalMotivationLayer() {
             >
               <X size={20} />
             </button>
-
             <div className="px-6 sm:px-10 py-10 sm:py-12 pr-14 sm:pr-16">
               <p
                 id="daily-thought-welcome-title"
@@ -121,47 +112,54 @@ export default function GlobalMotivationLayer() {
               <p className="text-center sm:text-left text-sm text-[#6B6B6B] mb-6">
                 A quick inspiration before you explore the site.
               </p>
-              {ready ? (
-                <>
-                  <blockquote className="font-heading text-center sm:text-left text-xl sm:text-2xl md:text-3xl leading-snug sm:leading-tight italic text-[#1A1A1A]">
-                    &ldquo;{quote.quote}&rdquo;
-                  </blockquote>
-                  <p className="mt-6 text-center sm:text-left text-base font-medium text-[#6B6B6B]">— {quote.source}</p>
-                </>
-              ) : (
-                <div className="w-full space-y-4 animate-pulse" aria-busy="true">
-                  <div className="h-4 w-32 rounded-full bg-black/10" />
-                  <div className="h-24 rounded-2xl bg-black/[0.06]" />
-                  <div className="h-4 w-40 rounded-full bg-black/10" />
-                </div>
-              )}
+              <blockquote className="font-heading text-center sm:text-left text-xl sm:text-2xl md:text-3xl leading-snug sm:leading-tight italic text-[#1A1A1A]">
+                &ldquo;{quote.quote}&rdquo;
+              </blockquote>
+              <p className="mt-6 text-center sm:text-left text-base font-medium text-[#6B6B6B]">— {quote.source}</p>
             </div>
           </div>
         </div>
       ) : null}
 
-      {showChip && !showWelcome ? (
+      {!showWelcome && !hiddenForDay ? (
         <aside
-          className="fixed left-3 right-3 sm:left-4 sm:right-auto top-[calc(3.5rem+env(safe-area-inset-top,0px)+0.35rem)] lg:top-[calc(4.25rem+env(safe-area-inset-top,0px)+0.35rem)] z-[45] max-w-md sm:max-w-[340px] pointer-events-auto"
+          className="fixed left-1/2 -translate-x-1/2 top-[calc(3.7rem+env(safe-area-inset-top,0px))] lg:top-[calc(4.25rem+env(safe-area-inset-top,0px))] z-[46] pointer-events-auto"
           aria-label="Daily motivation"
         >
-          <div className="relative rounded-2xl border border-black/[0.08] bg-white/95 backdrop-blur-lg shadow-[0_16px_48px_rgba(15,15,15,0.14)] p-4 sm:p-4 pr-11">
-            <button
-              type="button"
-              onClick={dismissChip}
-              className="absolute right-2.5 top-2.5 inline-flex h-8 w-8 items-center justify-center rounded-full text-[#6B6B6B] hover:bg-black/[0.05] hover:text-[#1A1A1A]"
-              aria-label="Dismiss daily thought"
-            >
-              <X size={18} />
-            </button>
-            <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-[#E8621A] mb-1.5">Today&apos;s thought</p>
-            {ready ? (
-              <>
-                <p className="text-[0.9rem] sm:text-[0.92rem] leading-relaxed text-[#1A1A1A]/90 line-clamp-4">&ldquo;{quote.quote}&rdquo;</p>
-                <p className="mt-2 text-xs text-[#6B6B6B] font-medium">— {quote.source}</p>
-              </>
+          <div className="rounded-2xl border border-white/40 bg-white/65 backdrop-blur-xl shadow-[0_14px_42px_rgba(15,15,15,0.16)] ring-1 ring-black/[0.06]">
+            {minimized ? (
+              <button
+                type="button"
+                onClick={toggleMinimize}
+                className="px-3 py-2 text-xs font-semibold text-[#E8621A]"
+                aria-label="Expand daily quote"
+              >
+                Daily quote
+              </button>
             ) : (
-              <div className="h-16 rounded-lg bg-black/[0.05] animate-pulse" />
+              <div className="relative w-[min(92vw,30rem)] p-4 pr-12">
+                <div className="absolute right-2 top-2 flex gap-1">
+                  <button
+                    type="button"
+                    onClick={toggleMinimize}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#6B6B6B] hover:bg-black/[0.05]"
+                    aria-label="Minimize quote"
+                  >
+                    <Minus size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={hideForToday}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#6B6B6B] hover:bg-black/[0.05]"
+                    aria-label="Hide quote for today"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+                <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-[#E8621A] mb-1.5">Today&apos;s thought</p>
+                <p className="text-[0.9rem] leading-relaxed text-[#1A1A1A]/90 line-clamp-4">&ldquo;{quote.quote}&rdquo;</p>
+                <p className="mt-2 text-xs text-[#6B6B6B] font-medium">— {quote.source}</p>
+              </div>
             )}
           </div>
         </aside>

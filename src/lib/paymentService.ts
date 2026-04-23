@@ -1,5 +1,3 @@
-import { OrderItem, ProductItem } from "@/lib/types";
-
 declare global {
   interface Window {
     Razorpay: any;
@@ -17,7 +15,17 @@ export async function loadRazorpayScript() {
   });
 }
 
-export async function createRazorpayOrder(product: ProductItem, customer: { name: string; email: string; phone?: string }) {
+export type CartCheckoutItem = {
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+};
+
+export async function createRazorpayOrder(
+  items: CartCheckoutItem[],
+  customer: { name: string; email: string; phone?: string },
+) {
   const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/razorpay-create-order`, {
     method: "POST",
     headers: {
@@ -25,9 +33,7 @@ export async function createRazorpayOrder(product: ProductItem, customer: { name
       Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
     },
     body: JSON.stringify({
-      productId: product.id,
-      productName: product.name,
-      amount: Number(product.price),
+      items,
       customer,
     }),
   });
@@ -38,7 +44,11 @@ export async function verifyRazorpayPayment(payload: {
   razorpay_order_id: string;
   razorpay_payment_id: string;
   razorpay_signature: string;
-  orderData: OrderItem;
+  orderPayload: {
+    items: CartCheckoutItem[];
+    totalAmount: number;
+    customer: { name: string; email: string; phone?: string };
+  };
 }) {
   const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/razorpay-verify-payment`, {
     method: "POST",

@@ -75,7 +75,7 @@
   }
 
   .section-padding {
-    @apply px-4 sm:px-6 lg:px-8 pt-10 pb-12 sm:pt-14 sm:pb-16 lg:pt-16 lg:pb-20;
+    @apply px-4 sm:px-6 lg:px-8 pt-8 pb-10 sm:pt-10 sm:pb-12 lg:pt-12 lg:pb-16;
   }
 
   .card-shadow {

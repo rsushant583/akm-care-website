@@ -69,7 +69,7 @@ export default function Hero() {
   return (
     <section
       ref={rootRef}
-      className="relative min-h-screen lg:min-h-screen lg:h-screen lg:max-h-screen flex flex-col justify-center overflow-hidden grain-overlay"
+      className="relative min-h-[calc(100svh-3.2rem)] lg:min-h-[calc(100vh-3.8rem)] lg:h-[calc(100vh-3.8rem)] flex flex-col justify-center overflow-hidden grain-overlay"
     >
       <motion.div
         ref={parallaxRef}
@@ -96,7 +96,7 @@ export default function Hero() {
         </video>
       ) : null}
 
-      <div className="container-premium relative z-10 w-full py-6 sm:py-8 lg:py-6 flex-1 flex flex-col justify-center min-h-0">
+      <div className="container-premium relative z-10 w-full py-3 sm:py-5 lg:py-4 flex-1 flex flex-col justify-center min-h-0">
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-10 items-stretch min-h-0">
           <div className="max-w-xl min-w-0 flex flex-col justify-center">
             <div data-hero-fade className="opacity-0">
@@ -192,6 +192,7 @@ export default function Hero() {
                 </p>
                 <p className="mt-2 text-xs font-semibold text-[#F5A623] tracking-wide">— Bhagavad Gita, 2:47</p>
               </div>
+
             </div>
 
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-[4]">

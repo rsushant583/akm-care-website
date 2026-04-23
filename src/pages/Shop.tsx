@@ -1,5 +1,5 @@
 import { ShoppingCart, Bell } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useProducts } from "@/hooks/useProducts";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,6 +9,7 @@ import { SEO } from "@/components/SEO";
 import { createRazorpayOrder, loadRazorpayScript, verifyRazorpayPayment } from "@/lib/paymentService";
 import { isValidIndianPincode, mockDeliveryAvailable } from "@/lib/pincodeDelivery";
 import type { ProductItem } from "@/lib/types";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 
 const CATEGORY_FILTERS = ["All", "Food", "Organic", "Local"] as const;
 
@@ -29,22 +30,36 @@ function matchesProductFilter(cat: (typeof CATEGORY_FILTERS)[number], p: Product
 }
 
 const shopHeroImg =
-  "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=80";
+  "/shop/shop-subheading-hero.png";
+
+type CartLine = { product: ProductItem; quantity: number };
 
 export default function Shop() {
   const [showNotify, setShowNotify] = useState(false);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [selectedProduct, setSelectedProduct] = useState("");
-  const [selectedBuyProduct, setSelectedBuyProduct] = useState<any>(null);
-  const [cartProduct, setCartProduct] = useState<any>(null);
+  const [cartItems, setCartItems] = useState<CartLine[]>([]);
   const [showCart, setShowCart] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
   const [checkout, setCheckout] = useState({ name: "", email: "", phone: "" });
   const [processingPayment, setProcessingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState("");
   const [pinInput, setPinInput] = useState("");
   const [pinStatus, setPinStatus] = useState<"idle" | "invalid" | "ok" | "no">("idle");
   const [productFilter, setProductFilter] = useState<(typeof CATEGORY_FILTERS)[number]>("All");
+  const [cartSessionId] = useState(() => {
+    const key = "akm_cart_session_id";
+    try {
+      const existing = localStorage.getItem(key);
+      if (existing) return existing;
+      const created = crypto.randomUUID();
+      localStorage.setItem(key, created);
+      return created;
+    } catch {
+      return "guest-session";
+    }
+  });
   const { data: products, loading } = useProducts();
   const reduce = useReducedMotion();
 
@@ -52,6 +67,47 @@ export default function Shop() {
     () => products.filter((p) => matchesProductFilter(productFilter, p)),
     [products, productFilter],
   );
+  const cartItemCount = useMemo(() => cartItems.reduce((acc, i) => acc + i.quantity, 0), [cartItems]);
+  const cartTotal = useMemo(
+    () => cartItems.reduce((acc, i) => acc + Number(i.product.price) * i.quantity, 0),
+    [cartItems],
+  );
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("akm_cart_items");
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as CartLine[];
+      if (Array.isArray(parsed)) setCartItems(parsed);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("akm_cart_items", JSON.stringify(cartItems));
+    } catch {
+      /* ignore */
+    }
+  }, [cartItems]);
+
+  useEffect(() => {
+    const client = getSupabaseClient();
+    if (!client || !cartSessionId) return;
+    const sync = async () => {
+      await client.from("cart_items").delete().eq("session_id", cartSessionId);
+      if (cartItems.length === 0) return;
+      await client.from("cart_items").insert(
+        cartItems.map((line) => ({
+          session_id: cartSessionId,
+          product_id: line.product.id,
+          quantity: line.quantity,
+        })),
+      );
+    };
+    void sync();
+  }, [cartItems, cartSessionId]);
 
   const checkPincode = () => {
     const p = pinInput.trim();
@@ -80,41 +136,49 @@ export default function Shop() {
     setSelectedProduct("");
   };
 
-  const handleBuyNow = async (product: any) => {
+  const handleBuyNow = (product: ProductItem) => {
     setPaymentError("");
-    setSelectedBuyProduct(product);
+    setCartItems([{ product, quantity: 1 }]);
+    setShowCheckout(true);
   };
 
-  const saveCart = (product: any | null) => {
-    try {
-      if (!product) localStorage.removeItem("akm_cart_product");
-      else localStorage.setItem("akm_cart_product", JSON.stringify(product));
-    } catch {
-      // ignore
-    }
-  };
-
-  const openCart = (product: any) => {
-    setCartProduct(product);
-    saveCart(product);
+  const addToCart = (product: ProductItem, quantity = 1) => {
+    setCartItems((prev) => {
+      const idx = prev.findIndex((i) => i.product.id === product.id);
+      if (idx === -1) return [...prev, { product, quantity }];
+      const next = [...prev];
+      next[idx] = {
+        ...next[idx],
+        quantity: Math.min(10, next[idx].quantity + quantity),
+      };
+      return next;
+    });
     setShowCart(true);
   };
 
+  const updateQuantity = (productId: string, qty: number) => {
+    setCartItems((prev) =>
+      prev
+        .map((line) => (line.product.id === productId ? { ...line, quantity: Math.max(1, Math.min(10, qty)) } : line))
+        .filter((line) => line.quantity > 0),
+    );
+  };
+
+  const removeFromCart = (productId: string) => {
+    setCartItems((prev) => prev.filter((line) => line.product.id !== productId));
+  };
+
   const clearCart = () => {
-    setCartProduct(null);
-    saveCart(null);
+    setCartItems([]);
     setShowCart(false);
+    setShowCheckout(false);
   };
 
   const openRazorpay = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedBuyProduct) return;
+    if (cartItems.length === 0) return;
     if (!checkout.name || !checkout.email) {
       toast.error("Please enter your name and email.");
-      return;
-    }
-    if ((selectedBuyProduct.stock_quantity ?? 0) <= 0) {
-      toast.error("This item is currently out of stock.");
       return;
     }
 
@@ -127,7 +191,13 @@ export default function Shop() {
         return;
       }
 
-      const orderRes = await createRazorpayOrder(selectedBuyProduct, checkout);
+      const checkoutItems = cartItems.map((line) => ({
+        productId: line.product.id,
+        productName: line.product.name,
+        quantity: line.quantity,
+        unitPrice: Number(line.product.price),
+      }));
+      const orderRes = await createRazorpayOrder(checkoutItems, checkout);
       if (!orderRes?.success) {
         toast.error(orderRes?.error || "Unable to create order.");
         return;
@@ -138,7 +208,7 @@ export default function Shop() {
         amount: orderRes.order.amount,
         currency: orderRes.order.currency,
         name: "AKM Care",
-        description: selectedBuyProduct.name,
+        description: `${cartItems.length} item(s)`,
         order_id: orderRes.order.id,
         prefill: {
           name: checkout.name,
@@ -150,17 +220,14 @@ export default function Shop() {
             razorpay_order_id: response.razorpay_order_id,
             razorpay_payment_id: response.razorpay_payment_id,
             razorpay_signature: response.razorpay_signature,
-            orderData: {
-              product_id: selectedBuyProduct.id,
-              product_name: selectedBuyProduct.name,
-              amount: Number(selectedBuyProduct.price),
-              currency: "INR",
-              quantity: 1,
-              customer_name: checkout.name,
-              customer_email: checkout.email,
-              customer_phone: checkout.phone,
-              razorpay_order_id: response.razorpay_order_id,
-              payment_status: "paid",
+            orderPayload: {
+              items: checkoutItems,
+              totalAmount: cartTotal,
+              customer: {
+                name: checkout.name,
+                email: checkout.email,
+                phone: checkout.phone,
+              },
             },
           });
 
@@ -171,7 +238,8 @@ export default function Shop() {
             return;
           }
           toast.success("Payment successful! Order confirmed.");
-          setSelectedBuyProduct(null);
+          setCartItems([]);
+          setShowCheckout(false);
           setCheckout({ name: "", email: "", phone: "" });
         },
       };
@@ -202,14 +270,14 @@ export default function Shop() {
         keywords="buy makhana online, sattu powder online, village products India, rural products buy, authentic makhana, Bihar products online, healthy snacks India"
         canonical="/shop"
       />
-      <section className="section-padding bg-[#F5F0EB]">
+      <section className="section-padding pt-6 sm:pt-8 lg:pt-10 bg-[#F5F0EB]">
         <div className="container-premium grid lg:grid-cols-2 gap-8 items-center">
           <div>
             <h1 className="font-heading text-4xl sm:text-5xl lg:text-[2.75rem] text-[#1A1A1A] leading-tight mb-4">
               Authentic Village Products
             </h1>
             <p className="text-lg text-[#6B6B6B]">
-              We&apos;re preparing something special. Products will be available soon.
+              We sell online, Authentic Various Domestic Food Items, Fancy Sarees & Textile Products.
             </p>
           </div>
           <motion.div
@@ -324,7 +392,7 @@ export default function Shop() {
                     <span className="font-semibold text-xl text-[#E8621A]">₹{product.price}</span>
                     <button
                       type="button"
-                      onClick={() => openCart(product)}
+                      onClick={() => addToCart(product)}
                       disabled={(product.stock_quantity ?? 0) === 0}
                       className={`p-2.5 rounded-xl ${(product.stock_quantity ?? 0) === 0 ? "bg-muted text-muted-foreground cursor-not-allowed" : "bg-primary text-primary-foreground"}`}
                     >
@@ -354,12 +422,20 @@ export default function Shop() {
           )}
 
           <div className="text-center mt-12">
-            <button
-              onClick={() => setShowNotify(true)}
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-primary text-primary-foreground font-semibold hover:brightness-110 transition-all"
-            >
-              <Bell size={18} /> Notify Me When Available
-            </button>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <button
+                onClick={() => setShowCart(true)}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-primary text-primary-foreground font-semibold hover:brightness-110 transition-all"
+              >
+                <ShoppingCart size={18} /> View Cart ({cartItemCount})
+              </button>
+              <button
+                onClick={() => setShowNotify(true)}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-primary/10 text-primary font-semibold hover:bg-primary/20 transition-all"
+              >
+                <Bell size={18} /> Notify Me When Available
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -381,27 +457,64 @@ export default function Shop() {
         </div>
       )}
 
-      {showCart && cartProduct && (
+      {showCart && (
         <div className="fixed inset-0 z-[110] bg-foreground/50 flex items-center justify-center p-4" onClick={() => setShowCart(false)}>
           <div className="bg-card rounded-2xl p-8 max-w-md w-full card-shadow" onClick={(e) => e.stopPropagation()}>
             <h3 className="font-heading text-2xl mb-2">Your Cart</h3>
-            <p className="text-muted-foreground mb-6">Review your item before checkout.</p>
-            <div className="rounded-2xl border border-border/70 bg-background p-4 mb-5">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="font-heading text-base">{cartProduct.name}</div>
-                  <div className="text-sm text-muted-foreground">{cartProduct.quantity}</div>
-                </div>
-                <div className="font-semibold text-lg">₹{cartProduct.price}</div>
-              </div>
+            <p className="text-muted-foreground mb-6">Review your items before checkout.</p>
+            <div className="max-h-64 overflow-auto space-y-3 mb-5">
+              {cartItems.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Your cart is empty.</p>
+              ) : (
+                cartItems.map((line) => (
+                  <div key={line.product.id} className="rounded-2xl border border-border/70 bg-background p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="font-heading text-base line-clamp-1">{line.product.name}</div>
+                        <div className="text-sm text-muted-foreground">{line.product.quantity}</div>
+                        <div className="mt-2 flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => updateQuantity(line.product.id, line.quantity - 1)}
+                            className="h-7 w-7 rounded-full border border-border text-sm"
+                          >
+                            -
+                          </button>
+                          <span className="text-sm font-semibold w-5 text-center">{line.quantity}</span>
+                          <button
+                            type="button"
+                            onClick={() => updateQuantity(line.product.id, line.quantity + 1)}
+                            className="h-7 w-7 rounded-full border border-border text-sm"
+                          >
+                            +
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeFromCart(line.product.id)}
+                            className="ml-2 text-xs text-destructive font-semibold"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                      <div className="font-semibold text-lg">₹{Number(line.product.price) * line.quantity}</div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="mb-4 flex items-center justify-between text-base font-semibold">
+              <span>Total</span>
+              <span>₹{cartTotal}</span>
             </div>
             <div className="flex flex-col gap-3">
               <button
                 type="button"
                 onClick={() => {
                   setShowCart(false);
-                  handleBuyNow(cartProduct);
+                  if (cartItems.length > 0) setShowCheckout(true);
                 }}
+                disabled={cartItems.length === 0}
                 className="w-full py-3 rounded-full bg-primary text-primary-foreground font-semibold hover:brightness-110 transition-all"
               >
                 Proceed to Checkout
@@ -418,11 +531,11 @@ export default function Shop() {
         </div>
       )}
 
-      {selectedBuyProduct && (
-        <div className="fixed inset-0 z-[120] bg-foreground/50 flex items-center justify-center p-4" onClick={() => { setSelectedBuyProduct(null); setPaymentError(""); }}>
+      {showCheckout && cartItems.length > 0 && (
+        <div className="fixed inset-0 z-[120] bg-foreground/50 flex items-center justify-center p-4" onClick={() => { setShowCheckout(false); setPaymentError(""); }}>
           <div className="bg-card rounded-2xl p-8 max-w-md w-full card-shadow" onClick={(e) => e.stopPropagation()}>
             <h3 className="font-heading text-2xl mb-2">Quick Checkout</h3>
-            <p className="text-muted-foreground mb-4">{selectedBuyProduct.name} - ₹{selectedBuyProduct.price}</p>
+            <p className="text-muted-foreground mb-4">{cartItems.length} item(s) - ₹{cartTotal}</p>
             <form onSubmit={openRazorpay} className="space-y-4">
               <input required type="text" value={checkout.name} onChange={(e) => setCheckout((p) => ({ ...p, name: e.target.value }))} placeholder="Your Name" className="w-full px-4 py-3 rounded-xl border border-border bg-background" />
               <input required type="email" value={checkout.email} onChange={(e) => setCheckout((p) => ({ ...p, email: e.target.value }))} placeholder="Email" className="w-full px-4 py-3 rounded-xl border border-border bg-background" />
@@ -435,7 +548,7 @@ export default function Shop() {
                   <p className="text-sm text-destructive mb-2">{paymentError}</p>
                   <div className="flex gap-2">
                     <button type="submit" className="flex-1 py-2 rounded-full bg-primary text-primary-foreground text-sm font-semibold">Retry</button>
-                    <button type="button" onClick={() => { setSelectedBuyProduct(null); setPaymentError(""); }} className="flex-1 py-2 rounded-full bg-muted text-muted-foreground text-sm font-semibold">Cancel</button>
+                  <button type="button" onClick={() => { setShowCheckout(false); setPaymentError(""); }} className="flex-1 py-2 rounded-full bg-muted text-muted-foreground text-sm font-semibold">Cancel</button>
                   </div>
                 </div>
               )}

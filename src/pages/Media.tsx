@@ -28,10 +28,10 @@ export default function Media() {
         keywords="AKM Care YouTube, AKM Care Facebook, @akmcare1309, industrial training videos, motivation videos India, HR training sessions"
         canonical="/media"
       />
-      <section className="section-padding relative overflow-hidden">
+      <section className="section-padding pt-6 sm:pt-8 lg:pt-10 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.07] via-warm-beige to-background pointer-events-none" />
         <div className="container-premium text-center max-w-3xl relative z-10">
-          <p className="text-xs font-semibold tracking-[0.25em] uppercase text-primary mb-4">Media</p>
+          <p className="text-xs font-semibold tracking-[0.25em] uppercase text-primary mb-2.5">Media</p>
           <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl mb-6 bg-gradient-to-br from-foreground to-foreground/75 bg-clip-text">
             Video Library
           </h1>
@@ -41,9 +41,9 @@ export default function Media() {
         </div>
       </section>
 
-      <section className="section-padding pt-8">
+      <section className="section-padding pt-3 sm:pt-5">
         <div className="container-premium">
-          <div className="flex gap-2 overflow-x-auto pb-4 mb-10 scrollbar-hide -mx-1 px-1">
+          <div className="flex gap-2 overflow-x-auto pb-3 mb-6 scrollbar-hide -mx-1 px-1">
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -60,7 +60,7 @@ export default function Media() {
             ))}
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {filtered.map((video) => (
               <button
                 key={video.id}
@@ -98,7 +98,7 @@ export default function Media() {
             ))}
           </div>
 
-          <div className="text-center mt-14 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+          <div className="text-center mt-9 sm:mt-11 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
             <a
               href={YOUTUBE_CHANNEL_HANDLE_URL}
               target="_blank"

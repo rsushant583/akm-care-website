@@ -23,31 +23,60 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { productId, productName, amount } = await req.json();
-    const supabase = createClient(supabaseUrl, serviceRole);
-    const { data: product, error } = await supabase.from("products").select("id,stock_quantity").eq("id", productId).maybeSingle();
-    if (error || !product) {
-      return new Response(JSON.stringify({ success: false, error: "Product not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    if ((product.stock_quantity ?? 0) <= 0) {
-      return new Response(JSON.stringify({ success: false, error: "Product is out of stock" }), {
+    const { items, customer } = await req.json();
+    if (!Array.isArray(items) || items.length === 0) {
+      return new Response(JSON.stringify({ success: false, error: "Cart is empty" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    const supabase = createClient(supabaseUrl, serviceRole);
+    const uniqueProductIds = [...new Set(items.map((i: { productId: string }) => i.productId))];
+    const { data: products, error } = await supabase
+      .from("products")
+      .select("id,name,price,stock_quantity")
+      .in("id", uniqueProductIds);
+    if (error) throw error;
+
+    const productMap = new Map((products || []).map((p) => [p.id, p]));
+    let total = 0;
+    const normalizedItems: Array<{ productId: string; productName: string; quantity: number; unitPrice: number }> = [];
+    for (const raw of items) {
+      const qty = Math.max(1, Math.min(10, Number(raw.quantity || 1)));
+      const p = productMap.get(raw.productId);
+      if (!p) {
+        return new Response(JSON.stringify({ success: false, error: "One or more items are invalid" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (Number(p.stock_quantity ?? 0) < qty) {
+        return new Response(JSON.stringify({ success: false, error: `${p.name} is low on stock` }), {
+          status: 409,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const unitPrice = Number(p.price);
+      total += unitPrice * qty;
+      normalizedItems.push({
+        productId: p.id,
+        productName: p.name,
+        quantity: qty,
+        unitPrice,
+      });
+    }
+
     const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
     const order = await razorpay.orders.create({
-      amount: Math.round(Number(amount) * 100),
+      amount: Math.round(total * 100),
       currency: "INR",
       receipt: `akm_${Date.now()}`,
-      notes: { productId, productName },
+      notes: { itemCount: String(normalizedItems.length), customerEmail: String(customer?.email || "") },
     });
 
-    return new Response(JSON.stringify({ success: true, order, keyId }), {
+    return new Response(JSON.stringify({ success: true, order, keyId, items: normalizedItems, amount: total }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {

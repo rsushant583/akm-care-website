@@ -55,7 +55,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderData } = await req.json();
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderPayload } = await req.json();
+    if (!orderPayload?.items || !Array.isArray(orderPayload.items) || orderPayload.items.length === 0) {
+      return new Response(JSON.stringify({ success: false, error: "Invalid checkout payload" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const body = `${razorpay_order_id}|${razorpay_payment_id}`;
     const expected = createHmac("sha256", secret).update(body).digest("hex");
 
@@ -67,57 +74,103 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, serviceRole);
-    const { data: product, error: pErr } = await supabase
+    const { data: paidExisting } = await supabase
+      .from("orders")
+      .select("id")
+      .eq("razorpay_payment_id", razorpay_payment_id)
+      .eq("payment_status", "paid")
+      .limit(1);
+    if (paidExisting && paidExisting.length > 0) {
+      return new Response(JSON.stringify({ success: true, duplicate: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const productIds = [...new Set(orderPayload.items.map((i: { productId: string }) => i.productId))];
+    const { data: products, error: pErr } = await supabase
       .from("products")
-      .select("id,name,stock_quantity")
-      .eq("id", orderData.product_id)
-      .maybeSingle();
+      .select("id,name,price,stock_quantity")
+      .in("id", productIds);
+    if (pErr) throw pErr;
+    const pMap = new Map((products || []).map((p) => [p.id, p]));
 
-    if (pErr || !product) {
-      return new Response(JSON.stringify({ success: false, error: "Product not found while verifying order" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    if ((product.stock_quantity ?? 0) <= 0) {
-      return new Response(JSON.stringify({ success: false, error: "Item just went out of stock" }), {
-        status: 409,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const nextStock = Math.max(0, Number(product.stock_quantity) - 1);
-    const status = nextStock > 0 ? "available" : "sold_out";
-
-    const { data: updatedRows, error: stockErr } = await supabase
-      .from("products")
-      .update({ stock_quantity: nextStock, status })
-      .eq("id", orderData.product_id)
-      .gt("stock_quantity", 0)
-      .select("id");
-    if (stockErr) throw stockErr;
-    if (!updatedRows || updatedRows.length === 0) {
-      return new Response(JSON.stringify({ success: false, error: "Item just went out of stock" }), {
-        status: 409,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    for (const item of orderPayload.items) {
+      const p = pMap.get(item.productId);
+      const qty = Math.max(1, Number(item.quantity || 1));
+      if (!p || Number(p.stock_quantity ?? 0) < qty) {
+        return new Response(JSON.stringify({ success: false, error: `${item.productName} went out of stock` }), {
+          status: 409,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
-    const { error: orderErr } = await supabase.from("orders").insert({
-      ...orderData,
-      razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature,
-      payment_status: "paid",
-    });
-    if (orderErr) throw orderErr;
+    const insertedOrderIds: string[] = [];
+    for (const item of orderPayload.items) {
+      const p = pMap.get(item.productId)!;
+      const qty = Math.max(1, Number(item.quantity || 1));
+      const prevStock = Number(p.stock_quantity ?? 0);
+      const newStock = Math.max(0, prevStock - qty);
+      const status = newStock > 0 ? "available" : "sold_out";
+
+      const { data: updatedRows, error: stockErr } = await supabase
+        .from("products")
+        .update({ stock_quantity: newStock, status })
+        .eq("id", item.productId)
+        .gte("stock_quantity", qty)
+        .select("id");
+      if (stockErr) throw stockErr;
+      if (!updatedRows || updatedRows.length === 0) {
+        return new Response(JSON.stringify({ success: false, error: `${item.productName} went out of stock` }), {
+          status: 409,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: insertedOrder, error: orderErr } = await supabase
+        .from("orders")
+        .insert({
+          product_id: item.productId,
+          product_name: item.productName,
+          amount: Number(item.unitPrice) * qty,
+          unit_price: Number(item.unitPrice),
+          currency: "INR",
+          quantity: qty,
+          customer_name: orderPayload.customer.name,
+          customer_email: orderPayload.customer.email,
+          customer_phone: orderPayload.customer.phone || null,
+          razorpay_order_id,
+          razorpay_payment_id,
+          razorpay_signature,
+          order_group_id: razorpay_order_id,
+          payment_status: "paid",
+          notes: { itemCount: orderPayload.items.length },
+        })
+        .select("id")
+        .single();
+      if (orderErr) throw orderErr;
+      insertedOrderIds.push(insertedOrder.id);
+
+      const { error: movementErr } = await supabase.from("stock_movements").insert({
+        product_id: item.productId,
+        order_id: insertedOrder.id,
+        movement_type: "sale",
+        quantity_change: -qty,
+        previous_stock: prevStock,
+        new_stock: newStock,
+        reason: "Razorpay paid checkout",
+      });
+      if (movementErr) throw movementErr;
+
+      p.stock_quantity = newStock;
+    }
 
     await sendWhatsAppOrderNotification({
-      product: orderData.product_name,
-      amount: `INR ${orderData.amount}`,
-      customer: orderData.customer_name,
-      email: orderData.customer_email,
-      phone: orderData.customer_phone || "-",
+      item_count: String(orderPayload.items.length),
+      amount: `INR ${orderPayload.totalAmount}`,
+      customer: orderPayload.customer.name,
+      email: orderPayload.customer.email,
+      phone: orderPayload.customer.phone || "-",
       razorpay_order_id,
       razorpay_payment_id,
       timestamp: new Date().toISOString(),
@@ -128,11 +181,11 @@ Deno.serve(async (req) => {
       try {
         const resend = new Resend(resendKey);
         const orderRows = [
-          ["Product", orderData.product_name],
-          ["Amount", `INR ${orderData.amount}`],
-          ["Customer", orderData.customer_name],
-          ["Email", orderData.customer_email],
-          ["Phone", orderData.customer_phone || "-"],
+            ["Items", String(orderPayload.items.length)],
+            ["Amount", `INR ${orderPayload.totalAmount}`],
+            ["Customer", orderPayload.customer.name],
+            ["Email", orderPayload.customer.email],
+            ["Phone", orderPayload.customer.phone || "-"],
           ["Razorpay Order ID", razorpay_order_id],
           ["Razorpay Payment ID", razorpay_payment_id],
           ["Timestamp", new Date().toISOString()],
@@ -144,8 +197,8 @@ Deno.serve(async (req) => {
 
         await resend.emails.send({
           from: "AKM Care <onboarding@resend.dev>",
-          to: [orderData.customer_email, NOTIFICATION_EMAIL],
-          subject: `Order Confirmed - ${orderData.product_name}`,
+          to: [orderPayload.customer.email, NOTIFICATION_EMAIL],
+          subject: `Order Confirmed - ${orderPayload.items.length} item(s)`,
           html,
         });
       } catch (_) {
@@ -153,7 +206,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({ success: true, nextStock }), {
+    return new Response(JSON.stringify({ success: true, orderIds: insertedOrderIds }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {

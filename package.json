@@ -1,6 +1,6 @@
 {
   "name": "akm-care-website",
-  "description": "AKM Care & AKM Freight — Official Website",
+  "description": "AKM Care — Official Website",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -12,7 +12,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "supabase": "npx --yes supabase@latest",
+    "deploy:edge": "npx --yes supabase@latest functions deploy --project-ref tdqepnmysycxklqcvpai"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

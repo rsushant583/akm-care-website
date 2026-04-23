@@ -43,10 +43,10 @@ export default function Careers() {
         keywords="jobs AKM Care, careers Ahmedabad, HR jobs Gujarat, industrial company jobs"
         canonical="/careers"
       />
-      <section className="section-padding bg-warm-beige">
+      <section className="section-padding pt-6 sm:pt-8 lg:pt-10 bg-warm-beige">
         <div className="container-premium text-center max-w-3xl">
-          <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl mb-6">Careers</h1>
-          <p className="text-lg text-muted-foreground">
+          <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl mb-4">Careers</h1>
+          <p className="text-base sm:text-lg text-muted-foreground">
           Connect with team AKM Care to be the part of India's growing job placement Services for PAN India and abroad clients.
           </p>
         </div>
@@ -54,7 +54,7 @@ export default function Careers() {
 
       <section className="section-padding">
         <div className="container-premium">
-          <div className="bg-accent rounded-2xl p-8 text-center mb-14">
+          <div className="bg-accent rounded-2xl p-6 sm:p-8 text-center mb-10">
             <h2 className="font-heading text-2xl mb-3">Current Openings</h2>
             <p className="text-muted-foreground">
             No openings currently, but please share your recently updated CV for upcoming openings in future, either directly through this  website or on our email :- 
@@ -63,8 +63,8 @@ Based on our clients requirements and your eligibility criteria & candidature, y
             </p>
           </div>
 
-          <h2 className="font-heading text-3xl text-center mb-10">Why Work With Us</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-16">
+          <h2 className="font-heading text-3xl text-center mb-7">Why Work With Us</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-12">
             {whyUs.map((item) => (
               <div key={item.title} className="bg-card rounded-2xl p-6 text-center card-shadow">
                 <div className="w-14 h-14 rounded-xl bg-accent flex items-center justify-center mx-auto mb-4">
@@ -77,7 +77,7 @@ Based on our clients requirements and your eligibility criteria & candidature, y
           </div>
 
           <div className="max-w-2xl mx-auto">
-            <h2 className="font-heading text-3xl text-center mb-8">Apply Now</h2>
+            <h2 className="font-heading text-3xl text-center mb-6">Apply Now</h2>
             <form onSubmit={handleSubmit} className="bg-card rounded-2xl p-6 sm:p-8 card-shadow space-y-5">
               <input type="text" placeholder="Full Name" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-border bg-background text-base focus:outline-none focus:ring-2 focus:ring-primary/20" />
               <input type="email" placeholder="Email Address" required value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-border bg-background text-base focus:outline-none focus:ring-2 focus:ring-primary/20" />

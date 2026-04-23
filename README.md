@@ -1,7 +1,7 @@
-# AKM Care & AKM Freight
+# AKM Care
 
-Official website for AKM Care & AKM Freight — providing
-industrial training, HR solutions, logistics, and
+Official website for AKM Care — providing
+industrial training, HR solutions, and
 authentic rural e-commerce across India.
 
 ## Tech Stack
