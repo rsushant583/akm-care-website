@@ -30,6 +30,11 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://akmcare.com/personal-booking</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://akmcare.com/media</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>

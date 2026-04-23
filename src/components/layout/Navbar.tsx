@@ -10,6 +10,7 @@ const navLinks = [
   { label: "Training & Education", path: "/training" },
   { label: "Services", path: "/services" },
   { label: "Shop", path: "/shop" },
+  { label: "Personal Booking", path: "/personal-booking" },
   { label: "Media", path: "/media" },
   { label: "CSR", path: "/csr" },
   { label: "Careers", path: "/careers" },

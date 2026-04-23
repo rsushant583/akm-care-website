@@ -69,7 +69,7 @@ export default function Hero() {
   return (
     <section
       ref={rootRef}
-      className="relative min-h-[calc(100svh-3.2rem)] lg:min-h-[calc(100vh-3.8rem)] lg:h-[calc(100vh-3.8rem)] flex flex-col justify-center overflow-hidden grain-overlay"
+      className="relative min-h-[calc(100svh-3.2rem-2.25rem)] lg:min-h-[calc(100vh-3.8rem-2.25rem)] lg:h-[calc(100vh-3.8rem-2.25rem)] flex flex-col justify-center overflow-hidden grain-overlay"
     >
       <motion.div
         ref={parallaxRef}
@@ -184,13 +184,6 @@ export default function Hero() {
 
               <div className="absolute top-4 right-4 z-[3] rounded-full bg-white/92 backdrop-blur-md px-3 py-1.5 text-[0.65rem] sm:text-xs font-semibold text-[#1A1A1A] border border-white/60 shadow-sm">
                 Est. 2018 | Trusted by 500+ Companies
-              </div>
-
-              <div className="absolute left-4 bottom-4 right-4 sm:right-auto sm:max-w-[min(100%,340px)] z-[3] rounded-xl bg-black/45 backdrop-blur-md border border-white/15 p-4 text-white shadow-lg">
-                <p className="font-heading text-sm sm:text-base italic leading-snug text-white/95">
-                  “You have the right to work, not to the fruits of work alone.”
-                </p>
-                <p className="mt-2 text-xs font-semibold text-[#F5A623] tracking-wide">— Bhagavad Gita, 2:47</p>
               </div>
 
             </div>

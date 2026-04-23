@@ -14,6 +14,7 @@ const About = lazy(() => import("./pages/About"));
 const Training = lazy(() => import("./pages/Training"));
 const Services = lazy(() => import("./pages/Services"));
 const Shop = lazy(() => import("./pages/Shop"));
+const PersonalBooking = lazy(() => import("./pages/PersonalBooking"));
 const Media = lazy(() => import("./pages/Media"));
 const Motivation = lazy(() => import("./pages/Motivation"));
 const CSR = lazy(() => import("./pages/CSR"));
@@ -127,6 +128,7 @@ function AnimatedRoutes() {
           <Route path="/training" element={<Training />} />
           <Route path="/services" element={<Services />} />
           <Route path="/shop" element={<Shop />} />
+          <Route path="/personal-booking" element={<PersonalBooking />} />
           <Route path="/media" element={<Media />} />
           <Route path="/motivation" element={<Motivation />} />
           <Route path="/csr" element={<CSR />} />
