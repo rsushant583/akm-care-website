@@ -75,12 +75,12 @@ export default function PersonalBooking() {
         keywords="IRCTC, MakeMyTrip, RedBus, Amazon India, Flipkart, Meesho, Myntra, Ajio, personal booking, AKM Care"
         canonical="/personal-booking"
       />
-      <section className="section-padding pt-6 sm:pt-8 lg:pt-10 relative overflow-hidden">
+      <section className="section-padding pt-6 sm:pt-8 lg:pt-10 pb-4 sm:pb-5 lg:pb-6 relative">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.07] via-warm-beige to-background pointer-events-none" />
         <div className="container-premium text-center max-w-3xl relative z-10">
           <p className="text-xs font-semibold tracking-[0.25em] uppercase text-primary mb-2.5">Quick access</p>
-          <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl mb-6 bg-gradient-to-br from-foreground to-foreground/75 bg-clip-text">
-            Personal booking
+          <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl mb-4 sm:mb-5 bg-gradient-to-br from-foreground to-foreground/75 bg-clip-text">
+            Personal Booking
           </h1>
           <p className="text-lg text-muted-foreground leading-relaxed">
             External platforms for rail, travel, and shopping—open in a new tab when you choose.
@@ -88,10 +88,10 @@ export default function PersonalBooking() {
         </div>
       </section>
 
-      <section className="section-padding pt-0 -mt-6 sm:-mt-8">
+      <section className="section-padding pt-0 -mt-10 sm:-mt-12 lg:-mt-14 relative z-20">
         <div className="container-premium max-w-4xl">
-          <div className="mb-3 sm:mb-4 rounded-xl border border-[#E8621A]/20 bg-card/70 px-4 py-2 text-center shadow-sm">
-            <p className="font-medium text-[0.82rem] sm:text-[1rem] tracking-wide text-[#1A1A1A]/80 whitespace-nowrap">
+          <div className="mx-auto mb-5 sm:mb-6 max-w-2xl rounded-xl border border-[#E8621A]/20 bg-card/70 px-4 py-2.5 text-center shadow-sm">
+            <p className="font-bold text-[0.82rem] sm:text-[1rem] tracking-wide text-[#1A1A1A]/90 whitespace-nowrap">
               Here, We Assist Your Personal Needs, Un-conditionally.
             </p>
           </div>
