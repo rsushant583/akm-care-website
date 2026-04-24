@@ -51,7 +51,7 @@ const services: {
     iconClass: "text-[#F43397] bg-[#F43397]/10",
   },
   {
-    name: "Muntra",
+    name: "Myntra",
     description: "Fashion and lifestyle shopping platform.",
     href: "https://www.myntra.com/",
     icon: ShoppingBag,
@@ -71,8 +71,8 @@ export default function PersonalBooking() {
     <>
       <SEO
         title="Personal Booking — IRCTC, Travel & Shopping Links"
-        description="Quick links to IRCTC, MakeMyTrip, RedBus, Amazon, Flipkart, Meesho, Muntra, and Ajio for personal convenience. Read our disclaimer before using third-party services."
-        keywords="IRCTC, MakeMyTrip, RedBus, Amazon India, Flipkart, Meesho, Muntra, Ajio, personal booking, AKM Care"
+        description="Quick links to IRCTC, MakeMyTrip, RedBus, Amazon, Flipkart, Meesho, Myntra, and Ajio for personal convenience. Read our disclaimer before using third-party services."
+        keywords="IRCTC, MakeMyTrip, RedBus, Amazon India, Flipkart, Meesho, Myntra, Ajio, personal booking, AKM Care"
         canonical="/personal-booking"
       />
       <section className="section-padding pt-6 sm:pt-8 lg:pt-10 relative overflow-hidden">
@@ -88,8 +88,13 @@ export default function PersonalBooking() {
         </div>
       </section>
 
-      <section className="section-padding pt-0">
+      <section className="section-padding pt-0 -mt-6 sm:-mt-8">
         <div className="container-premium max-w-4xl">
+          <div className="mb-3 sm:mb-4 rounded-xl border border-[#E8621A]/20 bg-card/70 px-4 py-2 text-center shadow-sm">
+            <p className="font-medium text-[0.82rem] sm:text-[1rem] tracking-wide text-[#1A1A1A]/80 whitespace-nowrap">
+              Here, We Assist Your Personal Needs, Un-conditionally.
+            </p>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
             {services.map((s) => {
               const Icon = s.icon;
