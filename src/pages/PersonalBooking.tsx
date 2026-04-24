@@ -36,6 +36,34 @@ const services: {
     icon: ShoppingBag,
     iconClass: "text-[#1A1A1A] bg-[#F5A623]/12",
   },
+  {
+    name: "Flipkart",
+    description: "Online shopping for electronics, fashion, and more.",
+    href: "https://www.flipkart.com/",
+    icon: ShoppingBag,
+    iconClass: "text-[#2874F0] bg-[#2874F0]/10",
+  },
+  {
+    name: "Meesho",
+    description: "Affordable online shopping across popular categories.",
+    href: "https://www.meesho.com/",
+    icon: ShoppingBag,
+    iconClass: "text-[#F43397] bg-[#F43397]/10",
+  },
+  {
+    name: "Muntra",
+    description: "Fashion and lifestyle shopping platform.",
+    href: "https://www.myntra.com/",
+    icon: ShoppingBag,
+    iconClass: "text-[#FF3F6C] bg-[#FF3F6C]/10",
+  },
+  {
+    name: "Ajio",
+    description: "Fashion and accessories shopping destination.",
+    href: "https://www.ajio.com/",
+    icon: ShoppingBag,
+    iconClass: "text-[#3A3A3A] bg-[#3A3A3A]/10",
+  },
 ];
 
 export default function PersonalBooking() {
@@ -43,8 +71,8 @@ export default function PersonalBooking() {
     <>
       <SEO
         title="Personal Booking — IRCTC, Travel & Shopping Links"
-        description="Quick links to IRCTC, MakeMyTrip, RedBus, and Amazon for personal convenience. Read our disclaimer before using third-party services."
-        keywords="IRCTC, MakeMyTrip, RedBus, Amazon India, personal booking, AKM Care"
+        description="Quick links to IRCTC, MakeMyTrip, RedBus, Amazon, Flipkart, Meesho, Muntra, and Ajio for personal convenience. Read our disclaimer before using third-party services."
+        keywords="IRCTC, MakeMyTrip, RedBus, Amazon India, Flipkart, Meesho, Muntra, Ajio, personal booking, AKM Care"
         canonical="/personal-booking"
       />
       <section className="section-padding pt-6 sm:pt-8 lg:pt-10 relative overflow-hidden">
