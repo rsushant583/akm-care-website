@@ -3,6 +3,11 @@ export type Thought = { quote: string; source: string };
 export const thoughts: Thought[] = [
   {
     quote:
+      "You only have to do a very few things right in your life so long as you don't do too many things wrong.",
+    source: "Warren Buffett",
+  },
+  {
+    quote:
       "Wherever you are, be there totally. If you find your here and now intolerable and it makes you unhappy, you have three options: remove yourself from the situation, change it, or accept it totally. If you want to take responsibility for your life, you must choose one of those three options, and you must choose now. Then accept the consequences.",
     source: "Eckhart Tolle",
   },

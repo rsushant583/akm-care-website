@@ -4,14 +4,18 @@ import { Quote } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { useEffect, useMemo, useState } from "react";
 import { Reveal } from "@/components/ui/Reveal";
-import { getDailyMotivationSlice, getLocalDateKey, msUntilNextLocalMidnight } from "@/lib/dailyMotivation";
+import {
+  getDailyMotivationSlice,
+  getIndiaDateKey,
+  msUntilNextIndiaMidnight,
+} from "@/lib/dailyMotivation";
 
 export default function Motivation() {
   const { data: motivationQuotes, loading } = useMotivation();
-  const [dayKey, setDayKey] = useState(() => getLocalDateKey());
+  const [dayKey, setDayKey] = useState(() => getIndiaDateKey());
 
   useEffect(() => {
-    const t = window.setTimeout(() => setDayKey(getLocalDateKey()), msUntilNextLocalMidnight());
+    const t = window.setTimeout(() => setDayKey(getIndiaDateKey()), msUntilNextIndiaMidnight());
     return () => window.clearTimeout(t);
   }, [dayKey]);
 

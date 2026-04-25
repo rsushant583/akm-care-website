@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { dailyQuotes } from "@/data/dailyQuotes";
-import { getLocalDateKey, msUntilNextLocalMidnight } from "@/lib/dailyMotivation";
+import { useMotivation } from "@/hooks/useMotivation";
+import {
+  getDailyMotivationSlice,
+  getIndiaDateKey,
+  msUntilNextIndiaMidnight,
+} from "@/lib/dailyMotivation";
 import { prefersReducedMotion } from "@/lib/motion";
-
-function getDayOfYear(date = new Date()) {
-  const start = new Date(date.getFullYear(), 0, 0);
-  const diff = date.getTime() - start.getTime();
-  return Math.floor(diff / 86400000);
-}
 
 /**
  * Full-width “today’s thought” strip below the nav — continuous right-to-left ticker.
@@ -16,7 +14,8 @@ function getDayOfYear(date = new Date()) {
  */
 export default function GlobalMotivationLayer() {
   const { pathname } = useLocation();
-  const [dayKey, setDayKey] = useState(() => getLocalDateKey());
+  const { data: motivationQuotes } = useMotivation();
+  const [dayKey, setDayKey] = useState(() => getIndiaDateKey());
   const [reducedMotion, setReducedMotion] = useState(() =>
     typeof window !== "undefined" ? prefersReducedMotion() : false,
   );
@@ -30,16 +29,16 @@ export default function GlobalMotivationLayer() {
   }, []);
 
   useEffect(() => {
-    const t = window.setTimeout(() => setDayKey(getLocalDateKey()), msUntilNextLocalMidnight());
+    const t = window.setTimeout(() => setDayKey(getIndiaDateKey()), msUntilNextIndiaMidnight());
     return () => window.clearTimeout(t);
   }, [dayKey]);
 
-  const quote = useMemo(() => {
-    const idx = getDayOfYear(new Date(`${dayKey}T00:00:00`)) % dailyQuotes.length;
-    return dailyQuotes[idx];
-  }, [dayKey]);
+  const quote = useMemo(
+    () => getDailyMotivationSlice(motivationQuotes, dayKey).today,
+    [motivationQuotes, dayKey],
+  );
 
-  if (pathname.startsWith("/admin")) return null;
+  if (pathname.startsWith("/admin") || !quote) return null;
 
   const label = "Today's thought";
   const fullLine = `“${quote.quote}” — ${quote.source}`;
