@@ -143,7 +143,7 @@ export default function Contact() {
                 {
                   icon: Mail,
                   label: "Email",
-                  value: "contact@akmcare.in, akmcare108@gmail.com",
+                  value: "contact@akmcare.in",
                   action: "mailto:contact@akmcare.in",
                   cta: "Send Email",
                 },

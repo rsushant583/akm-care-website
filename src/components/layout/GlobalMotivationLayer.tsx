@@ -1,11 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useMotivation } from "@/hooks/useMotivation";
-import {
-  getDailyMotivationSlice,
-  getIndiaDateKey,
-  msUntilNextIndiaMidnight,
-} from "@/lib/dailyMotivation";
+import { useIndiaDayKey } from "@/hooks/useIndiaDayKey";
+import { getDailyMotivationSlice } from "@/lib/dailyMotivation";
 import { prefersReducedMotion } from "@/lib/motion";
 
 /**
@@ -15,7 +12,7 @@ import { prefersReducedMotion } from "@/lib/motion";
 export default function GlobalMotivationLayer() {
   const { pathname } = useLocation();
   const { data: motivationQuotes } = useMotivation();
-  const [dayKey, setDayKey] = useState(() => getIndiaDateKey());
+  const dayKey = useIndiaDayKey();
   const [reducedMotion, setReducedMotion] = useState(() =>
     typeof window !== "undefined" ? prefersReducedMotion() : false,
   );
@@ -27,11 +24,6 @@ export default function GlobalMotivationLayer() {
     mq.addEventListener("change", sync);
     return () => mq.removeEventListener("change", sync);
   }, []);
-
-  useEffect(() => {
-    const t = window.setTimeout(() => setDayKey(getIndiaDateKey()), msUntilNextIndiaMidnight());
-    return () => window.clearTimeout(t);
-  }, [dayKey]);
 
   const quote = useMemo(
     () => getDailyMotivationSlice(motivationQuotes, dayKey).today,

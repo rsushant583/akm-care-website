@@ -16,11 +16,11 @@ export const services = [
 ];
 
 export const products = [
-  { id: "1", name: "Makhana (Fox Nuts)", price: 299, quantity: "250g", stock_quantity: 50, status: "available" as const, image_url: "/products/makhana.png", description: "Premium quality fox nuts sourced directly from Bihar's villages." },
-  { id: "2", name: "Sattu Powder", price: 199, quantity: "500g", stock_quantity: 35, status: "available" as const, image_url: "/products/sattu.png", description: "Authentic roasted gram flour, a superfood from rural India." },
-  { id: "3", name: "Organic Honey", price: 399, quantity: "500ml", stock_quantity: 24, status: "available" as const, image_url: "/products/honey.png", description: "Pure, unprocessed honey from the forests of central India." },
-  { id: "4", name: "Pure Desi Ghee", price: 899, quantity: "1kg", stock_quantity: 12, status: "available" as const, image_url: "/products/ghee.png", description: "Traditional clarified butter made from pure cow's milk." },
-  { id: "5", name: "Roasted Chana", price: 149, quantity: "500g", stock_quantity: 28, status: "available" as const, image_url: "/products/roasted-chana.png", description: "Crunchy roasted chickpeas, a healthy and delicious snack." },
+  { id: "1", name: "Makhana (Fox Nuts)", price: 299, quantity: "250g", stock_quantity: 0, status: "sold_out" as const, image_url: "/products/makhana.png", description: "Premium quality fox nuts sourced directly from Bihar's villages." },
+  { id: "2", name: "Sattu Powder", price: 199, quantity: "500g", stock_quantity: 0, status: "sold_out" as const, image_url: "/products/sattu.png", description: "Authentic roasted gram flour, a superfood from rural India." },
+  { id: "3", name: "Organic Honey", price: 399, quantity: "500ml", stock_quantity: 0, status: "sold_out" as const, image_url: "/products/honey.png", description: "Pure, unprocessed honey from the forests of central India." },
+  { id: "4", name: "Pure Desi Ghee", price: 899, quantity: "1kg", stock_quantity: 0, status: "sold_out" as const, image_url: "/products/ghee.png", description: "Traditional clarified butter made from pure cow's milk." },
+  { id: "5", name: "Roasted Chana", price: 149, quantity: "500g", stock_quantity: 0, status: "sold_out" as const, image_url: "/products/roasted-chana.png", description: "Crunchy roasted chickpeas, a healthy and delicious snack." },
 ];
 
 export const motivationQuotes = thoughts.map((t, idx) => ({
@@ -33,7 +33,7 @@ export const motivationQuotes = thoughts.map((t, idx) => ({
 export const faqs = [
   { id: "1", question: "What services does AKM Care provide?", answer: "AKM Care provides a comprehensive range of industrial solutions including corporate training, placement services, manpower deployment, compliance consulting, IT solutions (websites, apps, software development), catering & facility management, tours & travel, maintenance services, and customized need-based solutions. We serve industries Pan India.", category: "General" },
   { id: "2", question: "Do you offer training programs across India?", answer: "Yes, we offer training programs Pan India. Our specialized trainers deliver soft skills, technical, behavioral, commercial, leadership, sales & marketing, customer service, and safety & compliance training at your premises or in our training centers.", category: "Training" },
-  { id: "3", question: "How can we collaborate with AKM Care?", answer: "You can reach out to us via our contact form, email at contact@akmcare.in or akmcare108@gmail.com, or call us at +91-8200224226. Our team will assess your requirements and provide customized solutions.", category: "General" },
+  { id: "3", question: "How can we collaborate with AKM Care?", answer: "You can reach out to us via our contact form, email at contact@akmcare.in, or call us at +91-8200224226. Our team will assess your requirements and provide customized solutions.", category: "General" },
   { id: "4", question: "When will products be available for purchase?", answer: "We are currently preparing our e-commerce platform to bring authentic village products directly to your doorstep. Products like Makhana, Sattu, and organic items will be available soon. You can sign up for notifications on our Shop page.", category: "Products" },
   { id: "5", question: "What is AKM Care's CSR initiative?", answer: "AKM Care provides free soft skill, behavioral, and motivational training through our faculty to schools, colleges, NGOs, and community organizations under our CSR program, available on Sundays subject to trainer availability.", category: "General" },
   { id: "6", question: "How do I apply for a job at AKM Care?", answer: "Visit our Careers page and submit your application with your resume. While we may not have open positions at all times, we review every application and keep promising candidates in our talent pool.", category: "General" },
@@ -45,7 +45,7 @@ export const faqs = [
   { id: "12", question: "Can AKM Care support custom service requests?", answer: "Yes. Contact us to discuss your specific requirements and we will provide a customized solution.", category: "Services" },
   { id: "13", question: "Are your products organic and authentic?", answer: "Yes, all our products are sourced directly from rural Indian villages, ensuring authenticity and quality. We prioritize organic and traditional production methods.", category: "Products" },
   { id: "14", question: "Do you offer annual maintenance contracts?", answer: "Yes, we offer comprehensive AMCs covering repair, maintenance, civil works, housekeeping, gardening, and pest control services.", category: "Services" },
-  { id: "15", question: "How can I request a CSR training session?", answer: "Training officers, HODs, HR heads, and directors can contact us at contact@akmcare.in or akmcare108@gmail.com or call +91-8200224226 to schedule CSR training sessions for nearby communities.", category: "General" },
+  { id: "15", question: "How can I request a CSR training session?", answer: "Training officers, HODs, HR heads, and directors can contact us at contact@akmcare.in or call +91-8200224226 to schedule CSR training sessions for nearby communities.", category: "General" },
 ];
 
 export const trainingCategories = [

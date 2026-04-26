@@ -7,8 +7,8 @@ const mapFallbackProducts = () =>
   fallbackProducts.map((item, index) => ({
     ...item,
     image_url: item.image_url || "",
-    stock_quantity: Math.min(50, Math.max(0, item.stock_quantity ?? 0)),
-    status: (item.stock_quantity ?? 0) > 0 ? "available" : "sold_out",
+    stock_quantity: 0,
+    status: "sold_out",
     display_order: index,
     created_at: new Date().toISOString(),
   }));
@@ -32,14 +32,11 @@ export function useProducts() {
         .select("*")
         .order("display_order", { ascending: true });
       if (dbError) throw dbError;
-      const normalized = (rows || []).map((item) => {
-        const stock = Math.min(50, Math.max(0, Number(item.stock_quantity ?? 0)));
-        return {
-          ...item,
-          stock_quantity: stock,
-          status: stock > 0 ? "available" : "sold_out",
-        };
-      });
+      const normalized = (rows || []).map((item) => ({
+        ...item,
+        stock_quantity: 0,
+        status: "sold_out",
+      }));
       setData(normalized.length > 0 ? normalized : mapFallbackProducts());
       setError(null);
     } catch (err) {

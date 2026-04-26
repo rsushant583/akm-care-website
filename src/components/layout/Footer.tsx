@@ -93,7 +93,7 @@ export default function Footer() {
               </li>
               <li className="flex items-start gap-2.5">
                 <Mail size={16} className="text-[#E8621A] mt-0.5 shrink-0" />
-                <span className="text-sm text-white/65">contact@akmcare.in, akmcare108@gmail.com</span>
+                <span className="text-sm text-white/65">contact@akmcare.in</span>
               </li>
               <li className="flex items-start gap-2.5">
                 <MapPin size={16} className="text-[#E8621A] mt-0.5 shrink-0" />

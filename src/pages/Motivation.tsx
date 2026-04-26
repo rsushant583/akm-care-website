@@ -1,23 +1,15 @@
 import { useMotivation } from "@/hooks/useMotivation";
+import { useIndiaDayKey } from "@/hooks/useIndiaDayKey";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Quote } from "lucide-react";
 import { SEO } from "@/components/SEO";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Reveal } from "@/components/ui/Reveal";
-import {
-  getDailyMotivationSlice,
-  getIndiaDateKey,
-  msUntilNextIndiaMidnight,
-} from "@/lib/dailyMotivation";
+import { getDailyMotivationSlice } from "@/lib/dailyMotivation";
 
 export default function Motivation() {
   const { data: motivationQuotes, loading } = useMotivation();
-  const [dayKey, setDayKey] = useState(() => getIndiaDateKey());
-
-  useEffect(() => {
-    const t = window.setTimeout(() => setDayKey(getIndiaDateKey()), msUntilNextIndiaMidnight());
-    return () => window.clearTimeout(t);
-  }, [dayKey]);
+  const dayKey = useIndiaDayKey();
 
   const { today, archive } = useMemo(
     () => getDailyMotivationSlice(motivationQuotes, dayKey),

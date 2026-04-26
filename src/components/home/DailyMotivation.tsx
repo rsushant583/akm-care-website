@@ -1,24 +1,16 @@
 import { useMotivation } from "@/hooks/useMotivation";
+import { useIndiaDayKey } from "@/hooks/useIndiaDayKey";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { gsap } from "@/lib/gsapRegister";
 import { prefersReducedMotion } from "@/lib/motion";
 import { runRevealWhenVisible } from "@/lib/runRevealWhenVisible";
-import {
-  getDailyMotivationSlice,
-  getIndiaDateKey,
-  msUntilNextIndiaMidnight,
-} from "@/lib/dailyMotivation";
+import { getDailyMotivationSlice } from "@/lib/dailyMotivation";
 
 export default function DailyMotivation() {
   const sectionRef = useRef<HTMLElement>(null);
   const { data: motivationQuotes, loading } = useMotivation();
-  const [dayKey, setDayKey] = useState(() => getIndiaDateKey());
-
-  useEffect(() => {
-    const t = window.setTimeout(() => setDayKey(getIndiaDateKey()), msUntilNextIndiaMidnight());
-    return () => window.clearTimeout(t);
-  }, [dayKey]);
+  const dayKey = useIndiaDayKey();
 
   const quote = useMemo(
     () => getDailyMotivationSlice(motivationQuotes, dayKey).today,
