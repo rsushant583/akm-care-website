@@ -57,7 +57,6 @@ export default function DailyMotivation() {
             data-daily-card
             className="max-w-3xl mx-auto rounded-2xl p-8 sm:p-12 text-center border border-white/50 shadow-[0_20px_60px_rgba(26,26,26,0.08)] bg-white/80 backdrop-blur-md"
           >
-            <p className="text-base sm:text-lg font-semibold text-[#E8621A] mb-4">{quote.greeting}</p>
             <blockquote className="font-heading text-xl sm:text-2xl lg:text-3xl italic leading-relaxed mb-6 text-[#1A1A1A]">
               "{quote.text}"
             </blockquote>

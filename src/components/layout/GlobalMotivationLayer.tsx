@@ -25,7 +25,7 @@ export default function GlobalMotivationLayer() {
   if (pathname.startsWith("/admin") || !quote) return null;
 
   const label = "Today's thought";
-  const fullLine = `${quote.greeting}  💬 "${quote.text}" — ${quote.author}`;
+  const fullLine = `💬 "${quote.text}" — ${quote.author}`;
 
   if (reducedMotion) {
     return (

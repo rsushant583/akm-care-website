@@ -4,7 +4,6 @@ import { getDailyQuote } from "@/utils/getDailyQuote";
 type DailyQuote = {
   text: string;
   author: string;
-  greeting: string;
 };
 
 const DailyQuoteContext = createContext<DailyQuote | null>(null);
