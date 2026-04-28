@@ -1,9 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { useMotivation } from "@/hooks/useMotivation";
-import { useIndiaDayKey } from "@/hooks/useIndiaDayKey";
-import { getDailyMotivationSlice } from "@/lib/dailyMotivation";
 import { prefersReducedMotion } from "@/lib/motion";
+import { useDailyQuote } from "@/context/DailyQuoteContext";
 
 /**
  * Full-width “today’s thought” strip below the nav — continuous right-to-left ticker.
@@ -11,8 +9,7 @@ import { prefersReducedMotion } from "@/lib/motion";
  */
 export default function GlobalMotivationLayer() {
   const { pathname } = useLocation();
-  const { data: motivationQuotes } = useMotivation();
-  const dayKey = useIndiaDayKey();
+  const quote = useDailyQuote();
   const [reducedMotion, setReducedMotion] = useState(() =>
     typeof window !== "undefined" ? prefersReducedMotion() : false,
   );
@@ -25,15 +22,10 @@ export default function GlobalMotivationLayer() {
     return () => mq.removeEventListener("change", sync);
   }, []);
 
-  const quote = useMemo(
-    () => getDailyMotivationSlice(motivationQuotes, dayKey).today,
-    [motivationQuotes, dayKey],
-  );
-
   if (pathname.startsWith("/admin") || !quote) return null;
 
   const label = "Today's thought";
-  const fullLine = `“${quote.quote}” — ${quote.source}`;
+  const fullLine = `${quote.greeting}  💬 "${quote.text}" — ${quote.author}`;
 
   if (reducedMotion) {
     return (

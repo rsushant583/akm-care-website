@@ -1,25 +1,16 @@
-import { useMotivation } from "@/hooks/useMotivation";
-import { useIndiaDayKey } from "@/hooks/useIndiaDayKey";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { gsap } from "@/lib/gsapRegister";
 import { prefersReducedMotion } from "@/lib/motion";
 import { runRevealWhenVisible } from "@/lib/runRevealWhenVisible";
-import { getDailyMotivationSlice } from "@/lib/dailyMotivation";
+import { useDailyQuote } from "@/context/DailyQuoteContext";
 
 export default function DailyMotivation() {
   const sectionRef = useRef<HTMLElement>(null);
-  const { data: motivationQuotes, loading } = useMotivation();
-  const dayKey = useIndiaDayKey();
-
-  const quote = useMemo(
-    () => getDailyMotivationSlice(motivationQuotes, dayKey).today,
-    [motivationQuotes, dayKey],
-  );
+  const quote = useDailyQuote();
 
   useEffect(() => {
     const root = sectionRef.current;
-    if (!root || loading || !quote || prefersReducedMotion()) return;
+    if (!root || !quote || prefersReducedMotion()) return;
 
     let ctx: gsap.Context | null = null;
     const disconnect = runRevealWhenVisible(root, () => {
@@ -46,7 +37,7 @@ export default function DailyMotivation() {
       disconnect();
       ctx?.revert();
     };
-  }, [loading, quote]);
+  }, [quote]);
 
   return (
     <section
@@ -58,24 +49,19 @@ export default function DailyMotivation() {
       </div>
       <div className="container-premium relative z-10">
         <h2 data-daily-reveal className="font-heading text-3xl sm:text-4xl text-center mb-8 text-[#1A1A1A]">
-          Today&apos;s Inspiration
+          Thought of the Day
         </h2>
 
-        {loading || !quote ? (
-          <Skeleton className="max-w-3xl mx-auto h-56 rounded-2xl" />
-        ) : (
+        {!quote ? null : (
           <div
             data-daily-card
-            className={`max-w-3xl mx-auto rounded-2xl p-8 sm:p-12 text-center border border-white/50 shadow-[0_20px_60px_rgba(26,26,26,0.08)] ${
-              quote.source === "Phil Jackson"
-                ? "bg-white/85 backdrop-blur-md ring-1 ring-[#E8621A]/20"
-                : "bg-white/80 backdrop-blur-md"
-            }`}
+            className="max-w-3xl mx-auto rounded-2xl p-8 sm:p-12 text-center border border-white/50 shadow-[0_20px_60px_rgba(26,26,26,0.08)] bg-white/80 backdrop-blur-md"
           >
+            <p className="text-base sm:text-lg font-semibold text-[#E8621A] mb-4">{quote.greeting}</p>
             <blockquote className="font-heading text-xl sm:text-2xl lg:text-3xl italic leading-relaxed mb-6 text-[#1A1A1A]">
-              &ldquo;{quote.quote}&rdquo;
+              "{quote.text}"
             </blockquote>
-            <p className="text-sm sm:text-base text-[#6B6B6B] font-medium font-body">— {quote.source}</p>
+            <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium font-body">— {quote.author}</p>
           </div>
         )}
       </div>
