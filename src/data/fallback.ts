@@ -13,6 +13,7 @@ export const services = [
   { id: "10", title: "Employment Verification", description: "Thorough background checks and employment verification services for secure hiring.", icon: "UserCheck", category: "HR" },
   { id: "11", title: "CSR Initiatives", description: "Free soft skill and motivational training programs for communities, schools, and NGOs.", icon: "Heart", category: "Others" },
   { id: "12", title: "IT Solutions", description: "Website creation, mobile app development, and custom software development tailored to your business needs.", icon: "Code", category: "Others" },
+  { id: "14", title: "Property & Real Estate Dealing Services", description: "End-to-end assistance for property and real estate dealing requirements with practical, client-focused support.", icon: "Briefcase", category: "Others" },
 ];
 
 export const products = [

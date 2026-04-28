@@ -43,7 +43,7 @@ export default function Careers() {
         keywords="jobs AKM Care, careers Ahmedabad, HR jobs Gujarat, industrial company jobs"
         canonical="/careers"
       />
-      <section className="section-padding pt-6 sm:pt-8 lg:pt-10 bg-warm-beige">
+      <section className="section-padding pt-6 sm:pt-8 lg:pt-10 pb-4 sm:pb-6 bg-warm-beige">
         <div className="container-premium text-center max-w-3xl">
           <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl mb-4">Careers</h1>
           <p className="text-base sm:text-lg text-muted-foreground">
@@ -52,25 +52,36 @@ export default function Careers() {
         </div>
       </section>
 
-      <section className="section-padding">
+      <section className="section-padding pt-4 sm:pt-6">
         <div className="container-premium">
-          <div className="bg-accent rounded-2xl p-6 sm:p-8 text-center mb-10">
-            <h2 className="font-heading text-2xl mb-3">Current Openings</h2>
+          <div className="bg-[#FFF4E6] rounded-2xl p-6 sm:p-8 max-w-3xl mx-auto text-center mb-10">
+            <h2 className="font-heading font-bold text-2xl mb-3">Current Openings</h2>
             <p className="text-muted-foreground">
             No openings currently, but please share your recently updated CV for upcoming openings in future, either directly through this website or on our email: contact@akmcare.in.
             Based on our clients requirements and your eligibility criteria & candidature, your CV shall be forwarded to our clients.
             </p>
-            <p className="text-muted-foreground mt-4">
-              Freshers and bigness are advised to register your profile on naukri.com to get relevant opportunity based on your credibility and candidature.
+            <h3 className="mt-5 font-bold text-lg text-[#1A1A1A]">Instructions For Freshers and Expert Professionals</h3>
+            <p className="text-muted-foreground font-bold mt-3">
+              Freshers and Business Professionals are advised to register your profile on Naukri.com to get relevant opportunity based on your credibility and candidature and simultaneously update your profile on LinkedIn too.
             </p>
-            <a
-              href="https://www.naukri.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex mt-5 px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-semibold hover:brightness-110 transition-all"
-            >
-              Naukri.com
-            </a>
+            <div className="mt-5 flex items-center justify-center gap-3 sm:gap-4">
+              <a
+                href="https://www.naukri.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-semibold hover:brightness-110 transition-all"
+              >
+                Naukri.com
+              </a>
+              <a
+                href="https://www.linkedin.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-semibold hover:brightness-110 transition-all"
+              >
+                LinkedIn
+              </a>
+            </div>
           </div>
 
           <h2 className="font-heading text-3xl text-center mb-7">Why Work With Us</h2>
