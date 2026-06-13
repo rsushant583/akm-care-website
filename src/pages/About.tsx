@@ -38,8 +38,26 @@ export default function About() {
         <div className="container-premium relative z-10 grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           <div>
             <SectionLabel className="mb-2">Who we are</SectionLabel>
-            <h1 className="font-heading text-4xl sm:text-5xl lg:text-[2.75rem] text-[#1A1A1A] leading-tight mb-4">
-              About AKM Care
+            <h1 className="font-heading text-4xl sm:text-5xl lg:text-[2.75rem] leading-tight mb-4">
+              {reduce ? (
+                <span className="text-[#1A1A1A]">AKM Care - Trusted & Fair</span>
+              ) : (
+                <motion.span
+                  className="inline-block text-transparent bg-clip-text"
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(110deg, #1a1a1a 0%, #2b2318 18%, #6b4420 32%, #d4922a 44%, #e8621a 50%, #f0c674 52%, #d4922a 58%, #2b2318 72%, #1a1a1a 100%)",
+                    backgroundSize: "220% 100%",
+                    WebkitBackgroundClip: "text",
+                    filter: "drop-shadow(0 0 14px rgba(232, 98, 26, 0.2))",
+                  }}
+                  initial={{ backgroundPosition: "0% 50%" }}
+                  animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
+                  transition={{ duration: 6, ease: "easeInOut", repeat: Infinity }}
+                >
+                  AKM Care - Trusted & Fair
+                </motion.span>
+              )}
             </h1>
             <p className="text-base sm:text-lg text-[#6B6B6B] leading-relaxed mb-6">
               AKM Care provides integrated solutions on a single platform with ethics and integrity within a benchmarking value frame.
