@@ -139,7 +139,7 @@ export default function Contact() {
               className="space-y-5"
             >
               {[
-                { icon: Phone, label: "Phone", value: "+91-8200224226", action: "tel:+918200224226", cta: "Call Now" },
+                { icon: Phone, label: "Phone", value: "+91-84019 95486", action: "tel:+918401995486", cta: "Call Now" },
                 {
                   icon: Mail,
                   label: "Email",
@@ -150,8 +150,8 @@ export default function Contact() {
                 {
                   icon: MessageCircle,
                   label: "WhatsApp",
-                  value: "+91-8200224226",
-                  action: "https://wa.me/918200224226",
+                  value: "+91-84019 95486",
+                  action: "https://wa.me/918401995486",
                   cta: "Chat on WhatsApp",
                 },
                 { icon: MapPin, label: "Location", value: "Ahmedabad, Gujarat, India", action: "", cta: "" },

@@ -1,8 +1,8 @@
-import { ContactSubmission, FeedbackSubmission, ProductInterestSubmission, CareerApplicationSubmission } from "@/lib/types";
+import { ContactSubmission, FeedbackSubmission, ProductInterestSubmission, CareerApplicationSubmission, VendorApplicationSubmission } from "@/lib/types";
 
 const NOTIFICATION_EMAIL = "rsushant583@gmail.com";
 
-type EmailEvent = "contact" | "feedback" | "product_interest" | "career";
+type EmailEvent = "contact" | "feedback" | "product_interest" | "career" | "vendor";
 
 async function sendAlert(event: EmailEvent, payload: unknown) {
   try {
@@ -69,4 +69,8 @@ export async function sendProductInterestAlert(data: ProductInterestSubmission) 
 
 export async function sendCareerAlert(data: CareerApplicationSubmission) {
   return sendAlert("career", data);
+}
+
+export async function sendVendorAlert(data: VendorApplicationSubmission & { id?: string }) {
+  return sendAlert("vendor", data);
 }

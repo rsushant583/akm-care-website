@@ -29,6 +29,34 @@ export default function CSR() {
         description="AKM Care's corporate social responsibility initiatives. Contributing to community development, skill enhancement, and sustainable industrial practices across India."
         canonical="/csr"
       />
+
+      <section
+        className="relative overflow-hidden border-b border-black/[0.06] bg-gradient-to-br from-white/90 via-[#FAF8F5]/95 to-[#F5F0EB]/90 backdrop-blur-sm"
+        aria-label="Featured quote"
+      >
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(232,98,26,0.08),transparent_70%)] pointer-events-none" />
+        <div className="absolute inset-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] pointer-events-none" />
+        <div className="container-premium relative z-10 py-10 sm:py-12 lg:py-14">
+          <blockquote className="mx-auto max-w-4xl text-center">
+            <span
+              className="block font-heading text-5xl sm:text-6xl leading-none text-[#E8621A]/25 mb-2 sm:mb-3 select-none"
+              aria-hidden="true"
+            >
+              &ldquo;
+            </span>
+            <p className="font-heading text-lg sm:text-xl lg:text-2xl leading-relaxed sm:leading-relaxed text-[#1A1A1A]/90 italic px-2 sm:px-6">
+              There&apos;s a lot of good that&apos;s done for society in building businesses, but it&apos;s also great to be involved in those things where you can be connected to the community, to the world, and think about how you can use what you&apos;re creating, both in terms of your personal skills as well as your products or services to do good things for others.
+            </p>
+            <footer className="mt-6 sm:mt-8 flex flex-col items-center gap-1">
+              <span className="h-px w-12 bg-[#E8621A]/40" aria-hidden="true" />
+              <cite className="not-italic font-semibold text-sm sm:text-base tracking-wide text-[#E8621A]">
+                Jeff Raikes
+              </cite>
+            </footer>
+          </blockquote>
+        </div>
+      </section>
+
       <section className="section-padding section-shell relative overflow-hidden bg-[#F5F0EB]">
         <div className="absolute inset-0 bg-gradient-to-br from-[#E8621A]/[0.07] to-transparent pointer-events-none" />
         <Reveal className="container-premium text-center max-w-3xl relative z-10">

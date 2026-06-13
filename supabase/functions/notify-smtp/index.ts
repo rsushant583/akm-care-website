@@ -47,6 +47,7 @@ Deno.serve(async (req) => {
       feedback: "New Feedback Submission",
       product_interest: "New Product Interest Submission",
       career: "New Career Application",
+      vendor: "New Vendor Application",
       order_paid: "New Paid Order",
     };
 

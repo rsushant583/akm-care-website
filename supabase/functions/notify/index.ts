@@ -63,6 +63,21 @@ Deno.serve(async (req) => {
         row("Message", payload?.message),
         row("Timestamp", timestamp),
       ].join(""));
+    } else if (event === "vendor") {
+      subject = "New Vendor Application — AKM Care Marketplace";
+      html = htmlTemplate("New Vendor Application", [
+        row("Business Name", payload?.business_name),
+        row("Owner Name", payload?.owner_name),
+        row("Email", payload?.email),
+        row("Mobile", payload?.mobile),
+        row("GST Number", payload?.gst_number),
+        row("Product Category", payload?.product_category),
+        row("Business Address", payload?.business_address),
+        row("Product Description", payload?.product_description),
+        row("Website / Social Links", payload?.website_links),
+        row("Documents", JSON.stringify(payload?.documents ?? [])),
+        row("Timestamp", timestamp),
+      ].join(""));
     }
 
     const result = await resend.emails.send({

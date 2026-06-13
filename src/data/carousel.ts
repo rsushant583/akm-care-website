@@ -34,4 +34,10 @@ export const carouselSlides: CarouselSlide[] = [
     image: "/slides/slide-home-05-csr.png",
     theme: "brand",
   },
+  {
+    title: "AKM Care — Your Trusted Partner",
+    subtitle: "One platform for training, HR, compliance, and marketplace solutions across India",
+    image: "/slides/slide-home-06-brand-logo.jpeg",
+    theme: "brand",
+  },
 ];

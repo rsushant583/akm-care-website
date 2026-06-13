@@ -8,8 +8,9 @@ import { useMotivation } from "@/hooks/useMotivation";
 import { useFAQ } from "@/hooks/useFAQ";
 import { useInbox } from "@/hooks/useInbox";
 import { useOrders } from "@/hooks/useOrders";
+import { useVendors } from "@/hooks/useVendors";
 
-const tabs = ["Motivation", "Products", "Services", "FAQ", "Inbox", "Orders"] as const;
+const tabs = ["Motivation", "Products", "Services", "FAQ", "Inbox", "Orders", "Vendors"] as const;
 
 export default function Admin() {
   const [pin, setPin] = useState("");
@@ -23,6 +24,7 @@ export default function Admin() {
   const { data: faqs } = useFAQ();
   const inbox = useInbox();
   const orders = useOrders();
+  const vendors = useVendors();
 
   const unreadCounts = useMemo(
     () => ({
@@ -103,6 +105,7 @@ export default function Admin() {
         {tab === "FAQ" && <FAQTab faqs={faqs} onSave={upsert} onDelete={remove} />}
         {tab === "Inbox" && <InboxTab inbox={inbox.data} unreadCounts={unreadCounts} onMarkRead={async (table: string, id: string) => upsert(table, { is_read: true }, id)} />}
         {tab === "Orders" && <OrdersTab orders={orders.data} loading={orders.loading} />}
+        {tab === "Vendors" && <VendorsTab vendors={vendors.data} loading={vendors.loading} onUpdateStatus={vendors.updateStatus} />}
       </div>
     </section>
     </>
@@ -214,6 +217,114 @@ function OrdersTab({ orders, loading }: any) {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function VendorsTab({ vendors, loading, onUpdateStatus }: any) {
+  const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
+  const [notes, setNotes] = useState<Record<string, string>>({});
+
+  if (loading) return <div className="text-muted-foreground">Loading vendor applications...</div>;
+
+  const filtered = filter === "all" ? vendors : vendors.filter((v: any) => v.status === filter);
+  const counts = {
+    pending: vendors.filter((v: any) => v.status === "pending").length,
+    approved: vendors.filter((v: any) => v.status === "approved").length,
+    rejected: vendors.filter((v: any) => v.status === "rejected").length,
+  };
+
+  const statusBadge = (status: string) => {
+    const styles: Record<string, string> = {
+      pending: "bg-amber-100 text-amber-800",
+      approved: "bg-emerald-100 text-emerald-700",
+      rejected: "bg-red-100 text-red-700",
+    };
+    return (
+      <span className={`text-xs font-semibold px-3 py-1 rounded-full capitalize ${styles[status] || "bg-muted text-muted-foreground"}`}>
+        {status}
+      </span>
+    );
+  };
+
+  const handleStatus = async (id: string, status: "approved" | "rejected") => {
+    const result = await onUpdateStatus(id, status, notes[id]);
+    if (result.success) toast.success(`Vendor ${status}`);
+    else toast.error(result.error || "Update failed");
+  };
+
+  return (
+    <div>
+      <div className="flex gap-2 overflow-x-auto mb-6">
+        {(["all", "pending", "approved", "rejected"] as const).map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`px-4 py-2 rounded-full font-medium capitalize whitespace-nowrap ${filter === f ? "bg-primary text-primary-foreground" : "bg-accent"}`}
+          >
+            {f === "all" ? `All (${vendors.length})` : `${f} (${counts[f as keyof typeof counts]})`}
+          </button>
+        ))}
+      </div>
+
+      {!filtered.length ? (
+        <div className="text-muted-foreground">No vendor applications{filter !== "all" ? ` with status "${filter}"` : ""}.</div>
+      ) : (
+        <div className="space-y-4">
+          {filtered.map((v: any) => (
+            <div key={v.id} className="bg-card rounded-xl border p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+                <div>
+                  <h3 className="font-semibold text-lg">{v.business_name}</h3>
+                  <p className="text-sm text-muted-foreground">{v.owner_name} • {v.product_category}</p>
+                </div>
+                {statusBadge(v.status)}
+              </div>
+              <div className="grid sm:grid-cols-2 gap-2 text-sm text-muted-foreground mb-4">
+                <p><span className="font-medium text-foreground">Email:</span> {v.email}</p>
+                <p><span className="font-medium text-foreground">Mobile:</span> {v.mobile}</p>
+                <p><span className="font-medium text-foreground">GST:</span> {v.gst_number || "—"}</p>
+                <p><span className="font-medium text-foreground">Applied:</span> {new Date(v.created_at).toLocaleString()}</p>
+                <p className="sm:col-span-2"><span className="font-medium text-foreground">Address:</span> {v.business_address}</p>
+                <p className="sm:col-span-2"><span className="font-medium text-foreground">Products:</span> {v.product_description}</p>
+                {v.website_links ? (
+                  <p className="sm:col-span-2"><span className="font-medium text-foreground">Links:</span> {v.website_links}</p>
+                ) : null}
+                {Array.isArray(v.documents) && v.documents.length > 0 ? (
+                  <p className="sm:col-span-2">
+                    <span className="font-medium text-foreground">Documents:</span>{" "}
+                    {v.documents.map((d: any) => d.name).join(", ")}
+                  </p>
+                ) : null}
+              </div>
+              {v.status === "pending" ? (
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <input
+                    className="flex-1 px-3 py-2 rounded-lg border text-sm"
+                    placeholder="Admin notes (optional)"
+                    value={notes[v.id] || ""}
+                    onChange={(e) => setNotes({ ...notes, [v.id]: e.target.value })}
+                  />
+                  <button
+                    onClick={() => handleStatus(v.id, "approved")}
+                    className="px-5 py-2 rounded-full bg-emerald-600 text-white font-semibold text-sm hover:brightness-105"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    onClick={() => handleStatus(v.id, "rejected")}
+                    className="px-5 py-2 rounded-full bg-red-600 text-white font-semibold text-sm hover:brightness-105"
+                  >
+                    Reject
+                  </button>
+                </div>
+              ) : v.admin_notes ? (
+                <p className="text-sm text-muted-foreground"><span className="font-medium">Notes:</span> {v.admin_notes}</p>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

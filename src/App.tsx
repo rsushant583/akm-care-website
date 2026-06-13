@@ -22,6 +22,7 @@ const Careers = lazy(() => import("./pages/Careers"));
 const Contact = lazy(() => import("./pages/Contact"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const Disclaimer = lazy(() => import("./pages/Disclaimer"));
+const SellYourProduct = lazy(() => import("./pages/SellYourProduct"));
 const Admin = lazy(() => import("./pages/Admin"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -128,6 +129,7 @@ function AnimatedRoutes() {
           <Route path="/training" element={<Training />} />
           <Route path="/services" element={<Services />} />
           <Route path="/shop" element={<Shop />} />
+          <Route path="/sell-your-product" element={<SellYourProduct />} />
           <Route path="/personal-booking" element={<PersonalBooking />} />
           <Route path="/media" element={<Media />} />
           <Route path="/motivation" element={<Motivation />} />

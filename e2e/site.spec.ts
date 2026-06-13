@@ -6,6 +6,7 @@ const routes = [
   "/training",
   "/services",
   "/shop",
+  "/sell-your-product",
   "/personal-booking",
   "/media",
   "/motivation",

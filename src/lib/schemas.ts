@@ -4,7 +4,7 @@ export const organizationSchema = {
   name: "AKM Care",
   alternateName: "AKM Care",
   url: "https://akmcare.in",
-  logo: "https://akmcare.in/logo.png",
+  logo: "https://akmcare.in/logo.jpeg",
   description:
     "Industrial training, HR solutions, compliance consulting and rural e-commerce platform serving pan-India.",
   address: {
@@ -17,6 +17,7 @@ export const organizationSchema = {
     {
       "@type": "ContactPoint",
       contactType: "customer service",
+      telephone: "+91-84019-95486",
       availableLanguage: ["English", "Hindi"],
     },
   ],

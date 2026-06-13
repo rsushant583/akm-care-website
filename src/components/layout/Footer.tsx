@@ -39,7 +39,7 @@ export default function Footer() {
                 <Youtube size={16} />
               </a>
               <a
-                href="https://wa.me/918200224226"
+                href="https://wa.me/918401995486"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#E8621A] transition-all duration-300"
@@ -89,7 +89,7 @@ export default function Footer() {
             <ul className="space-y-3">
               <li className="flex items-start gap-2.5">
                 <Phone size={16} className="text-[#E8621A] mt-0.5 shrink-0" />
-                <span className="text-sm text-white/65">+91-8200224226</span>
+                <span className="text-sm text-white/65">+91-84019 95486</span>
               </li>
               <li className="flex items-start gap-2.5">
                 <Mail size={16} className="text-[#E8621A] mt-0.5 shrink-0" />
