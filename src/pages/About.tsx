@@ -52,8 +52,8 @@ export default function About() {
                     filter: "drop-shadow(0 0 14px rgba(232, 98, 26, 0.2))",
                   }}
                   initial={{ backgroundPosition: "0% 50%" }}
-                  animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
-                  transition={{ duration: 6, ease: "easeInOut", repeat: Infinity }}
+                  animate={{ backgroundPosition: "100% 50%" }}
+                  transition={{ duration: 6, ease: "linear", repeat: Infinity }}
                 >
                   AKM Care - Trusted & Fair
                 </motion.span>

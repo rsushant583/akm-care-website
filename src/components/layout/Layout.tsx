@@ -4,6 +4,7 @@ import Footer from "./Footer";
 import MobileNav from "./MobileNav";
 import GlobalMotivationLayer from "./GlobalMotivationLayer";
 import FeedbackWidget from "@/components/FeedbackWidget";
+import YogaDayCelebration from "@/components/layout/YogaDayCelebration";
 import { enablePremiumUI } from "@/config/uiMode";
 import SmoothScroll from "./SmoothScroll";
 import { DailyQuoteProvider } from "@/context/DailyQuoteContext";
@@ -27,6 +28,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         <Footer />
         <MobileNav />
         <FeedbackWidget />
+        <YogaDayCelebration />
       </div>
     </DailyQuoteProvider>
   );
