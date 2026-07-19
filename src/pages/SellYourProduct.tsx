@@ -123,7 +123,7 @@ export default function SellYourProduct() {
               <Store size={14} /> AKM Care Marketplace
             </span>
             <h1 className="font-heading text-4xl sm:text-5xl lg:text-[2.75rem] text-[#1A1A1A] mb-4">
-              Sell Your Product on Our Page
+              Sell Your Product Through Our Website
             </h1>
             <p className="text-lg text-[#6B6B6B] leading-relaxed mb-8">
               Join our growing marketplace and reach customers across India. We handle the platform — you focus on delivering quality products.
