@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getSupabaseAdminClient } from "@/lib/supabaseClient";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 
 export function useOrders() {
   const [data, setData] = useState<any[]>([]);
@@ -7,13 +7,13 @@ export function useOrders() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = async () => {
-    const admin = getSupabaseAdminClient();
-    if (!admin) {
+    const client = getSupabaseClient();
+    if (!client) {
       setLoading(false);
       return;
     }
     try {
-      const { data: rows, error: dbError } = await admin
+      const { data: rows, error: dbError } = await client
         .from("orders")
         .select("*")
         .order("created_at", { ascending: false });
@@ -29,16 +29,16 @@ export function useOrders() {
 
   useEffect(() => {
     fetchData();
-    const admin = getSupabaseAdminClient();
-    if (!admin) return;
-    const channel = admin
+    const client = getSupabaseClient();
+    if (!client) return;
+    const channel = client
       .channel("orders_realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, fetchData)
       .on("postgres_changes", { event: "*", schema: "public", table: "products" }, fetchData)
       .subscribe();
 
     return () => {
-      admin.removeChannel(channel);
+      client.removeChannel(channel);
     };
   }, []);
 

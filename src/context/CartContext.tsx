@@ -168,15 +168,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!hydrated) return;
+    let cancelled = false;
     const t = window.setTimeout(() => {
       void syncCartToDatabase({
         sessionId,
         userId: user?.id,
         items,
         savedForLater,
-      }).catch(() => undefined);
-    }, 400);
-    return () => window.clearTimeout(t);
+      })
+        .catch(() => undefined)
+        .finally(() => {
+          if (cancelled) return;
+        });
+    }, 600);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
   }, [items, savedForLater, sessionId, user?.id, hydrated]);
 
   const addToCart = useCallback((payload: AddPayload) => {

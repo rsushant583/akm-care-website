@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getSupabaseAdminClient } from "@/lib/supabaseClient";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 
 interface InboxState {
   contacts: any[];
@@ -19,17 +19,17 @@ export function useInbox() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = async () => {
-    const adminClient = getSupabaseAdminClient();
-    if (!adminClient) {
+    const client = getSupabaseClient();
+    if (!client) {
       setLoading(false);
       return;
     }
     try {
       const [contacts, feedback, interests, applications] = await Promise.all([
-        adminClient.from("contact_submissions").select("*").order("created_at", { ascending: false }),
-        adminClient.from("feedback_submissions").select("*").order("created_at", { ascending: false }),
-        adminClient.from("product_interests").select("*").order("created_at", { ascending: false }),
-        adminClient.from("career_applications").select("*").order("created_at", { ascending: false }),
+        client.from("contact_submissions").select("*").order("created_at", { ascending: false }),
+        client.from("feedback_submissions").select("*").order("created_at", { ascending: false }),
+        client.from("product_interests").select("*").order("created_at", { ascending: false }),
+        client.from("career_applications").select("*").order("created_at", { ascending: false }),
       ]);
 
       if (contacts.error) throw contacts.error;
@@ -53,10 +53,10 @@ export function useInbox() {
 
   useEffect(() => {
     fetchData();
-    const adminClient = getSupabaseAdminClient();
-    if (!adminClient) return;
+    const client = getSupabaseClient();
+    if (!client) return;
 
-    const channel = adminClient
+    const channel = client
       .channel("inbox_realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "contact_submissions" }, fetchData)
       .on("postgres_changes", { event: "*", schema: "public", table: "feedback_submissions" }, fetchData)
@@ -65,7 +65,7 @@ export function useInbox() {
       .subscribe();
 
     return () => {
-      adminClient.removeChannel(channel);
+      client.removeChannel(channel);
     };
   }, []);
 

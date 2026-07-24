@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getSupabaseAdminClient } from "@/lib/supabaseClient";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 import type { VendorApplication } from "@/lib/types";
 
 export function useVendors() {
@@ -8,13 +8,13 @@ export function useVendors() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = async () => {
-    const adminClient = getSupabaseAdminClient();
-    if (!adminClient) {
+    const client = getSupabaseClient();
+    if (!client) {
       setLoading(false);
       return;
     }
     try {
-      const { data: rows, error: queryError } = await adminClient
+      const { data: rows, error: queryError } = await client
         .from("vendor_applications")
         .select("*")
         .order("created_at", { ascending: false });
@@ -31,16 +31,16 @@ export function useVendors() {
 
   useEffect(() => {
     fetchData();
-    const adminClient = getSupabaseAdminClient();
-    if (!adminClient) return;
+    const client = getSupabaseClient();
+    if (!client) return;
 
-    const channel = adminClient
+    const channel = client
       .channel("vendors_realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "vendor_applications" }, fetchData)
       .subscribe();
 
     return () => {
-      adminClient.removeChannel(channel);
+      client.removeChannel(channel);
     };
   }, []);
 
@@ -49,8 +49,8 @@ export function useVendors() {
     status: "approved" | "rejected" | "pending",
     adminNotes?: string,
   ) => {
-    const adminClient = getSupabaseAdminClient();
-    if (!adminClient) return { success: false, error: "Admin client unavailable" };
+    const client = getSupabaseClient();
+    if (!client) return { success: false, error: "Supabase client unavailable" };
 
     const payload: Record<string, unknown> = {
       status,
@@ -59,17 +59,14 @@ export function useVendors() {
     };
     if (adminNotes !== undefined) payload.admin_notes = adminNotes;
 
-    const { error: updateError } = await adminClient
-      .from("vendor_applications")
-      .update(payload)
-      .eq("id", id);
+    const { error: updateError } = await client.from("vendor_applications").update(payload).eq("id", id);
 
     if (updateError) return { success: false, error: updateError.message };
 
     if (status === "approved") {
       const application = data.find((v) => v.id === id);
       if (application) {
-        await adminClient.from("vendors").upsert(
+        await client.from("vendors").upsert(
           {
             application_id: id,
             business_name: application.business_name,

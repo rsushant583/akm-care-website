@@ -1,20 +1,19 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
 const missingEnvWarning =
-  "Supabase env vars are missing. Falling back to local data.";
+  "Supabase env vars are missing (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY). Falling back to local data.";
 
-export const supabase =
+/**
+ * Browser Supabase client — anon key only.
+ * Admin mutations rely on the signed-in user JWT + RLS (`admin_users` / `is_admin_user()`).
+ * Never initialize a service-role client in frontend code.
+ */
+export const supabase: SupabaseClient | null =
   supabaseUrl && supabaseAnonKey
     ? createClient(supabaseUrl, supabaseAnonKey)
-    : null;
-
-export const supabaseAdmin =
-  supabaseUrl && supabaseServiceKey
-    ? createClient(supabaseUrl, supabaseServiceKey)
     : null;
 
 export function getSupabaseClient() {
@@ -22,11 +21,4 @@ export function getSupabaseClient() {
     console.warn(missingEnvWarning);
   }
   return supabase;
-}
-
-export function getSupabaseAdminClient() {
-  if (!supabaseAdmin) {
-    console.warn("Supabase admin client unavailable. Check service key.");
-  }
-  return supabaseAdmin;
 }

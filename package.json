@@ -17,6 +17,8 @@
     "deploy:edge": "npx --yes supabase@latest functions deploy --project-ref tdqepnmysycxklqcvpai",
     "catalog:import": "node --env-file=.env scripts/import-catalog.mjs",
     "catalog:seed": "npx --yes supabase@latest db query --linked -f supabase/seed_catalog.sql",
+    "admin:seed": "npx --yes supabase@latest db query --linked -f supabase/seed_admin.sql",
+    "admin:bootstrap": "node --env-file=.env scripts/bootstrap-admin.mjs",
     "db:push": "npx --yes supabase@latest db push"
   },
   "dependencies": {

@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import MobileNav from "./MobileNav";
@@ -11,6 +12,13 @@ import { DailyQuoteProvider } from "@/context/DailyQuoteContext";
 import { CompareTray, FloatingCart } from "@/components/shop";
 
 export default function Layout({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
+  const isAdmin = pathname.startsWith("/admin");
+
+  if (isAdmin) {
+    return <>{children}</>;
+  }
+
   return (
     <DailyQuoteProvider>
       <div
