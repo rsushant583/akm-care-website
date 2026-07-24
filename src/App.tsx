@@ -5,15 +5,29 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Layout from "@/components/layout/Layout";
 import { HelmetProvider } from "react-helmet-async";
-import { lazy, Suspense, useLayoutEffect, useRef, useState } from "react";
+import { lazy, Suspense, useLayoutEffect, useRef } from "react";
 import { gsap, ScrollTrigger } from "@/lib/gsapRegister";
 import { prefersReducedMotion } from "@/lib/motion";
+import { AuthProvider } from "@/context/AuthContext";
+import { CartProvider } from "@/context/CartContext";
+import { WishlistProvider } from "@/context/WishlistContext";
+import { CompareProvider } from "@/context/CompareContext";
+import { RecentlyViewedProvider } from "@/context/RecentlyViewedContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 const Index = lazy(() => import("./pages/Index"));
 const About = lazy(() => import("./pages/About"));
 const Training = lazy(() => import("./pages/Training"));
 const Services = lazy(() => import("./pages/Services"));
 const Shop = lazy(() => import("./pages/Shop"));
+const ProductDetails = lazy(() => import("./pages/ProductDetails"));
+const Cart = lazy(() => import("./pages/Cart"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const Auth = lazy(() => import("./pages/Auth"));
+const Account = lazy(() => import("./pages/Account"));
+const Wishlist = lazy(() => import("./pages/Wishlist"));
+const OrderSuccess = lazy(() => import("./pages/OrderSuccess"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const PersonalBooking = lazy(() => import("./pages/PersonalBooking"));
 const Media = lazy(() => import("./pages/Media"));
 const Motivation = lazy(() => import("./pages/Motivation"));
@@ -30,69 +44,38 @@ const queryClient = new QueryClient();
 
 function AnimatedRoutes() {
   const location = useLocation();
-  const [displayLocation, setDisplayLocation] = useState(location);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const bootRef = useRef(true);
-  const displayLocationRef = useRef(location);
-
-  useLayoutEffect(() => {
-    displayLocationRef.current = displayLocation;
-  }, [displayLocation]);
-
-  useLayoutEffect(() => {
-    if (bootRef.current) return;
-    const shown = displayLocationRef.current;
-    if (location.pathname === shown.pathname && location.search === shown.search) return;
-
-    const wrap = wrapperRef.current;
-    if (!wrap) {
-      setDisplayLocation(location);
-      return;
-    }
-
-    if (prefersReducedMotion()) {
-      window.scrollTo(0, 0);
-      setDisplayLocation(location);
-      return;
-    }
-
-    gsap.killTweensOf(wrap);
-    gsap.to(wrap, {
-      opacity: 0,
-      scale: 0.98,
-      duration: 0.45,
-      ease: "power2.in",
-      onComplete: () => {
-        window.scrollTo(0, 0);
-        setDisplayLocation(location);
-      },
-    });
-  }, [location]);
+  const prevPathRef = useRef(location.pathname + location.search);
 
   useLayoutEffect(() => {
     const wrap = wrapperRef.current;
     if (!wrap) return;
 
-    if (bootRef.current) {
-      bootRef.current = false;
-      gsap.set(wrap, { opacity: 1, scale: 1, y: 0 });
-      return;
-    }
+    const key = location.pathname + location.search;
+    const isFirst = prevPathRef.current === key && wrap.style.opacity === "";
+    prevPathRef.current = key;
 
     if (prefersReducedMotion()) {
       gsap.set(wrap, { opacity: 1, scale: 1, y: 0 });
+      window.scrollTo(0, 0);
       return;
     }
 
+    window.scrollTo(0, 0);
     gsap.killTweensOf(wrap);
+    if (isFirst) {
+      gsap.set(wrap, { opacity: 1, scale: 1, y: 0 });
+      return;
+    }
+
     gsap.fromTo(
       wrap,
-      { opacity: 0, y: 20, scale: 0.985 },
+      { opacity: 0.35, y: 12, scale: 0.995 },
       {
         opacity: 1,
         y: 0,
         scale: 1,
-        duration: 0.52,
+        duration: 0.35,
         ease: "power3.out",
         onComplete: () => {
           try {
@@ -103,7 +86,7 @@ function AnimatedRoutes() {
         },
       },
     );
-  }, [displayLocation]);
+  }, [location]);
 
   return (
     <div
@@ -123,12 +106,27 @@ function AnimatedRoutes() {
           </div>
         }
       >
-        <Routes location={displayLocation}>
+        <Routes location={location}>
           <Route path="/" element={<Index />} />
           <Route path="/about" element={<About />} />
           <Route path="/training" element={<Training />} />
           <Route path="/services" element={<Services />} />
           <Route path="/shop" element={<Shop />} />
+          <Route path="/shop/product/:slug" element={<ProductDetails />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/wishlist" element={<Wishlist />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/auth/reset-password" element={<ResetPassword />} />
+          <Route path="/order-success" element={<OrderSuccess />} />
+          <Route
+            path="/account"
+            element={
+              <ProtectedRoute>
+                <Account />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/sell-your-product" element={<SellYourProduct />} />
           <Route path="/personal-booking" element={<PersonalBooking />} />
           <Route path="/media" element={<Media />} />
@@ -150,18 +148,28 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <HelmetProvider>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter
-          future={{
-            v7_startTransition: true,
-            v7_relativeSplatPath: true,
-          }}
-        >
-          <Layout>
-            <AnimatedRoutes />
-          </Layout>
-        </BrowserRouter>
+        <AuthProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <CompareProvider>
+                <RecentlyViewedProvider>
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter
+                    future={{
+                      v7_startTransition: true,
+                      v7_relativeSplatPath: true,
+                    }}
+                  >
+                    <Layout>
+                      <AnimatedRoutes />
+                    </Layout>
+                  </BrowserRouter>
+                </RecentlyViewedProvider>
+              </CompareProvider>
+            </WishlistProvider>
+          </CartProvider>
+        </AuthProvider>
       </TooltipProvider>
     </HelmetProvider>
   </QueryClientProvider>

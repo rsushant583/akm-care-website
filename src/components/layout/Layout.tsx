@@ -8,6 +8,7 @@ import YogaDayCelebration from "@/components/layout/YogaDayCelebration";
 import { enablePremiumUI } from "@/config/uiMode";
 import SmoothScroll from "./SmoothScroll";
 import { DailyQuoteProvider } from "@/context/DailyQuoteContext";
+import { CompareTray, FloatingCart } from "@/components/shop";
 
 export default function Layout({ children }: { children: ReactNode }) {
   return (
@@ -27,6 +28,8 @@ export default function Layout({ children }: { children: ReactNode }) {
         </main>
         <Footer />
         <MobileNav />
+        <FloatingCart />
+        <CompareTray />
         <FeedbackWidget />
         <YogaDayCelebration />
       </div>

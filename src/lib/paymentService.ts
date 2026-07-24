@@ -25,6 +25,7 @@ export type CartCheckoutItem = {
 export async function createRazorpayOrder(
   items: CartCheckoutItem[],
   customer: { name: string; email: string; phone?: string },
+  extras?: { shippingTotal?: number; discountTotal?: number },
 ) {
   const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/razorpay-create-order`, {
     method: "POST",
@@ -35,6 +36,8 @@ export async function createRazorpayOrder(
     body: JSON.stringify({
       items,
       customer,
+      shippingTotal: extras?.shippingTotal ?? 0,
+      discountTotal: extras?.discountTotal ?? 0,
     }),
   });
   return response.json();

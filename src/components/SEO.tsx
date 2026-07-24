@@ -7,7 +7,7 @@ interface SEOProps {
   canonical?: string;
   ogImage?: string;
   ogType?: string;
-  schema?: object;
+  schema?: object | object[];
   /** Override default robots meta (e.g. "noindex, nofollow" for admin/404). */
   robots?: string;
 }
@@ -54,9 +54,12 @@ export function SEO({
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={ogImage} />
 
-      {schema && (
-        <script type="application/ld+json">{JSON.stringify(schema)}</script>
-      )}
+      {schema &&
+        (Array.isArray(schema) ? schema : [schema]).map((entry, i) => (
+          <script key={i} type="application/ld+json">
+            {JSON.stringify(entry)}
+          </script>
+        ))}
     </Helmet>
   );
 }

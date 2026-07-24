@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { items, customer } = await req.json();
+    const { items, customer, shippingTotal = 0, discountTotal = 0 } = await req.json();
     if (!Array.isArray(items) || items.length === 0) {
       return new Response(JSON.stringify({ success: false, error: "Cart is empty" }), {
         status: 400,
@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
     const uniqueProductIds = [...new Set(items.map((i: { productId: string }) => i.productId))];
     const { data: products, error } = await supabase
       .from("products")
-      .select("id,name,price,stock_quantity")
+      .select("id,name,price,akm_care_price,selling_price,stock_quantity")
       .in("id", uniqueProductIds);
     if (error) throw error;
 
@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
     let total = 0;
     const normalizedItems: Array<{ productId: string; productName: string; quantity: number; unitPrice: number }> = [];
     for (const raw of items) {
-      const qty = Math.max(1, Math.min(10, Number(raw.quantity || 1)));
+      const qty = Math.max(1, Math.min(100, Number(raw.quantity || 1)));
       const p = productMap.get(raw.productId);
       if (!p) {
         return new Response(JSON.stringify({ success: false, error: "One or more items are invalid" }), {
@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      const unitPrice = Number(p.price);
+      const unitPrice = Number(p.akm_care_price ?? p.selling_price ?? p.price ?? raw.unitPrice ?? 0);
       total += unitPrice * qty;
       normalizedItems.push({
         productId: p.id,
@@ -67,6 +67,8 @@ Deno.serve(async (req) => {
         unitPrice,
       });
     }
+
+    total = Math.max(0, total + Number(shippingTotal || 0) - Number(discountTotal || 0));
 
     const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
     const order = await razorpay.orders.create({

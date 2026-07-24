@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu } from "lucide-react";
+import { Heart, Menu, ShoppingCart, User } from "lucide-react";
 import logo from "@/assets/akm-logo.jpeg";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
+import { useAuth } from "@/context/AuthContext";
 
 const navLinks = [
   { label: "Home", path: "/" },
@@ -22,6 +25,9 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const location = useLocation();
+  const { itemCount } = useCart();
+  const { count: wishlistCount } = useWishlist();
+  const { isAuthenticated } = useAuth();
   useEffect(() => {
     const handler = () => setIsScrolled(window.scrollY > 12);
     handler();
@@ -81,6 +87,37 @@ export default function Navbar() {
 
           <div className="flex items-center gap-2 shrink-0 z-10">
             <Link
+              to="/wishlist"
+              aria-label={`Wishlist${wishlistCount ? `, ${wishlistCount} items` : ""}`}
+              className="relative inline-flex items-center justify-center h-10 w-10 rounded-xl border border-black/10 bg-white/70 text-[#1A1A1A] hover:bg-white"
+            >
+              <Heart size={18} />
+              {wishlistCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[1.15rem] h-[1.15rem] px-1 rounded-full bg-[#E8621A] text-white text-[10px] font-bold flex items-center justify-center">
+                  {wishlistCount > 99 ? "99+" : wishlistCount}
+                </span>
+              )}
+            </Link>
+            <Link
+              to="/cart"
+              aria-label={`Shopping cart${itemCount ? `, ${itemCount} items` : ""}`}
+              className="relative inline-flex items-center justify-center h-10 w-10 rounded-xl border border-black/10 bg-white/70 text-[#1A1A1A] hover:bg-white"
+            >
+              <ShoppingCart size={18} />
+              {itemCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[1.15rem] h-[1.15rem] px-1 rounded-full bg-[#E8621A] text-white text-[10px] font-bold flex items-center justify-center">
+                  {itemCount > 99 ? "99+" : itemCount}
+                </span>
+              )}
+            </Link>
+            <Link
+              to={isAuthenticated ? "/account" : "/auth"}
+              aria-label={isAuthenticated ? "My account" : "Sign in"}
+              className="inline-flex items-center justify-center h-10 w-10 rounded-xl border border-black/10 bg-white/70 text-[#1A1A1A] hover:bg-white"
+            >
+              <User size={18} />
+            </Link>
+            <Link
               to="/contact"
               className="hidden sm:inline-flex items-center px-4 py-2 lg:px-5 lg:py-2.5 rounded-full bg-[#E8621A] text-white text-xs lg:text-sm font-semibold shadow-md shadow-[#E8621A]/25 hover:brightness-105 transition-all"
             >
@@ -118,6 +155,12 @@ export default function Navbar() {
                       </Link>
                     );
                   })}
+                  <Link to="/wishlist" className="px-3 py-3.5 rounded-xl text-base font-medium">
+                    Wishlist
+                  </Link>
+                  <Link to={isAuthenticated ? "/account" : "/auth"} className="px-3 py-3.5 rounded-xl text-base font-medium">
+                    {isAuthenticated ? "My Account" : "Sign in"}
+                  </Link>
                   <Link
                     to="/contact"
                     className="mt-4 text-center px-5 py-3.5 rounded-full bg-[#E8621A] text-white font-semibold shadow-md"

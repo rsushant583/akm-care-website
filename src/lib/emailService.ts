@@ -2,9 +2,18 @@ import { ContactSubmission, FeedbackSubmission, ProductInterestSubmission, Caree
 
 const NOTIFICATION_EMAIL = "rsushant583@gmail.com";
 
-type EmailEvent = "contact" | "feedback" | "product_interest" | "career" | "vendor";
+type EmailEvent =
+  | "contact"
+  | "feedback"
+  | "product_interest"
+  | "career"
+  | "vendor"
+  | "order_confirmation"
+  | "payment_success"
+  | "shipping_confirmation"
+  | "order_delivered";
 
-async function sendAlert(event: EmailEvent, payload: unknown) {
+async function sendAlert(event: EmailEvent, payload: unknown, to?: string) {
   try {
     const baseUrl = import.meta.env.VITE_SUPABASE_URL;
     const url = `${baseUrl}/functions/v1/notify`;
@@ -14,17 +23,19 @@ async function sendAlert(event: EmailEvent, payload: unknown) {
       return { success: false, error: "Supabase function not configured" };
     }
 
+    const body = {
+      event,
+      to: to || NOTIFICATION_EMAIL,
+      payload,
+    };
+
     const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${key}`,
       },
-      body: JSON.stringify({
-        event,
-        to: NOTIFICATION_EMAIL,
-        payload,
-      }),
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
@@ -34,11 +45,7 @@ async function sendAlert(event: EmailEvent, payload: unknown) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${key}`,
         },
-        body: JSON.stringify({
-          event,
-          to: NOTIFICATION_EMAIL,
-          payload,
-        }),
+        body: JSON.stringify(body),
       });
       if (!smtpResponse.ok) {
         const errorText = await smtpResponse.text();
@@ -73,4 +80,17 @@ export async function sendCareerAlert(data: CareerApplicationSubmission) {
 
 export async function sendVendorAlert(data: VendorApplicationSubmission & { id?: string }) {
   return sendAlert("vendor", data);
+}
+
+/** Customer + ops order lifecycle emails */
+export async function sendOrderEmail(
+  event: "order_confirmation" | "payment_success" | "shipping_confirmation" | "order_delivered",
+  payload: Record<string, unknown> & { customer?: { email?: string } },
+) {
+  const customerEmail = payload.customer?.email;
+  const ops = await sendAlert(event, payload, NOTIFICATION_EMAIL);
+  if (customerEmail && customerEmail !== NOTIFICATION_EMAIL) {
+    await sendAlert(event, payload, customerEmail);
+  }
+  return ops;
 }
