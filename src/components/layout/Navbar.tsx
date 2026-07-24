@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Heart, Menu, ShoppingCart, User } from "lucide-react";
+import { Menu, ShoppingCart } from "lucide-react";
 import logo from "@/assets/akm-logo.jpeg";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useCart } from "@/context/CartContext";
-import { useWishlist } from "@/context/WishlistContext";
 import { useAuth } from "@/context/AuthContext";
 
 const navLinks = [
@@ -26,8 +25,8 @@ export default function Navbar() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const location = useLocation();
   const { itemCount } = useCart();
-  const { count: wishlistCount } = useWishlist();
   const { isAuthenticated } = useAuth();
+
   useEffect(() => {
     const handler = () => setIsScrolled(window.scrollY > 12);
     handler();
@@ -49,11 +48,11 @@ export default function Navbar() {
         className={`fixed top-0 left-0 right-0 z-50 pt-[env(safe-area-inset-top,0px)] transition-colors duration-300 ${navSurface}`}
       >
         <div
-          className={`container-premium flex items-center justify-between mx-auto transition-[height] duration-300 ${
+          className={`container-premium flex items-center justify-between gap-3 mx-auto transition-[height] duration-300 ${
             isScrolled ? "h-[3.25rem] lg:h-14" : "h-14 lg:h-[4.25rem]"
           }`}
         >
-          <Link to="/" className="flex items-center gap-2 shrink-0 z-10">
+          <Link to="/" className="flex items-center gap-2 shrink-0">
             <img
               src={logo}
               alt="AKM Care"
@@ -65,39 +64,28 @@ export default function Navbar() {
             />
           </Link>
 
-          <div className="hidden xl:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center justify-center gap-0.5 2xl:gap-1 max-w-[min(72vw,52rem)]">
+          {/* Flex center — never absolute, so links cannot sit under action buttons */}
+          <div className="hidden xl:flex flex-1 min-w-0 items-center justify-center gap-0.5 2xl:gap-1 px-2">
             {navLinks.map((link) => {
               const active = location.pathname === link.path;
               return (
                 <Link
                   key={link.path}
                   to={link.path}
-                  className={`relative px-2.5 2xl:px-3 py-2 text-[0.7rem] 2xl:text-[0.8rem] font-medium tracking-wide text-[#1A1A1A]/80 hover:text-[#1A1A1A] transition-colors whitespace-nowrap ${
+                  className={`relative shrink px-1.5 2xl:px-2.5 py-2 text-[0.65rem] 2xl:text-[0.78rem] font-medium tracking-wide text-[#1A1A1A]/80 hover:text-[#1A1A1A] transition-colors whitespace-nowrap ${
                     active ? "text-[#1A1A1A]" : ""
                   }`}
                 >
                   {link.label}
                   {active ? (
-                    <span className="absolute left-2 right-2 bottom-1 h-0.5 rounded-full bg-[#E8621A]" />
+                    <span className="absolute left-1.5 right-1.5 bottom-1 h-0.5 rounded-full bg-[#E8621A]" />
                   ) : null}
                 </Link>
               );
             })}
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 z-10">
-            <Link
-              to="/wishlist"
-              aria-label={`Wishlist${wishlistCount ? `, ${wishlistCount} items` : ""}`}
-              className="relative inline-flex items-center justify-center h-10 w-10 rounded-xl border border-black/10 bg-white/70 text-[#1A1A1A] hover:bg-white"
-            >
-              <Heart size={18} />
-              {wishlistCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[1.15rem] h-[1.15rem] px-1 rounded-full bg-[#E8621A] text-white text-[10px] font-bold flex items-center justify-center">
-                  {wishlistCount > 99 ? "99+" : wishlistCount}
-                </span>
-              )}
-            </Link>
+          <div className="flex items-center gap-2 shrink-0">
             <Link
               to="/cart"
               aria-label={`Shopping cart${itemCount ? `, ${itemCount} items` : ""}`}
@@ -109,13 +97,6 @@ export default function Navbar() {
                   {itemCount > 99 ? "99+" : itemCount}
                 </span>
               )}
-            </Link>
-            <Link
-              to={isAuthenticated ? "/account" : "/auth"}
-              aria-label={isAuthenticated ? "My account" : "Sign in"}
-              className="inline-flex items-center justify-center h-10 w-10 rounded-xl border border-black/10 bg-white/70 text-[#1A1A1A] hover:bg-white"
-            >
-              <User size={18} />
             </Link>
             <Link
               to="/contact"
@@ -155,6 +136,9 @@ export default function Navbar() {
                       </Link>
                     );
                   })}
+                  <Link to="/cart" className="px-3 py-3.5 rounded-xl text-base font-medium">
+                    Cart{itemCount > 0 ? ` (${itemCount})` : ""}
+                  </Link>
                   <Link to="/wishlist" className="px-3 py-3.5 rounded-xl text-base font-medium">
                     Wishlist
                   </Link>
