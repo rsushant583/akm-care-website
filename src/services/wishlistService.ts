@@ -8,26 +8,14 @@ export async function syncWishlist(params: {
 }) {
   const client = getSupabaseClient();
   if (!client) return;
+  if (!params.userId) return; // guests: localStorage only (C3)
 
   const ids = params.productIds.filter(isUuid);
-  if (params.userId) {
-    await client.from("wishlists").delete().eq("user_id", params.userId);
-    if (ids.length === 0) return;
-    const { error } = await client.from("wishlists").insert(
-      ids.map((product_id) => ({
-        user_id: params.userId,
-        session_id: params.sessionId,
-        product_id,
-      })),
-    );
-    if (error) throw error;
-    return;
-  }
-
-  await client.from("wishlists").delete().eq("session_id", params.sessionId);
+  await client.from("wishlists").delete().eq("user_id", params.userId);
   if (ids.length === 0) return;
   const { error } = await client.from("wishlists").insert(
     ids.map((product_id) => ({
+      user_id: params.userId,
       session_id: params.sessionId,
       product_id,
     })),
@@ -40,11 +28,8 @@ export async function loadWishlistIds(params: {
   userId?: string | null;
 }): Promise<string[]> {
   const client = getSupabaseClient();
-  if (!client) return [];
-  let query = client.from("wishlists").select("product_id");
-  if (params.userId) query = query.eq("user_id", params.userId);
-  else query = query.eq("session_id", params.sessionId);
-  const { data, error } = await query;
+  if (!client || !params.userId) return [];
+  const { data, error } = await client.from("wishlists").select("product_id").eq("user_id", params.userId);
   if (error) throw error;
   return (data || []).map((r) => String(r.product_id));
 }

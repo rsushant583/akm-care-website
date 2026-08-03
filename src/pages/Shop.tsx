@@ -103,7 +103,7 @@ export default function Shop() {
   return (
     <>
       <SEO
-        title="Shop — Authentic Village Products | Makhana, Sattu & More"
+        title="Shop — Authentic Apparel & Clothing Items | Sarees, Apparels, Clothing items, Makhana, Sattu & More"
         description="Buy authentic rural Indian products online — premium Makhana (Fox Nuts), Sattu Powder, Fancy Sarees & Textile Products. Sourced for AKM Care, delivered pan-India."
         keywords="buy makhana online, sattu powder online, chanderi saree, AKM Care shop, village products India"
         canonical="/shop"

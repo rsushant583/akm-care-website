@@ -17,19 +17,17 @@ export async function syncCartToDatabase(params: {
   const client = getSupabaseClient();
   if (!client) return;
 
-  const { sessionId, userId, items, savedForLater } = params;
+  const { userId, items, savedForLater } = params;
+  // Guest carts are localStorage-only under tightened RLS (C3)
+  if (!userId) return;
 
-  if (userId) {
-    await client.from("cart_items").delete().eq("user_id", userId);
-  } else {
-    await client.from("cart_items").delete().eq("session_id", sessionId);
-  }
+  await client.from("cart_items").delete().eq("user_id", userId);
 
   const rows = [...items.map((l) => ({ line: l, saved: false })), ...savedForLater.map((l) => ({ line: l, saved: true }))]
     .filter(({ line }) => isUuid(line.productId))
     .map(({ line, saved }) => ({
-      session_id: sessionId,
-      user_id: userId || null,
+      session_id: params.sessionId,
+      user_id: userId,
       product_id: line.productId,
       quantity: Math.min(100, Math.max(1, line.quantity)),
       color_id: line.colorId ?? null,
@@ -59,13 +57,9 @@ export async function loadCartFromDatabase(params: {
   userId?: string | null;
 }): Promise<{ items: CartLineItem[]; savedForLater: CartLineItem[] }> {
   const client = getSupabaseClient();
-  if (!client) return { items: [], savedForLater: [] };
+  if (!client || !params.userId) return { items: [], savedForLater: [] };
 
-  let query = client.from("cart_items").select("*");
-  if (params.userId) query = query.eq("user_id", params.userId);
-  else query = query.eq("session_id", params.sessionId);
-
-  const { data, error } = await query;
+  const { data, error } = await client.from("cart_items").select("*").eq("user_id", params.userId);
   if (error) throw error;
 
   const toLine = (row: Record<string, unknown>): CartLineItem => {

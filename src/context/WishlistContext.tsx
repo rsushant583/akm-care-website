@@ -79,11 +79,12 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
   }, [ids, hydrated]);
 
   useEffect(() => {
-    if (!hydrated) return;
+    // DB wishlist sync only for authenticated users (guests stay in localStorage — C3)
+    if (!hydrated || !user?.id) return;
     const t = window.setTimeout(() => {
       void syncWishlist({
         sessionId,
-        userId: user?.id,
+        userId: user.id,
         productIds: ids,
       }).catch(() => undefined);
     }, 400);

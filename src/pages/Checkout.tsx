@@ -12,7 +12,7 @@ import { isValidIndianPincode } from "@/lib/pincodeDelivery";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { listAddresses, saveAddress, type Address } from "@/services/addressService";
-import { attachPayment, createPendingOrder, markOrderFailed } from "@/services/orderService";
+import { markOrderFailed } from "@/services/orderService";
 import { createRazorpayOrder, loadRazorpayScript, verifyRazorpayPayment } from "@/lib/paymentService";
 import { sendOrderEmail } from "@/lib/emailService";
 import { productPath } from "@/lib/ecommerce/slug";
@@ -356,73 +356,61 @@ export default function Checkout() {
     }
 
     setSubmitting(true);
-    let orderId: string | null = null;
+    let orderHeaderId: string | null = null;
+    let accessToken: string | null = null;
     try {
-      const order = await createPendingOrder({
-        userId: user?.id,
-        customer: draft.customer,
-        address: addressPayload,
-        items,
-        shippingMethod,
-        shippingTotal,
-        couponCode: couponCode || undefined,
-        couponDiscount: checkoutTotals.couponDiscount,
-        notes: draft.notes,
-      });
-      orderId = order.id;
-
-      await sendOrderEmail("order_confirmation", {
-        orderNumber: order.order_number,
-        customer: draft.customer,
-        totals: checkoutTotals,
-        items: items.map((i) => ({ name: i.name, quantity: i.quantity, unitPrice: i.unitPrice })),
-      });
-
       if (draft.paymentMethod === "cod") {
         toast.error("Cash on Delivery is coming soon. Please pay with Razorpay.");
-        await markOrderFailed(order.id, "COD not enabled");
         return;
       }
 
       if (draft.paymentMethod !== "razorpay") {
         toast.error("Please select Razorpay to continue.");
-        await markOrderFailed(order.id, "Unsupported payment method");
         return;
       }
 
       const ready = await loadRazorpayScript();
       if (!ready) {
         toast.error("Could not load Razorpay. Check your connection.");
-        await markOrderFailed(order.id, "Razorpay script failed");
         return;
       }
 
-      const created = await createRazorpayOrder(
-        items.map((i) => ({
-          productId: i.productId,
-          productName: i.name,
+      // Server creates pending order + Razorpay order; client sends ids/qty/method/code only (no money fields)
+      const created = await createRazorpayOrder({
+        items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+        customer: draft.customer,
+        address: addressPayload,
+        shippingMethod,
+        couponCode: couponCode || undefined,
+        notes: draft.notes,
+        userId: user?.id,
+      });
+
+      if (!created?.success || !created.order || !created.orderHeaderId || !created.accessToken) {
+        toast.error(created?.error || "Could not create payment order.");
+        return;
+      }
+
+      orderHeaderId = created.orderHeaderId;
+      accessToken = created.accessToken;
+
+      await sendOrderEmail("order_confirmation", {
+        orderNumber: created.orderNumber,
+        customer: draft.customer,
+        totals: created.totals,
+        items: (created.items || []).map((i) => ({
+          name: i.productName,
           quantity: i.quantity,
           unitPrice: i.unitPrice,
         })),
-        draft.customer,
-        {
-          shippingTotal,
-          discountTotal: checkoutTotals.couponDiscount,
-        },
-      );
-
-      if (!created?.success || !created.order) {
-        toast.error(created?.error || "Could not create payment order.");
-        await markOrderFailed(order.id, created?.error || "create order failed");
-        return;
-      }
+      });
 
       const rzp = new window.Razorpay({
         key: created.keyId,
         amount: created.order.amount,
         currency: created.order.currency || "INR",
         name: "AKM Care",
-        description: `Order ${order.order_number}`,
+        description: `Order ${created.orderNumber}`,
         order_id: created.order.id,
         prefill: {
           name: draft.customer.name,
@@ -440,63 +428,54 @@ export default function Checkout() {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
-              orderPayload: {
-                items:
-                  created.items ||
-                  items.map((i) => ({
-                    productId: i.productId,
-                    productName: i.name,
-                    quantity: i.quantity,
-                    unitPrice: i.unitPrice,
-                  })),
-                totalAmount: created.amount ?? checkoutTotals.orderTotal,
-                customer: draft.customer,
-              },
+              orderHeaderId: created.orderHeaderId!,
+              accessToken: created.accessToken!,
             });
 
             if (!verified?.success) {
               toast.error(verified?.error || "Payment verification failed.");
-              await markOrderFailed(order.id, verified?.error || "verify failed");
+              await markOrderFailed(
+                created.orderHeaderId!,
+                created.accessToken!,
+                verified?.error || "verify failed",
+              );
               return;
             }
 
-            await attachPayment({
-              orderId: order.id,
-              razorpayOrderId: response.razorpay_order_id,
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpaySignature: response.razorpay_signature,
-              amount: Number(created.amount ?? checkoutTotals.orderTotal),
-              method: "razorpay",
-              status: "captured",
-            });
-
             await sendOrderEmail("payment_success", {
-              orderNumber: order.order_number,
+              orderNumber: created.orderNumber,
               customer: draft.customer,
               paymentId: response.razorpay_payment_id,
-              amount: created.amount ?? checkoutTotals.orderTotal,
+              amount: verified.amount ?? created.amount,
             });
 
             clearCart();
             localStorage.removeItem(CHECKOUT_STORAGE_KEY);
             toast.success("Payment successful");
-            navigate(`/order-success?order=${order.order_number}`, { replace: true });
+            navigate(
+              `/order-success?order=${encodeURIComponent(created.orderNumber || "")}&token=${encodeURIComponent(created.accessToken!)}`,
+              { replace: true },
+            );
           } catch (err) {
             toast.error(err instanceof Error ? err.message : "Payment callback failed");
-            await markOrderFailed(order.id, "callback error");
+            await markOrderFailed(created.orderHeaderId!, created.accessToken!, "callback error");
           }
         },
       });
 
       rzp.on("payment.failed", async (resp: { error?: { description?: string } }) => {
         toast.error(resp?.error?.description || "Payment failed. Please try again.");
-        if (orderId) await markOrderFailed(orderId, resp?.error?.description || "payment.failed");
+        if (orderHeaderId && accessToken) {
+          await markOrderFailed(orderHeaderId, accessToken, resp?.error?.description || "payment.failed");
+        }
       });
 
       rzp.open();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Checkout failed");
-      if (orderId) await markOrderFailed(orderId, "checkout exception");
+      if (orderHeaderId && accessToken) {
+        await markOrderFailed(orderHeaderId, accessToken, "checkout exception");
+      }
     } finally {
       setSubmitting(false);
     }

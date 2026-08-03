@@ -106,8 +106,13 @@ export default function EcommercePreview() {
         return;
       }
 
-      const orderRes = await createRazorpayOrder(selectedBuyProduct, checkout);
-      if (!orderRes?.success) {
+      const orderRes = await createRazorpayOrder({
+        items: [{ productId: selectedBuyProduct.id, quantity: 1 }],
+        customer: checkout,
+        address: { source: "home_preview" },
+        shippingMethod: "standard",
+      });
+      if (!orderRes?.success || !orderRes.order || !orderRes.orderHeaderId || !orderRes.accessToken) {
         toast.error(orderRes?.error || "Unable to create order.");
         return;
       }
@@ -129,18 +134,8 @@ export default function EcommercePreview() {
             razorpay_order_id: response.razorpay_order_id,
             razorpay_payment_id: response.razorpay_payment_id,
             razorpay_signature: response.razorpay_signature,
-            orderData: {
-              product_id: selectedBuyProduct.id,
-              product_name: selectedBuyProduct.name,
-              amount: Number(selectedBuyProduct.price),
-              currency: "INR",
-              quantity: 1,
-              customer_name: checkout.name,
-              customer_email: checkout.email,
-              customer_phone: checkout.phone,
-              razorpay_order_id: response.razorpay_order_id,
-              payment_status: "paid",
-            },
+            orderHeaderId: orderRes.orderHeaderId!,
+            accessToken: orderRes.accessToken!,
           });
 
           if (!verify?.success) {

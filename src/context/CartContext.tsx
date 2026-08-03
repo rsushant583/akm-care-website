@@ -167,12 +167,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [savedForLater, hydrated]);
 
   useEffect(() => {
-    if (!hydrated) return;
+    // DB cart sync only for authenticated users (guest carts stay in localStorage — C3)
+    if (!hydrated || !user?.id) return;
     let cancelled = false;
     const t = window.setTimeout(() => {
       void syncCartToDatabase({
         sessionId,
-        userId: user?.id,
+        userId: user.id,
         items,
         savedForLater,
       })
