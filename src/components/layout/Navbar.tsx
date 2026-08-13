@@ -1,23 +1,43 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, ShoppingCart } from "lucide-react";
+import { ChevronDown, Heart, Menu, ShoppingCart, User } from "lucide-react";
 import logo from "@/assets/akm-logo.jpeg";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
+import { useWishlist } from "@/context/WishlistContext";
+import { ProductSearch } from "@/components/shop/ProductSearch";
+import {
+  OFFICIAL_BROWSABLE_CATEGORIES,
+  shopCategoryPath,
+  shopCollectionPath,
+} from "@/data/catalog/categories";
+import { cn } from "@/lib/utils";
 
-const navLinks = [
-  { label: "Home", path: "/" },
-  { label: "About Us", path: "/about" },
-  { label: "Training & Education", path: "/training" },
-  { label: "Services", path: "/services" },
-  { label: "Shop", path: "/shop" },
-  { label: "Sell Your Product", path: "/sell-your-product" },
-  { label: "Personal Booking", path: "/personal-booking" },
-  { label: "Media", path: "/media" },
+const companyLinks = [
+  { label: "About", path: "/about" },
   { label: "CSR", path: "/csr" },
+  { label: "Media", path: "/media" },
+  { label: "Motivation", path: "/motivation" },
   { label: "Careers", path: "/careers" },
+  { label: "FAQ", path: "/faq" },
   { label: "Contact", path: "/contact" },
+  { label: "Training", path: "/training" },
+  { label: "Personal Booking", path: "/personal-booking" },
+  { label: "Disclaimer", path: "/disclaimer" },
+];
+
+const sheetPrimary = [
+  { label: "Shop", path: "/shop" },
+  { label: "Deals", path: shopCollectionPath("deals") },
+  { label: "Services", path: "/services" },
+  { label: "Sell With Us", path: "/sell-your-product" },
 ];
 
 export default function Navbar() {
@@ -25,10 +45,11 @@ export default function Navbar() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const location = useLocation();
   const { itemCount } = useCart();
+  const { count: wishlistCount } = useWishlist();
   const { isAuthenticated } = useAuth();
 
   useEffect(() => {
-    const handler = () => setIsScrolled(window.scrollY > 12);
+    const handler = () => setIsScrolled(window.scrollY > 8);
     handler();
     window.addEventListener("scroll", handler, { passive: true });
     return () => window.removeEventListener("scroll", handler);
@@ -36,127 +57,210 @@ export default function Navbar() {
 
   useEffect(() => {
     setSheetOpen(false);
-  }, [location.pathname]);
+  }, [location.pathname, location.search]);
 
-  const navSurface = isScrolled
-    ? "backdrop-blur-md bg-white/85 shadow-sm border-b border-black/[0.06]"
-    : "bg-transparent border-b border-transparent";
+  const linkClass = (active: boolean) =>
+    cn(
+      "relative shrink px-2 py-2 text-[0.75rem] 2xl:text-[0.8rem] font-medium tracking-wide transition-colors whitespace-nowrap",
+      active ? "text-[#1A1A1A]" : "text-[#1A1A1A]/75 hover:text-[#1A1A1A]",
+    );
 
   return (
-    <>
-      <nav
-        className={`fixed top-0 left-0 right-0 z-50 pt-[env(safe-area-inset-top,0px)] transition-colors duration-300 ${navSurface}`}
-      >
-        <div
-          className={`container-premium flex items-center justify-between gap-3 mx-auto transition-[height] duration-300 ${
-            isScrolled ? "h-[3.25rem] lg:h-14" : "h-14 lg:h-[4.25rem]"
-          }`}
-        >
-          <Link to="/" className="flex items-center gap-2 shrink-0">
-            <img
-              src={logo}
-              alt="AKM Care"
-              width={140}
-              height={56}
-              loading="eager"
-              decoding="async"
-              className={`object-contain transition-all duration-300 ${isScrolled ? "h-9 lg:h-10" : "h-10 lg:h-12"}`}
-            />
+    <header
+      className={cn(
+        "fixed top-0 left-0 right-0 z-50 pt-[env(safe-area-inset-top,0px)] border-b transition-colors duration-200",
+        isScrolled
+          ? "bg-white/95 backdrop-blur-md border-black/[0.06] shadow-sm"
+          : "bg-white border-black/[0.04]",
+      )}
+    >
+      <div className="container-premium flex items-center gap-2 sm:gap-3 h-14">
+        <Link to="/" className="flex items-center shrink-0" aria-label="AKM Care home">
+          <img
+            src={logo}
+            alt="AKM Care"
+            width={120}
+            height={40}
+            loading="eager"
+            decoding="async"
+            className="h-9 w-auto object-contain"
+          />
+        </Link>
+
+        <nav className="hidden xl:flex flex-1 min-w-0 items-center justify-center gap-0.5" aria-label="Primary">
+          <Link
+            to="/shop"
+            className={linkClass(location.pathname === "/shop" && !location.search.includes("collection="))}
+          >
+            Shop
+            {location.pathname === "/shop" && !location.search.includes("collection=") ? (
+              <span className="absolute left-2 right-2 bottom-1 h-0.5 rounded-full bg-[#E8621A]" />
+            ) : null}
           </Link>
 
-          {/* Flex center — never absolute, so links cannot sit under action buttons */}
-          <div className="hidden xl:flex flex-1 min-w-0 items-center justify-center gap-0.5 2xl:gap-1 px-2">
-            {navLinks.map((link) => {
-              const active = location.pathname === link.path;
-              return (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  className={`relative shrink px-1.5 2xl:px-2.5 py-2 text-[0.65rem] 2xl:text-[0.78rem] font-medium tracking-wide text-[#1A1A1A]/80 hover:text-[#1A1A1A] transition-colors whitespace-nowrap ${
-                    active ? "text-[#1A1A1A]" : ""
-                  }`}
-                >
-                  {link.label}
-                  {active ? (
-                    <span className="absolute left-1.5 right-1.5 bottom-1 h-0.5 rounded-full bg-[#E8621A]" />
-                  ) : null}
-                </Link>
-              );
-            })}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className={cn(linkClass(false), "inline-flex items-center gap-1 outline-none")}
+              aria-label="Shop by category"
+            >
+              Categories <ChevronDown size={14} aria-hidden />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" className="min-w-[15rem]">
+              {OFFICIAL_BROWSABLE_CATEGORIES.map((cat) => (
+                <DropdownMenuItem key={cat.id} asChild>
+                  <Link to={shopCategoryPath(cat.id)}>{cat.label}</Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <div className="hidden 2xl:block w-[min(16rem,20vw)] mx-2">
+            <ProductSearch
+              navigateToShop
+              value=""
+              onChange={() => {}}
+              placeholder="Search products…"
+              className="[&_input]:h-9 [&_input]:py-1.5 [&_input]:text-sm [&_input]:rounded-full"
+            />
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <Link
-              to="/cart"
-              aria-label={`Shopping cart${itemCount ? `, ${itemCount} items` : ""}`}
-              className="relative inline-flex items-center justify-center h-10 w-10 rounded-xl border border-black/10 bg-white/70 text-[#1A1A1A] hover:bg-white"
-            >
-              <ShoppingCart size={18} />
-              {itemCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[1.15rem] h-[1.15rem] px-1 rounded-full bg-[#E8621A] text-white text-[10px] font-bold flex items-center justify-center">
-                  {itemCount > 99 ? "99+" : itemCount}
-                </span>
-              )}
-            </Link>
-            <Link
-              to="/contact"
-              className="hidden sm:inline-flex items-center px-4 py-2 lg:px-5 lg:py-2.5 rounded-full bg-[#E8621A] text-white text-xs lg:text-sm font-semibold shadow-md shadow-[#E8621A]/25 hover:brightness-105 transition-all"
-            >
-              Get In Touch
-            </Link>
+          <Link to={shopCollectionPath("deals")} className={linkClass(location.search.includes("collection=deals"))}>
+            Deals
+          </Link>
+          <Link to="/services" className={linkClass(location.pathname === "/services")}>
+            Services
+          </Link>
+          <Link to="/sell-your-product" className={linkClass(location.pathname === "/sell-your-product")}>
+            Sell With Us
+          </Link>
 
-            <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-              <SheetTrigger asChild>
-                <button
-                  type="button"
-                  className="xl:hidden inline-flex items-center justify-center h-10 w-10 rounded-xl border border-black/10 bg-white/70 text-[#1A1A1A] hover:bg-white"
-                  aria-label="Open menu"
-                >
-                  <Menu size={22} />
-                </button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-[min(100vw,22rem)] pt-12 bg-[#FAF8F5] border-l border-black/10">
-                <SheetHeader className="text-left mb-6">
-                  <SheetTitle className="font-heading text-xl">Menu</SheetTitle>
-                </SheetHeader>
-                <nav className="flex flex-col gap-0.5" aria-label="Primary navigation drawer">
-                  {navLinks.map((link) => {
-                    const active = location.pathname === link.path;
-                    return (
-                      <Link
-                        key={link.path}
-                        to={link.path}
-                        className={`px-3 py-3.5 rounded-xl text-base font-medium border border-transparent ${
-                          active
-                            ? "bg-white text-[#E8621A] border-[#E8621A]/15 shadow-sm"
-                            : "text-[#1A1A1A]/85 hover:bg-white/80"
-                        }`}
-                      >
-                        {link.label}
-                      </Link>
-                    );
-                  })}
-                  <Link to="/cart" className="px-3 py-3.5 rounded-xl text-base font-medium">
-                    Cart{itemCount > 0 ? ` (${itemCount})` : ""}
-                  </Link>
-                  <Link to="/wishlist" className="px-3 py-3.5 rounded-xl text-base font-medium">
-                    Wishlist
-                  </Link>
-                  <Link to={isAuthenticated ? "/account" : "/auth"} className="px-3 py-3.5 rounded-xl text-base font-medium">
-                    {isAuthenticated ? "My Account" : "Sign in"}
-                  </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className={cn(linkClass(false), "inline-flex items-center gap-1 outline-none")}
+              aria-label="Company pages"
+            >
+              Company <ChevronDown size={14} aria-hidden />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" className="min-w-[14rem]">
+              {companyLinks.map((link) => (
+                <DropdownMenuItem key={link.path} asChild>
+                  <Link to={link.path}>{link.label}</Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </nav>
+
+        <div className="flex flex-1 xl:flex-none items-center justify-end gap-1.5 sm:gap-2 min-w-0">
+          <div className="flex-1 xl:hidden max-w-[min(52vw,14rem)] sm:max-w-xs">
+            <ProductSearch
+              navigateToShop
+              value=""
+              onChange={() => {}}
+              placeholder="Search…"
+              className="[&_input]:h-9 [&_input]:py-1.5 [&_input]:text-sm [&_input]:rounded-full [&_input]:pl-9"
+            />
+          </div>
+          <div className="hidden xl:block 2xl:hidden w-40">
+            <ProductSearch
+              navigateToShop
+              value=""
+              onChange={() => {}}
+              placeholder="Search…"
+              className="[&_input]:h-9 [&_input]:py-1.5 [&_input]:text-sm [&_input]:rounded-full"
+            />
+          </div>
+
+          <Link
+            to={isAuthenticated ? "/account" : "/auth"}
+            aria-label={isAuthenticated ? "My account" : "Sign in"}
+            className="btn-icon hidden md:inline-flex"
+          >
+            <User size={18} aria-hidden />
+          </Link>
+          <Link
+            to="/wishlist"
+            aria-label={`Wishlist${wishlistCount ? `, ${wishlistCount} items` : ""}`}
+            className="btn-icon relative hidden md:inline-flex"
+          >
+            <Heart size={18} aria-hidden />
+            {wishlistCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-[#E8621A] text-white text-[10px] font-bold flex items-center justify-center">
+                {wishlistCount > 99 ? "99+" : wishlistCount}
+              </span>
+            )}
+          </Link>
+          <Link
+            to="/cart"
+            aria-label={`Shopping cart${itemCount ? `, ${itemCount} items` : ""}`}
+            className="btn-icon relative"
+          >
+            <ShoppingCart size={18} aria-hidden />
+            {itemCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-[#E8621A] text-white text-[10px] font-bold flex items-center justify-center">
+                {itemCount > 99 ? "99+" : itemCount}
+              </span>
+            )}
+          </Link>
+
+          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+            <SheetTrigger asChild>
+              <button type="button" className="btn-icon xl:hidden" aria-label="Open menu">
+                <Menu size={20} aria-hidden />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[min(100vw,22rem)] pt-12 bg-[#FAF8F5] border-l border-black/10">
+              <SheetHeader className="text-left mb-6">
+                <SheetTitle className="font-heading text-xl">Menu</SheetTitle>
+              </SheetHeader>
+              <nav className="flex flex-col gap-0.5" aria-label="Primary navigation drawer">
+                {sheetPrimary.map((link) => (
                   <Link
-                    to="/contact"
-                    className="mt-4 text-center px-5 py-3.5 rounded-full bg-[#E8621A] text-white font-semibold shadow-md"
+                    key={link.path}
+                    to={link.path}
+                    className="px-3 py-3.5 rounded-xl text-base font-medium text-[#1A1A1A]/85 hover:bg-white/80"
                   >
-                    Get In Touch
+                    {link.label}
                   </Link>
-                </nav>
-              </SheetContent>
-            </Sheet>
-          </div>
+                ))}
+                <p className="px-3 pt-4 pb-2 text-[11px] font-semibold uppercase tracking-wide text-[#6B6B6B]">
+                  Categories
+                </p>
+                {OFFICIAL_BROWSABLE_CATEGORIES.map((cat) => (
+                  <Link
+                    key={cat.id}
+                    to={shopCategoryPath(cat.id)}
+                    className="px-3 py-3 rounded-xl text-base font-medium text-[#1A1A1A]/85 hover:bg-white/80"
+                  >
+                    {cat.label}
+                  </Link>
+                ))}
+                <p className="px-3 pt-4 pb-2 text-[11px] font-semibold uppercase tracking-wide text-[#6B6B6B]">
+                  Company
+                </p>
+                {companyLinks.map((link) => (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    className="px-3 py-3 rounded-xl text-base font-medium text-[#1A1A1A]/85 hover:bg-white/80"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+                <Link to="/cart" className="px-3 py-3.5 rounded-xl text-base font-medium">
+                  Cart{itemCount > 0 ? ` (${itemCount})` : ""}
+                </Link>
+                <Link to="/wishlist" className="px-3 py-3.5 rounded-xl text-base font-medium">
+                  Wishlist{wishlistCount > 0 ? ` (${wishlistCount})` : ""}
+                </Link>
+                <Link to={isAuthenticated ? "/account" : "/auth"} className="px-3 py-3.5 rounded-xl text-base font-medium">
+                  {isAuthenticated ? "My Account" : "Sign in"}
+                </Link>
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
-      </nav>
-    </>
+      </div>
+    </header>
   );
 }

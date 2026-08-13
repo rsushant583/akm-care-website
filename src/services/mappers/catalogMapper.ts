@@ -122,6 +122,13 @@ export function mapCatalogRow(row: CatalogListRow, index = 0): CatalogProduct {
   const images = asImages(row.images, name, row.image_url);
   const stock = Number(row.stock_quantity ?? 0);
   const slug = row.slug || slugify(name);
+  const rawStatus = (row.status as CatalogProduct["status"]) || null;
+  const status: CatalogProduct["status"] =
+    stock > 0
+      ? "available"
+      : rawStatus === "coming_soon" || rawStatus === "draft"
+        ? rawStatus
+        : "sold_out";
 
   return {
     id: String(row.id),
@@ -149,7 +156,7 @@ export function mapCatalogRow(row: CatalogListRow, index = 0): CatalogProduct {
     warranty: String(row.warranty ?? "NA"),
     packingType: row.packing_type ?? undefined,
     freightCost: row.freight_cost,
-    status: (row.status as CatalogProduct["status"]) ?? (stock > 0 ? "available" : "sold_out"),
+    status,
     category: (row.category_slug as CatalogProduct["category"]) ?? "apparel",
     categoryLabel: String(row.category_label ?? row.category_name ?? "Apparel"),
     brand: row.brand_name ?? "AKM Care",

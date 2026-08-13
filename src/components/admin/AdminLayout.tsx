@@ -24,6 +24,7 @@ import {
 import { useState } from "react";
 import { SEO } from "@/components/SEO";
 import { useAdminAuth } from "@/context/AdminAuthContext";
+import { AdminOrderAlertsProvider, useAdminOrderAlerts } from "@/context/AdminOrderAlertsContext";
 import { cn } from "@/lib/utils";
 
 const nav = [
@@ -59,9 +60,10 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-export default function AdminLayout() {
+function AdminShell() {
   const { admin, signOut } = useAdminAuth();
   const navigate = useNavigate();
+  const { unseenCount } = useAdminOrderAlerts();
   const [open, setOpen] = useState(false);
 
   return (
@@ -99,6 +101,14 @@ export default function AdminLayout() {
               >
                 <item.icon size={16} />
                 {item.label}
+                {item.to === "/admin/orders" && unseenCount > 0 && (
+                  <span
+                    className="ml-auto rounded-full bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5"
+                    aria-label={`${unseenCount} new orders`}
+                  >
+                    {unseenCount}
+                  </span>
+                )}
               </NavLink>
             ))}
           </nav>
@@ -132,5 +142,13 @@ export default function AdminLayout() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function AdminLayout() {
+  return (
+    <AdminOrderAlertsProvider>
+      <AdminShell />
+    </AdminOrderAlertsProvider>
   );
 }

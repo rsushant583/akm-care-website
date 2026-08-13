@@ -1,342 +1,148 @@
-import { ShoppingCart } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { gsap } from "@/lib/gsapRegister";
-import { prefersReducedMotion } from "@/lib/motion";
-import { runRevealWhenVisible } from "@/lib/runRevealWhenVisible";
-import { useProducts } from "@/hooks/useProducts";
-import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "@/components/ui/sonner";
-import { createRazorpayOrder, loadRazorpayScript, verifyRazorpayPayment } from "@/lib/paymentService";
-import { isValidIndianPincode, mockDeliveryAvailable } from "@/lib/pincodeDelivery";
+import { Link } from "react-router-dom";
+import { useMemo } from "react";
+import { useCatalogMerchandising, useCatalogProducts } from "@/hooks/useCatalogProducts";
+import { ProductGrid, ProductGridSkeleton, RecentlyViewedStrip } from "@/components/shop";
+import { shopCollectionPath } from "@/data/catalog/categories";
+import type { CatalogProduct } from "@/lib/ecommerce/types";
 
+function dedupeById(lists: CatalogProduct[][], excludeIds?: Set<string>): CatalogProduct[] {
+  const seen = new Set<string>(excludeIds ? [...excludeIds] : []);
+  const out: CatalogProduct[] = [];
+  for (const list of lists) {
+    for (const p of list) {
+      if (seen.has(p.id)) continue;
+      seen.add(p.id);
+      out.push(p);
+    }
+  }
+  return out;
+}
+
+/** Homepage catalog — same catalog SoT as Shop; hide empty / duplicate merch rows. */
 export default function EcommercePreview() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const headerRef = useRef<HTMLDivElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const gridRef = useRef<HTMLDivElement>(null);
-  const { data: products, loading } = useProducts();
-  const [selectedBuyProduct, setSelectedBuyProduct] = useState<any>(null);
-  const [checkout, setCheckout] = useState({ name: "", email: "", phone: "" });
-  const [processingPayment, setProcessingPayment] = useState(false);
-  const [paymentError, setPaymentError] = useState("");
-  const [pinInput, setPinInput] = useState("");
-  const [pinStatus, setPinStatus] = useState<"idle" | "invalid" | "ok" | "no">("idle");
+  const { featured, bestSellers, deals, newArrivals, loading: merchLoading } = useCatalogMerchandising(8);
+  const { data: catalogPreview, loading: catalogLoading } = useCatalogProducts({
+    pageSize: 8,
+    enablePagination: false,
+  });
 
-  useEffect(() => {
-    const section = sectionRef.current;
-    const header = headerRef.current;
-    const panel = panelRef.current;
-    const grid = gridRef.current;
-    if (!section || !header || !panel || !grid || loading) return;
+  const loading = merchLoading || catalogLoading;
 
-    const cards = grid.querySelectorAll<HTMLElement>(".ecom-card");
-    if (!cards.length) return;
+  const primary = useMemo(() => {
+    if (featured.length > 0) return featured;
+    return catalogPreview.slice(0, 8);
+  }, [featured, catalogPreview]);
 
-    if (prefersReducedMotion()) {
-      gsap.set([...header.querySelectorAll("[data-ecom-head]"), panel, ...cards], {
-        clearProps: "all",
-        opacity: 1,
-        y: 0,
-        scale: 1,
-      });
-      return;
-    }
+  const primaryIds = useMemo(() => new Set(primary.map((p) => p.id)), [primary]);
 
-    let ctx: gsap.Context | null = null;
-    const disconnect = runRevealWhenVisible(section, () => {
-      ctx?.revert();
-      const desktop = window.matchMedia("(min-width: 1024px)").matches;
-      const heads = header.querySelectorAll("[data-ecom-head]");
-      ctx = gsap.context(() => {
-        const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-        tl.fromTo(
-          heads,
-          { opacity: 0, y: desktop ? 30 : 28 },
-          { opacity: 1, y: 0, stagger: 0.06, duration: 0.72 },
-        )
-          .fromTo(panel, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.65 }, "-=0.45")
-          .fromTo(
-            cards,
-            { opacity: 0, y: desktop ? 46 : 40, scale: desktop ? 0.97 : 1 },
-            {
-              opacity: 1,
-              y: 0,
-              scale: 1,
-              duration: desktop ? 0.65 : 0.62,
-              stagger: 0.06,
-            },
-            "-=0.45",
-          );
-      }, section);
-    });
+  const uniqueNew = useMemo(
+    () => dedupeById([newArrivals], primaryIds).slice(0, 8),
+    [newArrivals, primaryIds],
+  );
+  const uniqueDeals = useMemo(
+    () => dedupeById([deals], new Set([...primaryIds, ...uniqueNew.map((p) => p.id)])).slice(0, 8),
+    [deals, primaryIds, uniqueNew],
+  );
+  const uniqueBest = useMemo(() => {
+    const exclude = new Set([...primaryIds, ...uniqueNew.map((p) => p.id), ...uniqueDeals.map((p) => p.id)]);
+    return dedupeById([bestSellers], exclude).slice(0, 8);
+  }, [bestSellers, primaryIds, uniqueNew, uniqueDeals]);
 
-    return () => {
-      disconnect();
-      ctx?.revert();
-    };
-  }, [loading, products]);
-
-  const checkPincode = () => {
-    const p = pinInput.trim();
-    if (!isValidIndianPincode(p)) {
-      setPinStatus("invalid");
-      return;
-    }
-    setPinStatus(mockDeliveryAvailable(p) ? "ok" : "no");
-  };
-
-  const openRazorpay = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedBuyProduct) return;
-    if (!checkout.name || !checkout.email) {
-      toast.error("Please enter your name and email.");
-      return;
-    }
-    if ((selectedBuyProduct.stock_quantity ?? 0) <= 0) {
-      toast.error("This item is currently out of stock.");
-      return;
-    }
-
-    setProcessingPayment(true);
-    setPaymentError("");
-    try {
-      const scriptLoaded = await loadRazorpayScript();
-      if (!scriptLoaded) {
-        toast.error("Could not load payment gateway.");
-        return;
-      }
-
-      const orderRes = await createRazorpayOrder({
-        items: [{ productId: selectedBuyProduct.id, quantity: 1 }],
-        customer: checkout,
-        address: { source: "home_preview" },
-        shippingMethod: "standard",
-      });
-      if (!orderRes?.success || !orderRes.order || !orderRes.orderHeaderId || !orderRes.accessToken) {
-        toast.error(orderRes?.error || "Unable to create order.");
-        return;
-      }
-
-      const options = {
-        key: orderRes.keyId,
-        amount: orderRes.order.amount,
-        currency: orderRes.order.currency,
-        name: "AKM Care",
-        description: selectedBuyProduct.name,
-        order_id: orderRes.order.id,
-        prefill: {
-          name: checkout.name,
-          email: checkout.email,
-          contact: checkout.phone,
-        },
-        handler: async function (response: any) {
-          const verify = await verifyRazorpayPayment({
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_signature: response.razorpay_signature,
-            orderHeaderId: orderRes.orderHeaderId!,
-            accessToken: orderRes.accessToken!,
-          });
-
-          if (!verify?.success) {
-            toast.error(verify?.error || "Payment verification failed.");
-            setPaymentError(verify?.error || "Payment verification failed.");
-            return;
-          }
-
-          toast.success("Payment successful! Order confirmed.");
-          setSelectedBuyProduct(null);
-          setCheckout({ name: "", email: "", phone: "" });
-        },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.on("payment.failed", (response: any) => {
-        const message = response?.error?.description || "Payment failed. Please try again.";
-        setPaymentError(message);
-        toast.error(message);
-      });
-      rzp.on("modal.closed", () => {
-        if (!processingPayment) return;
-        setPaymentError("Payment window closed. You can retry.");
-      });
-      rzp.open();
-    } catch {
-      toast.error("Payment could not be initiated.");
-    } finally {
-      setProcessingPayment(false);
-    }
-  };
+  const showPrimary = primary.length > 0;
+  const catalogIsTiny = catalogPreview.length > 0 && catalogPreview.length <= 8;
+  /** Avoid repeating the same small catalog under multiple merch headings. */
+  const allowExtraMerch = !catalogIsTiny || featured.length > 0;
 
   return (
-    <section ref={sectionRef} className="section-padding section-shell relative min-h-0 overflow-hidden">
-      <div
-        className="absolute inset-0 bg-cover bg-center scale-105"
-        style={{
-          backgroundImage:
-            "url(https://images.unsplash.com/photo-1595855759920-86582396756a?auto=format&fit=crop&w=2000&q=80)",
-        }}
-        aria-hidden
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#1A1A1A]/88 via-[#1A1A1A]/82 to-[#1A1A1A]/92" aria-hidden />
-      <div className="container-premium relative z-10">
-        <div ref={headerRef} className="text-center mb-10 max-w-2xl mx-auto">
-          <div
-            data-ecom-head
-            className="inline-flex items-center rounded-full bg-white/10 text-white px-4 py-1.5 text-xs font-semibold tracking-wide mb-4 border border-white/15"
-          >
-            Village Store
-          </div>
-          <h2 data-ecom-head className="font-heading text-3xl sm:text-4xl lg:text-[2.5rem] mb-3 text-white">
-            From the Heart of India&apos;s Villages
-          </h2>
-          <p data-ecom-head className="text-white/80 text-base sm:text-lg">
-            Authentic rural products, coming to your doorstep
-          </p>
-        </div>
-
-        <div ref={panelRef} className="max-w-xl mx-auto mb-10 rounded-2xl bg-white/95 backdrop-blur-md border border-white/40 p-5 sm:p-6 shadow-xl">
-          <h3 className="font-heading text-base sm:text-lg mb-1 text-center">Check Delivery Availability by Pincode</h3>
-          <p className="text-xs sm:text-sm text-muted-foreground text-center mb-4">Enter your 6-digit Indian pincode</p>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <input
-              type="text"
-              inputMode="numeric"
-              maxLength={6}
-              placeholder="Pincode"
-              value={pinInput}
-              onChange={(e) => {
-                setPinInput(e.target.value.replace(/\D/g, "").slice(0, 6));
-                setPinStatus("idle");
-              }}
-              className="flex-1 px-4 py-3 rounded-xl border border-border bg-background text-base"
-            />
-            <button
-              type="button"
-              onClick={checkPincode}
-              className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:brightness-110 transition-all whitespace-nowrap"
-            >
-              Check Availability
-            </button>
-          </div>
-          {pinStatus === "invalid" && (
-            <p className="text-sm text-destructive mt-3 text-center">Please enter a valid 6-digit pincode.</p>
-          )}
-          {pinStatus === "ok" && (
-            <p className="text-sm font-medium text-emerald-700 mt-3 text-center">Delivery Available</p>
-          )}
-          {pinStatus === "no" && (
-            <p className="text-sm font-medium text-destructive mt-3 text-center">Delivery Not Available</p>
-          )}
-        </div>
-
-        <div ref={gridRef} className="flex gap-4 overflow-x-auto lg:grid lg:grid-cols-5 lg:overflow-visible pb-2 snap-x snap-mandatory scrollbar-hide -mx-1 px-1">
-          {loading ? Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-72 rounded-2xl" />
-          )) : products.map((product) => (
-            <div
-              key={product.id}
-              className="ecom-card group w-[min(260px,86vw)] shrink-0 snap-start lg:w-auto bg-white border border-white/30 rounded-2xl overflow-hidden shadow-xl transition-all duration-500 ease-in-out hover:-translate-y-2 hover:border-[#E8621A]/35"
-            >
-              <div className="aspect-square bg-gradient-to-br from-saffron-light to-accent flex items-center justify-center relative overflow-hidden">
-                {product.image_url ? (
-                  <img
-                    src={product.image_url}
-                    alt={product.name}
-                    width={400}
-                    height={400}
-                    loading="lazy"
-                    decoding="async"
-                    className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
-                  />
-                ) : (
-                  <span className="text-4xl">
-                    {product.name.includes("Makhana") ? "🫘" :
-                     product.name.includes("Sattu") ? "🌾" :
-                     product.name.includes("Honey") ? "🍯" :
-                     product.name.includes("Ghee") ? "🧈" : "🫘"}
-                  </span>
-                )}
-                <span className={`absolute top-3 right-3 text-xs font-semibold px-3 py-1 rounded-full ${
-                  (product.stock_quantity ?? 0) === 0
-                    ? "bg-destructive/10 text-destructive"
-                    : "bg-emerald-100 text-emerald-700"
-                }`}>
-                  {(product.stock_quantity ?? 0) > 0 ? `In Stock (${product.stock_quantity})` : "Out of Stock"}
-                </span>
-              </div>
-              <div className="p-4">
-                <h3 className="font-heading text-base mb-0.5">{product.name}</h3>
-                <p className="text-xs text-muted-foreground mb-2">{product.quantity}</p>
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-lg">₹{product.price}</span>
-                  <button
-                    onClick={() => {
-                      setPaymentError("");
-                      setSelectedBuyProduct(product);
-                    }}
-                    disabled={(product.stock_quantity ?? 0) === 0}
-                    className={`p-2 rounded-xl ${
-                      (product.stock_quantity ?? 0) === 0
-                        ? "bg-muted text-muted-foreground cursor-not-allowed"
-                        : "bg-primary text-primary-foreground"
-                    }`}
-                  >
-                    <ShoppingCart size={16} />
-                  </button>
-                </div>
-                <button
-                  onClick={() =>
-                    (product.stock_quantity ?? 0) > 0
-                      ? (() => {
-                          setPaymentError("");
-                          setSelectedBuyProduct(product);
-                        })()
-                      : null
-                  }
-                  disabled={(product.stock_quantity ?? 0) === 0}
-                  className={`mt-3 w-full py-2 rounded-full text-sm font-semibold transition-all ${
-                    (product.stock_quantity ?? 0) > 0
-                      ? "bg-primary text-primary-foreground hover:brightness-110"
-                      : "bg-primary/10 text-primary cursor-not-allowed"
-                  }`}
-                >
-                  {(product.stock_quantity ?? 0) > 0 ? "Buy Now" : "Notify me when available"}
-                </button>
-              </div>
+    <div>
+      <section className="bg-[#FAF8F5] py-8 sm:py-10 lg:py-12" aria-labelledby="featured-products-heading">
+        <div className="container-premium space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+            <div>
+              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-[#E8621A] mb-2">
+                {featured.length > 0 ? "Featured" : "Shop"}
+              </p>
+              <h2 id="featured-products-heading" className="type-section">
+                {featured.length > 0 ? "Handpicked for you" : "Shop our products"}
+              </h2>
+              <p className="type-meta mt-1.5 text-sm">Live catalog pricing, images, and stock</p>
             </div>
-          ))}
-        </div>
-        {!loading && products.length === 0 && (
-          <div className="text-center mt-8 text-muted-foreground">Products are being updated. Please check again shortly.</div>
-        )}
-      </div>
-
-      {selectedBuyProduct && (
-        <div className="fixed inset-0 z-[120] bg-foreground/50 flex items-center justify-center p-4" onClick={() => { setSelectedBuyProduct(null); setPaymentError(""); }}>
-          <div className="bg-card rounded-2xl p-8 max-w-md w-full card-shadow" onClick={(e) => e.stopPropagation()}>
-            <h3 className="font-heading text-2xl mb-2">Quick Checkout</h3>
-            <p className="text-muted-foreground mb-4">{selectedBuyProduct.name} - ₹{selectedBuyProduct.price}</p>
-            <form onSubmit={openRazorpay} className="space-y-4">
-              <input required type="text" value={checkout.name} onChange={(e) => setCheckout((p) => ({ ...p, name: e.target.value }))} placeholder="Your Name" className="w-full px-4 py-3 rounded-xl border border-border bg-background" />
-              <input required type="email" value={checkout.email} onChange={(e) => setCheckout((p) => ({ ...p, email: e.target.value }))} placeholder="Email" className="w-full px-4 py-3 rounded-xl border border-border bg-background" />
-              <input type="tel" value={checkout.phone} onChange={(e) => setCheckout((p) => ({ ...p, phone: e.target.value }))} placeholder="Phone (optional)" className="w-full px-4 py-3 rounded-xl border border-border bg-background" />
-              <button disabled={processingPayment} type="submit" className="w-full py-3 rounded-full bg-primary text-primary-foreground font-semibold hover:brightness-110 transition-all">
-                {processingPayment ? "Processing..." : "Pay with Razorpay"}
-              </button>
-              {paymentError && (
-                <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3">
-                  <p className="text-sm text-destructive mb-2">{paymentError}</p>
-                  <div className="flex gap-2">
-                    <button type="submit" className="flex-1 py-2 rounded-full bg-primary text-primary-foreground text-sm font-semibold">Retry</button>
-                    <button type="button" onClick={() => { setSelectedBuyProduct(null); setPaymentError(""); }} className="flex-1 py-2 rounded-full bg-muted text-muted-foreground text-sm font-semibold">Cancel</button>
-                  </div>
-                </div>
-              )}
-            </form>
+            <Link to="/shop" className="btn-tertiary">
+              Shop all
+            </Link>
           </div>
+          {loading ? (
+            <ProductGridSkeleton count={4} />
+          ) : showPrimary ? (
+            <ProductGrid products={primary} />
+          ) : (
+            <p className="text-sm text-[#6B6B6B]">Products will appear here once published in Admin.</p>
+          )}
         </div>
+      </section>
+
+      {allowExtraMerch && !loading && uniqueNew.length >= 2 && (
+        <section className="section-padding pt-2 pb-8 bg-white" aria-labelledby="new-arrivals-heading">
+          <div className="container-premium space-y-6">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#E8621A] mb-2">Just in</p>
+                <h2 id="new-arrivals-heading" className="font-heading text-2xl sm:text-3xl">
+                  New arrivals
+                </h2>
+              </div>
+              <Link to={shopCollectionPath("new-arrivals")} className="text-sm font-semibold text-[#E8621A] hover:underline">
+                See all
+              </Link>
+            </div>
+            <ProductGrid products={uniqueNew} />
+          </div>
+        </section>
       )}
-    </section>
+
+      {allowExtraMerch && !loading && uniqueDeals.length >= 2 && (
+        <section className="section-padding pt-2 pb-8 bg-[#FAF8F5]" aria-labelledby="deals-heading">
+          <div className="container-premium space-y-6">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#E8621A] mb-2">Offers</p>
+                <h2 id="deals-heading" className="font-heading text-2xl sm:text-3xl">
+                  Deals &amp; discounts
+                </h2>
+              </div>
+              <Link to={shopCollectionPath("deals")} className="text-sm font-semibold text-[#E8621A] hover:underline">
+                See all
+              </Link>
+            </div>
+            <ProductGrid products={uniqueDeals} />
+          </div>
+        </section>
+      )}
+
+      {allowExtraMerch && !loading && uniqueBest.length >= 2 && (
+        <section className="section-padding pt-2 pb-8 bg-white" aria-labelledby="best-sellers-heading">
+          <div className="container-premium space-y-6">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#E8621A] mb-2">Bestsellers</p>
+                <h2 id="best-sellers-heading" className="font-heading text-2xl sm:text-3xl">
+                  Customer favourites
+                </h2>
+              </div>
+              <Link to={shopCollectionPath("best-sellers")} className="text-sm font-semibold text-[#E8621A] hover:underline">
+                See all
+              </Link>
+            </div>
+            <ProductGrid products={uniqueBest} />
+          </div>
+        </section>
+      )}
+
+      <section className="section-padding pt-2 pb-6 bg-white">
+        <div className="container-premium">
+          <RecentlyViewedStrip />
+        </div>
+      </section>
+    </div>
   );
 }

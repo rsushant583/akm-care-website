@@ -45,14 +45,24 @@ export default function FeedbackWidget() {
     }
   };
 
+  const onProductDetail = location.pathname.startsWith("/shop/product/");
+
   return (
     <>
       <button
+        type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] right-4 z-40 rounded-full bg-primary p-4 text-primary-foreground shadow-lg transition-all hover:brightness-110 lg:bottom-6 lg:right-6"
+        className={`fixed z-40 left-3 lg:left-auto lg:right-6 lg:bottom-6
+          h-11 w-11 rounded-full bg-[#1A1A1A]/90 text-white shadow-md
+          flex items-center justify-center
+          hover:bg-[#1A1A1A] transition-colors
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/50 focus-visible:ring-offset-2
+          ${onProductDetail
+            ? "bottom-[calc(8.25rem+env(safe-area-inset-bottom,0px))]"
+            : "bottom-[calc(5.25rem+env(safe-area-inset-bottom,0px))]"}`}
         aria-label="Open feedback"
       >
-        <MessageCircle size={20} />
+        <MessageCircle size={18} aria-hidden />
       </button>
 
       {open && (

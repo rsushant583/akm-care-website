@@ -43,7 +43,7 @@ export function CompareTray() {
   if (count === 0) return null;
 
   return (
-    <div className="pointer-events-none fixed z-[85] inset-x-0 bottom-0 pb-[env(safe-area-inset-bottom,0px)]">
+    <div className="pointer-events-none fixed z-[85] inset-x-0 bottom-0 pb-[calc(4.25rem+env(safe-area-inset-bottom,0px))] lg:pb-[env(safe-area-inset-bottom,0px)]">
       <div className="pointer-events-auto mx-auto max-w-5xl m-3 rounded-2xl border border-black/10 bg-white shadow-2xl p-3 sm:p-4">
         <div className="flex items-center justify-between gap-2 mb-3">
           <p className="font-heading text-sm sm:text-base inline-flex items-center gap-2">

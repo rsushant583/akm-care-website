@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Minus, Plus, Pencil, Trash2 } from "lucide-react";
+import { Minus, Plus, Trash2 } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
@@ -46,13 +46,8 @@ type PersistedCheckout = {
   saveAddressForLater: boolean;
 };
 
-function etaLabel(minDays: number, maxDays: number) {
-  const fmt = (n: number) => {
-    const d = new Date();
-    d.setDate(d.getDate() + n);
-    return d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
-  };
-  return `${fmt(minDays)} – ${fmt(maxDays)}`;
+function shippingWindowLabel(minDays: number, maxDays: number) {
+  return `${minDays}–${maxDays} business days (estimate)`;
 }
 
 function isValidEmail(value: string) {
@@ -75,7 +70,7 @@ function loadPersisted(): PersistedCheckout | null {
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { user, profile, isAuthenticated } = useAuth();
+  const { user, profile, isAuthenticated, session } = useAuth();
   const {
     items,
     checkoutTotals,
@@ -85,14 +80,28 @@ export default function Checkout() {
     shippingMethod,
     setShippingMethod,
     shippingTotal,
+    shippingConfig,
     updateQuantity,
     removeFromCart,
+    refreshCartFromCatalog,
   } = useCart();
 
   const persisted = useMemo(() => loadPersisted(), []);
+  const cartFingerprint = useMemo(
+    () => items.map((i) => `${i.productId}:${i.quantity}:${i.unitPrice}`).join("|"),
+    [items],
+  );
 
-  const [step, setStep] = useState<StepIndex>(persisted?.step && persisted.step <= 6 ? persisted.step : 1);
+  const [step, setStep] = useState<StepIndex>(() => {
+    const p = loadPersisted();
+    if (!p?.step || p.step > 6) return 1;
+    return p.step >= 6 ? 5 : p.step;
+  });
   const [submitting, setSubmitting] = useState(false);
+  const [paymentPhase, setPaymentPhase] = useState<
+    "idle" | "creating" | "opening" | "processing" | "verifying"
+  >("idle");
+  const submitLockRef = useRef(false);
   const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
   const [selectedSavedId, setSelectedSavedId] = useState<string | null>(null);
   const [addressLabel, setAddressLabel] = useState<"home" | "office" | "other">(
@@ -101,7 +110,6 @@ export default function Checkout() {
   const [saveAddressForLater, setSaveAddressForLater] = useState(persisted?.saveAddressForLater ?? true);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-
   const [draft, setDraft] = useState<CheckoutDraft>(
     persisted?.draft || {
       customer: {
@@ -118,8 +126,26 @@ export default function Checkout() {
 
   useEffect(() => {
     if (persisted?.draft?.couponCode) setCouponCode(persisted.draft.couponCode);
+    // Invalidate stale draft step if cart contents changed since last persist
+    try {
+      const storedFp = sessionStorage.getItem("akm_checkout_cart_fp");
+      if (storedFp && storedFp !== cartFingerprint && items.length > 0) {
+        setStep(1);
+      }
+      if (items.length > 0) sessionStorage.setItem("akm_checkout_cart_fp", cartFingerprint);
+    } catch {
+      /* ignore */
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    try {
+      if (items.length > 0) sessionStorage.setItem("akm_checkout_cart_fp", cartFingerprint);
+    } catch {
+      /* ignore */
+    }
+  }, [cartFingerprint, items.length]);
 
   useEffect(() => {
     if (!user) return;
@@ -342,69 +368,107 @@ export default function Checkout() {
   };
 
   const placeOrder = async () => {
+    if (submitLockRef.current || submitting) return;
+
     const customerErrs = validateCustomerFields();
     const addressErrs = validateAddressFields();
     if (Object.keys(customerErrs).length || Object.keys(addressErrs).length) {
       if (Object.keys(customerErrs).length) {
         showStepErrors(["name", "email", "phone"], customerErrs);
         setStep(2);
+        window.setTimeout(() => document.getElementById("checkout-field-name")?.focus(), 50);
       } else {
         showStepErrors(["line1", "city", "state", "pincode"], addressErrs);
         setStep(3);
+        window.setTimeout(() => document.getElementById("checkout-field-line1")?.focus(), 50);
       }
       return;
     }
 
+    submitLockRef.current = true;
     setSubmitting(true);
+    setPaymentPhase("creating");
     let orderHeaderId: string | null = null;
     let accessToken: string | null = null;
+    const unlock = () => {
+      setPaymentPhase("idle");
+      setSubmitting(false);
+      submitLockRef.current = false;
+    };
     try {
       if (draft.paymentMethod === "cod") {
         toast.error("Cash on Delivery is coming soon. Please pay with Razorpay.");
+        unlock();
         return;
       }
 
       if (draft.paymentMethod !== "razorpay") {
         toast.error("Please select Razorpay to continue.");
+        unlock();
+        return;
+      }
+
+      const refresh = await refreshCartFromCatalog();
+      if (refresh.unavailableNames.length) {
+        toast.error("Some items are no longer available. Please review your cart.");
+        setStep(1);
+        unlock();
+        return;
+      }
+      if (refresh.priceChanged || refresh.stockChanged) {
+        toast.message("Your cart has changed. Please review it before continuing.");
+        setStep(1);
+        unlock();
+        return;
+      }
+      if (items.length === 0) {
+        toast.error("Your cart is empty.");
+        unlock();
         return;
       }
 
       const ready = await loadRazorpayScript();
       if (!ready) {
         toast.error("Could not load Razorpay. Check your connection.");
+        unlock();
         return;
       }
 
-      // Server creates pending order + Razorpay order; client sends ids/qty/method/code only (no money fields)
+      setPaymentPhase("opening");
       const created = await createRazorpayOrder({
-        items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+        items: items.map((i) => ({
+          productId: i.productId,
+          quantity: i.quantity,
+          colorName: i.colorName,
+          variantName: i.variantName,
+        })),
         customer: draft.customer,
         address: addressPayload,
         shippingMethod,
         couponCode: couponCode || undefined,
         notes: draft.notes,
-        userId: user?.id,
+        accessToken: session?.access_token,
       });
 
       if (!created?.success || !created.order || !created.orderHeaderId || !created.accessToken) {
-        toast.error(created?.error || "Could not create payment order.");
+        toast.error(created?.error || "We couldn't start the payment. Please try again.");
+        unlock();
         return;
       }
 
       orderHeaderId = created.orderHeaderId;
       accessToken = created.accessToken;
 
-      await sendOrderEmail("order_confirmation", {
-        orderNumber: created.orderNumber,
-        customer: draft.customer,
-        totals: created.totals,
-        items: (created.items || []).map((i) => ({
-          name: i.productName,
-          quantity: i.quantity,
-          unitPrice: i.unitPrice,
-        })),
-      });
+      if (
+        created.totals &&
+        Math.abs(Number(created.totals.grandTotal) - checkoutTotals.orderTotal) > 1
+      ) {
+        toast.message(
+          `Final amount ${formatINR(Number(created.totals.grandTotal))} (server-verified). Opening secure payment…`,
+        );
+      }
 
+      setPaymentPhase("processing");
       const rzp = new window.Razorpay({
         key: created.keyId,
         amount: created.order.amount,
@@ -418,11 +482,23 @@ export default function Checkout() {
           contact: draft.customer.phone,
         },
         theme: { color: "#E8621A" },
+        modal: {
+          ondismiss: async () => {
+            toast.message("Payment cancelled. You can try again when ready.");
+            if (orderHeaderId && accessToken) {
+              await markOrderFailed(orderHeaderId, accessToken, "payment cancelled / dismissed");
+            }
+            setPaymentPhase("idle");
+            setSubmitting(false);
+            submitLockRef.current = false;
+          },
+        },
         handler: async (response: {
           razorpay_order_id: string;
           razorpay_payment_id: string;
           razorpay_signature: string;
         }) => {
+          setPaymentPhase("verifying");
           try {
             const verified = await verifyRazorpayPayment({
               razorpay_order_id: response.razorpay_order_id,
@@ -433,21 +509,28 @@ export default function Checkout() {
             });
 
             if (!verified?.success) {
-              toast.error(verified?.error || "Payment verification failed.");
+              toast.error(verified?.error || "Payment verification failed. Please contact support if money was deducted.");
               await markOrderFailed(
                 created.orderHeaderId!,
                 created.accessToken!,
                 verified?.error || "verify failed",
               );
+              setPaymentPhase("idle");
+              setSubmitting(false);
+              submitLockRef.current = false;
               return;
             }
 
-            await sendOrderEmail("payment_success", {
-              orderNumber: created.orderNumber,
-              customer: draft.customer,
-              paymentId: response.razorpay_payment_id,
-              amount: verified.amount ?? created.amount,
-            });
+            try {
+              await sendOrderEmail("payment_success", {
+                orderNumber: created.orderNumber,
+                customer: draft.customer,
+                paymentId: response.razorpay_payment_id,
+                amount: verified.amount ?? created.amount,
+              });
+            } catch {
+              /* notification failure must not reverse payment */
+            }
 
             clearCart();
             localStorage.removeItem(CHECKOUT_STORAGE_KEY);
@@ -457,8 +540,15 @@ export default function Checkout() {
               { replace: true },
             );
           } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Payment callback failed");
+            toast.error(
+              err instanceof Error
+                ? err.message
+                : "Payment verification is taking longer than expected. Check My Account or contact support.",
+            );
             await markOrderFailed(created.orderHeaderId!, created.accessToken!, "callback error");
+            setPaymentPhase("idle");
+            setSubmitting(false);
+            submitLockRef.current = false;
           }
         },
       });
@@ -468,16 +558,21 @@ export default function Checkout() {
         if (orderHeaderId && accessToken) {
           await markOrderFailed(orderHeaderId, accessToken, resp?.error?.description || "payment.failed");
         }
+        setPaymentPhase("idle");
+        setSubmitting(false);
+        submitLockRef.current = false;
       });
 
       rzp.open();
+      // Keep submitting=true while Razorpay modal is open (released on dismiss/fail/success)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Checkout failed");
+      toast.error(err instanceof Error ? err.message : "We couldn't start the payment. Please try again.");
       if (orderHeaderId && accessToken) {
         await markOrderFailed(orderHeaderId, accessToken, "checkout exception");
       }
-    } finally {
+      setPaymentPhase("idle");
       setSubmitting(false);
+      submitLockRef.current = false;
     }
   };
 
@@ -629,6 +724,7 @@ export default function Checkout() {
                   <p className="text-sm text-[#6B6B6B]">We’ll use these details for order updates and delivery.</p>
                   <div className="space-y-3">
                     <Field
+                      id="checkout-field-name"
                       label="Full name"
                       required
                       error={fieldError("name")}
@@ -638,6 +734,7 @@ export default function Checkout() {
                       autoComplete="name"
                     />
                     <Field
+                      id="checkout-field-email"
                       label="Email address"
                       type="email"
                       required
@@ -648,6 +745,7 @@ export default function Checkout() {
                       autoComplete="email"
                     />
                     <Field
+                      id="checkout-field-phone"
                       label="Mobile number"
                       type="tel"
                       required
@@ -702,6 +800,7 @@ export default function Checkout() {
                   <div className="grid sm:grid-cols-2 gap-3">
                     <div className="sm:col-span-2">
                       <Field
+                        id="checkout-field-line1"
                         label="Address line 1"
                         required
                         error={fieldError("line1")}
@@ -802,14 +901,14 @@ export default function Checkout() {
                         id: "standard" as const,
                         label: "Standard Delivery",
                         detail: "3–5 business days",
-                        eta: etaLabel(3, 5),
+                        eta: shippingWindowLabel(3, 5),
                         price: 49,
                       },
                       {
                         id: "express" as const,
                         label: "Express Delivery",
                         detail: "1–2 business days",
-                        eta: etaLabel(1, 2),
+                        eta: shippingWindowLabel(1, 2),
                         price: 99,
                       },
                     ]
@@ -950,7 +1049,7 @@ export default function Checkout() {
                       {formatINR(shippingTotal)}
                       <br />
                       <span className="text-[#6B6B6B]">
-                        Est. {shippingMethod === "express" ? etaLabel(1, 2) : etaLabel(3, 5)}
+                        Est. {shippingMethod === "express" ? shippingWindowLabel(1, 2) : shippingWindowLabel(3, 5)}
                       </span>
                     </p>
                   </ReviewBlock>
@@ -994,9 +1093,16 @@ export default function Checkout() {
                       type="button"
                       disabled={submitting}
                       onClick={() => void placeOrder()}
-                      className="rounded-full bg-[#E8621A] text-white font-semibold px-5 py-2.5 disabled:opacity-60"
+                      className="rounded-full bg-[#E8621A] text-white font-semibold px-5 py-2.5 disabled:opacity-60 min-h-11"
                     >
-                      {submitting ? "Processing…" : `Place order · ${formatINR(checkoutTotals.orderTotal)}`}
+                      {paymentPhase === "creating" && "Creating order…"}
+                      {paymentPhase === "opening" && "Opening secure payment…"}
+                      {paymentPhase === "processing" && "Payment processing…"}
+                      {paymentPhase === "verifying" && "Verifying payment…"}
+                      {paymentPhase === "idle" &&
+                        (submitting
+                          ? "Please wait…"
+                          : `Place order · ${formatINR(checkoutTotals.orderTotal)}`)}
                     </button>
                   </div>
                 </div>
@@ -1015,14 +1121,24 @@ export default function Checkout() {
               </div>
               <div className="flex justify-between text-sm">
                 <span>Shipping</span>
-                <span>{formatINR(shippingTotal)}</span>
+                <span>
+                  {shippingTotal === 0
+                    ? checkoutTotals.subtotal >= shippingConfig.freeAbove
+                      ? "Free"
+                      : formatINR(0)
+                    : formatINR(shippingTotal)}
+                </span>
               </div>
-              {checkoutTotals.couponDiscount > 0 && (
-                <div className="flex justify-between text-sm text-emerald-700">
+              {couponCode.trim() && (
+                <div className="flex justify-between text-sm text-[#6B6B6B]">
                   <span>Coupon</span>
-                  <span>-{formatINR(checkoutTotals.couponDiscount)}</span>
+                  <span>{couponCode.trim().toUpperCase()} (verified at payment)</span>
                 </div>
               )}
+              <p className="text-[11px] text-[#6B6B6B] pt-1">
+                Final total is confirmed by the secure payment server. Free shipping above{" "}
+                {formatINR(shippingConfig.freeAbove)}.
+              </p>
               <div className="flex justify-between font-semibold text-lg border-t border-black/5 pt-3">
                 <span>Total</span>
                 <span className="text-[#E8621A]">{formatINR(checkoutTotals.orderTotal)}</span>
@@ -1045,6 +1161,7 @@ function Field({
   type = "text",
   autoComplete,
   placeholder,
+  id,
 }: {
   label: string;
   value: string;
@@ -1055,18 +1172,21 @@ function Field({
   type?: string;
   autoComplete?: string;
   placeholder?: string;
+  id?: string;
 }) {
+  const inputId = id || `checkout-field-${label.toLowerCase().replace(/\s+/g, "-")}`;
   return (
-    <label className="text-sm block">
+    <label className="text-sm block" htmlFor={inputId}>
       <span className="font-medium">
         {label}
         {required ? <span className="text-[#E8621A]"> *</span> : null}
       </span>
       <input
+        id={inputId}
         type={type}
         className={cn(
-          "mt-1 w-full rounded-xl border px-3 py-2.5 bg-white",
-          error ? "border-red-400 focus:outline-red-500" : "border-black/10",
+          "mt-1 w-full rounded-xl border px-3 py-2.5 bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/35",
+          error ? "border-red-400" : "border-black/10",
         )}
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -1074,8 +1194,13 @@ function Field({
         autoComplete={autoComplete}
         placeholder={placeholder}
         aria-invalid={!!error}
+        aria-describedby={error ? `${inputId}-error` : undefined}
       />
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && (
+        <p id={`${inputId}-error`} className="mt-1 text-xs text-red-600" role="alert">
+          {error}
+        </p>
+      )}
     </label>
   );
 }

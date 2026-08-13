@@ -29,7 +29,7 @@ export default function ImageCarousel() {
     [0, 0.5, 1],
     reduceMotion ? [1, 1, 1] : [0.96, 1, 0.98],
   );
-  const frameOpacity = useTransform(scrollYProgress, [0, 0.2], reduceMotion ? [1, 1] : [0.85, 1]);
+  const frameOpacity = useTransform(scrollYProgress, [0, 0.2], reduceMotion ? [1, 1] : [0.95, 1]);
 
   useEffect(() => {
     const v = videoRef.current;
@@ -55,13 +55,11 @@ export default function ImageCarousel() {
       ctx?.revert();
       ctx = gsap.context(() => {
         const parts = root.querySelectorAll("[data-carousel-reveal]");
-        gsap.from(parts, {
-          opacity: 0,
-          y: 44,
-          duration: 0.9,
-          stagger: 0.1,
-          ease: "power3.out",
-        });
+        gsap.fromTo(
+          parts,
+          { opacity: 0.4, y: 20 },
+          { opacity: 1, y: 0, duration: 0.7, stagger: 0.08, ease: "power2.out", clearProps: "transform" },
+        );
       }, root);
     });
 
@@ -72,7 +70,7 @@ export default function ImageCarousel() {
   }, []);
 
   return (
-    <section ref={rootRef} className="section-padding relative overflow-hidden">
+    <section ref={rootRef} className="section-padding relative overflow-hidden py-10 sm:py-12">
       <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.06] via-warm-beige to-background pointer-events-none" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(90vw,720px)] h-[min(90vw,720px)] rounded-full bg-primary/[0.04] blur-3xl pointer-events-none" />
 

@@ -53,3 +53,7 @@ export function canWriteCatalog(role: AdminRole) {
 export function canManageSettings(role: AdminRole) {
   return role === "super_admin" || role === "admin";
 }
+
+export function canManageOrders(role: AdminRole) {
+  return role === "super_admin" || role === "admin";
+}

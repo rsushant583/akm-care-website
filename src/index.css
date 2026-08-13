@@ -32,7 +32,20 @@
     --input: 35 20% 91%;
     --ring: 25 95% 53%;
 
-    --radius: 1rem;
+    /* Commerce design system — intentional, not card-everywhere */
+    --radius: 0.75rem;
+    --radius-pill: 9999px;
+    --nav-height: 3.5rem;
+    --mobile-nav-height: 4rem;
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.25rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --space-10: 2.5rem;
+    --space-12: 3rem;
 
     --saffron: 25 95% 53%;
     --saffron-light: 30 90% 96%;
@@ -41,6 +54,8 @@
     --text-primary: 0 0% 6%;
     --text-secondary: 0 0% 24%;
     --text-muted: 0 0% 42%;
+    --surface: 40 25% 97%;
+    --surface-elevated: 0 0% 100%;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -79,15 +94,83 @@
   }
 
   .card-shadow {
-    box-shadow: 0 14px 44px rgba(15, 15, 15, 0.07);
+    box-shadow: 0 8px 28px rgba(15, 15, 15, 0.06);
   }
 
   .card-shadow-hover {
-    box-shadow: 0 24px 64px rgba(15, 15, 15, 0.12);
+    box-shadow: 0 16px 40px rgba(15, 15, 15, 0.1);
   }
 
   .container-premium {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Button hierarchy — use across storefront CTAs */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 h-11 px-5 rounded-full
+      bg-[#E8621A] text-white text-sm font-semibold
+      shadow-sm shadow-[#E8621A]/20
+      hover:brightness-105 active:scale-[0.98]
+      disabled:opacity-50 disabled:pointer-events-none
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40 focus-visible:ring-offset-2
+      transition-all;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 h-11 px-5 rounded-full
+      border border-black/10 bg-white text-[#1A1A1A] text-sm font-semibold
+      hover:border-[#E8621A]/35 hover:bg-[#FAF8F5] active:scale-[0.98]
+      disabled:opacity-50 disabled:pointer-events-none
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40 focus-visible:ring-offset-2
+      transition-all;
+  }
+
+  .btn-tertiary {
+    @apply inline-flex items-center justify-center gap-1 text-sm font-semibold text-[#E8621A]
+      hover:underline underline-offset-4
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40 rounded-sm;
+  }
+
+  .btn-icon {
+    @apply inline-flex items-center justify-center h-10 w-10 rounded-full
+      border border-black/10 bg-white text-[#1A1A1A]
+      hover:border-[#E8621A]/30 hover:text-[#E8621A]
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40
+      transition-colors;
+  }
+
+  .type-display {
+    @apply font-heading text-[1.75rem] sm:text-[2.25rem] lg:text-[2.75rem] leading-[1.12] tracking-tight text-[#1A1A1A];
+  }
+
+  .type-section {
+    @apply font-heading text-2xl sm:text-3xl text-[#1A1A1A] tracking-tight;
+  }
+
+  .type-product {
+    @apply font-heading text-sm sm:text-[0.95rem] leading-snug text-[#1A1A1A];
+  }
+
+  .type-price {
+    @apply font-semibold text-lg text-[#E8621A] tabular-nums;
+  }
+
+  .type-meta {
+    @apply text-xs text-[#6B6B6B];
+  }
+
+  .nav-offset {
+    padding-top: calc(var(--nav-height) + env(safe-area-inset-top, 0px));
+  }
+
+  .mobile-nav-pad {
+    padding-bottom: max(var(--mobile-nav-height), calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px)));
+  }
+
+  @media (min-width: 1024px) {
+    .mobile-nav-pad {
+      padding-bottom: 0;
+    }
   }
 
   .section-separator {

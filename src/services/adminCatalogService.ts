@@ -355,10 +355,40 @@ export async function listInventory(lowStockOnly = false, threshold = 5) {
 
 export async function updateStock(productId: string, stock_quantity: number) {
   const qty = Math.max(0, Math.floor(stock_quantity));
-  return updateProduct(productId, {
+  const updated = await updateProduct(productId, {
     stock_quantity: qty,
     status: qty > 0 ? "available" : "sold_out",
   });
+
+  // Keep inventory table in sync with products.stock_quantity (storefront SoT remains products.stock_quantity)
+  try {
+    const client = await requireAdminClient();
+    const { data: existing } = await client
+      .from("inventory")
+      .select("id")
+      .eq("product_id", productId)
+      .eq("warehouse_code", "DEFAULT")
+      .is("variant_id", null)
+      .maybeSingle();
+
+    if (existing?.id) {
+      await client
+        .from("inventory")
+        .update({ quantity_on_hand: qty })
+        .eq("id", existing.id);
+    } else {
+      await client.from("inventory").insert({
+        product_id: productId,
+        warehouse_code: "DEFAULT",
+        quantity_on_hand: qty,
+        quantity_reserved: 0,
+      });
+    }
+  } catch {
+    /* inventory sync is best-effort; products.stock_quantity already updated */
+  }
+
+  return updated;
 }
 
 export async function bulkUpdateStock(rows: { id: string; stock_quantity: number }[]) {

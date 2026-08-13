@@ -35,6 +35,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const hydrate = useCallback(async (u: User | null) => {
+    // L4: admin privilege comes only from admin_users, never from a leftover JWT/session.
     if (!u) {
       setUser(null);
       setAdmin(null);

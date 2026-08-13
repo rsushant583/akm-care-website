@@ -1,22 +1,16 @@
 import Razorpay from "npm:razorpay@2.9.4";
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeadersFor, json, publicError } from "../_shared/http.ts";
 
 const DEFAULT_SHIPPING: Record<string, number> = { standard: 49, express: 99 };
 const FREE_SHIPPING_ABOVE = 999;
 
-type IncomingItem = { productId?: string; quantity?: number };
-
-function json(status: number, body: Record<string, unknown>) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
+type IncomingItem = {
+  productId?: string;
+  quantity?: number;
+  colorName?: string;
+  variantName?: string;
+};
 
 function unitPriceFromProduct(p: Record<string, unknown>): number {
   const candidates = [p.akm_care_price, p.selling_price, p.price];
@@ -94,17 +88,18 @@ function orderNumber() {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-  if (req.method !== "POST") return json(405, { success: false, error: "Method Not Allowed" });
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeadersFor(req) });
+  if (req.method !== "POST") return json(req, 405, { success: false, error: "Method Not Allowed" });
 
   try {
     const keyId = Deno.env.get("RAZORPAY_KEY_ID") ?? "";
     const keySecret = Deno.env.get("RAZORPAY_KEY_SECRET") ?? "";
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 
     if (!keyId || !keySecret || !supabaseUrl || !serviceRole) {
-      return json(500, { success: false, error: "Server env missing for payments" });
+      return json(req, 500, { success: false, error: "Server env missing for payments" });
     }
 
     const body = await req.json();
@@ -115,19 +110,37 @@ Deno.serve(async (req) => {
     const shippingMethod = shippingMethodRaw === "express" ? "express" : "standard";
     const couponCode = body.couponCode ? String(body.couponCode) : undefined;
     const notes = body.notes ? String(body.notes).slice(0, 2000) : null;
-    const userId = body.userId && typeof body.userId === "string" ? body.userId : null;
+
+    // Bind user from JWT only — never trust body.userId
+    let userId: string | null = null;
+    const authHeader = req.headers.get("Authorization") || "";
+    if (anonKey && authHeader.startsWith("Bearer ") && authHeader !== `Bearer ${anonKey}`) {
+      try {
+        const userClient = createClient(supabaseUrl, anonKey, {
+          global: { headers: { Authorization: authHeader } },
+        });
+        const { data } = await userClient.auth.getUser();
+        if (data.user?.id) userId = data.user.id;
+      } catch {
+        userId = null;
+      }
+    }
 
     if (!Array.isArray(items) || items.length === 0) {
-      return json(400, { success: false, error: "Cart is empty" });
+      return json(req, 400, { success: false, error: "Cart is empty" });
     }
     if (!customer?.name || !customer?.email) {
-      return json(400, { success: false, error: "Customer name and email are required" });
+      return json(req, 400, { success: false, error: "Customer name and email are required" });
+    }
+    const phone = customer.phone ? String(customer.phone).replace(/\s+/g, "") : "";
+    if (!/^[6-9]\d{9}$/.test(phone)) {
+      return json(req, 400, { success: false, error: "A valid 10-digit Indian mobile number is required" });
     }
 
     const supabase = createClient(supabaseUrl, serviceRole);
     const uniqueProductIds = [...new Set(items.map((i) => String(i.productId || "")).filter(Boolean))];
     if (uniqueProductIds.length === 0) {
-      return json(400, { success: false, error: "No valid products in cart" });
+      return json(req, 400, { success: false, error: "No valid products in cart" });
     }
 
     const { data: products, error } = await supabase
@@ -147,6 +160,8 @@ Deno.serve(async (req) => {
       gst_percent: number;
       line_total: number;
       image_url: string | null;
+      color_name: string | null;
+      variant_name: string | null;
     }> = [];
 
     let subtotal = 0;
@@ -157,15 +172,15 @@ Deno.serve(async (req) => {
       const qty = Math.max(1, Math.min(100, Math.floor(Number(raw.quantity || 1))));
       const p = productMap.get(productId);
       if (!p) {
-        return json(400, { success: false, error: "One or more items are invalid" });
+        return json(req, 400, { success: false, error: "One or more items are invalid" });
       }
       if (Number(p.stock_quantity ?? 0) < qty) {
-        return json(409, { success: false, error: `${p.name} is low on stock` });
+        return json(req, 409, { success: false, error: `${p.name} is no longer available in the requested quantity` });
       }
 
       const unitPrice = unitPriceFromProduct(p as Record<string, unknown>);
       if (!(unitPrice > 0)) {
-        return json(400, { success: false, error: `${p.name} has no valid server price` });
+        return json(req, 400, { success: false, error: `${p.name} has no valid server price` });
       }
 
       const lineTotal = unitPrice * qty;
@@ -183,6 +198,8 @@ Deno.serve(async (req) => {
         gst_percent: gstPercent,
         line_total: lineTotal,
         image_url: p.image_url || null,
+        color_name: raw.colorName ? String(raw.colorName).slice(0, 80) : null,
+        variant_name: raw.variantName ? String(raw.variantName).slice(0, 80) : null,
       });
     }
 
@@ -198,7 +215,45 @@ Deno.serve(async (req) => {
     const grandTotal = Math.round((subtotal + shippingTotal - discountTotal) * 100) / 100;
 
     if (!(grandTotal > 0)) {
-      return json(400, { success: false, error: "Order total must be greater than zero" });
+      return json(req, 400, { success: false, error: "Order total must be greater than zero" });
+    }
+
+    const reservedLines: Array<{ product_id: string; quantity: number }> = [];
+    let couponReserved = false;
+    const releaseHolds = async () => {
+      for (const line of reservedLines.splice(0)) {
+        await supabase.rpc("release_product_stock", {
+          p_product_id: line.product_id,
+          p_qty: line.quantity,
+        });
+      }
+      if (couponReserved && coupon.code) {
+        await supabase.rpc("release_coupon_usage", { p_code: coupon.code });
+        couponReserved = false;
+      }
+    };
+
+    if (coupon.code) {
+      const { data: reservedCoupon } = await supabase.rpc("reserve_coupon_usage", { p_code: coupon.code });
+      if (!reservedCoupon || reservedCoupon.ok !== true) {
+        return json(req, 409, { success: false, error: "This coupon is no longer available" });
+      }
+      couponReserved = true;
+    }
+
+    for (const line of normalizedLines) {
+      const { data: reserved } = await supabase.rpc("reserve_product_stock", {
+        p_product_id: line.product_id,
+        p_qty: line.quantity,
+      });
+      if (!reserved || reserved.ok !== true) {
+        await releaseHolds();
+        return json(req, 409, {
+          success: false,
+          error: `${line.product_name} is no longer available in the requested quantity`,
+        });
+      }
+      reservedLines.push({ product_id: line.product_id, quantity: line.quantity });
     }
 
     const amountPaise = Math.round(grandTotal * 100);
@@ -214,6 +269,8 @@ Deno.serve(async (req) => {
       shippingMethod,
       couponCode: coupon.code,
       currency: "INR",
+      stockReserved: true,
+      couponReserved,
       lines: normalizedLines.map((l) => ({
         productId: l.product_id,
         quantity: l.quantity,
@@ -232,7 +289,7 @@ Deno.serve(async (req) => {
         user_id: userId,
         customer_name: String(customer.name).slice(0, 200),
         customer_email: String(customer.email).slice(0, 320),
-        customer_phone: customer.phone ? String(customer.phone).slice(0, 40) : null,
+        customer_phone: phone,
         shipping_address: address,
         subtotal,
         gst_total: gstTotal,
@@ -246,15 +303,23 @@ Deno.serve(async (req) => {
         shipping_method: shippingMethod,
         notes,
         pricing_snapshot: pricingSnapshot,
+        stock_reserved: true,
+        coupon_reserved: couponReserved,
       })
       .select("*")
       .single();
-    if (orderErr) throw orderErr;
+    if (orderErr) {
+      await releaseHolds();
+      throw orderErr;
+    }
 
     const { error: itemsErr } = await supabase.from("order_items").insert(
       normalizedLines.map((l) => ({ ...l, order_id: order.id })),
     );
-    if (itemsErr) throw itemsErr;
+    if (itemsErr) {
+      await releaseHolds();
+      throw itemsErr;
+    }
 
     await supabase.from("order_status").insert({
       order_id: order.id,
@@ -269,65 +334,80 @@ Deno.serve(async (req) => {
       estimated_days: shippingMethod === "express" ? 2 : 5,
     });
 
-    const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
-    const rpOrder = await razorpay.orders.create({
-      amount: amountPaise,
-      currency: "INR",
-      receipt: order.order_number.slice(0, 40),
-      notes: {
-        order_header_id: order.id,
-        order_number: order.order_number,
-        itemCount: String(normalizedLines.length),
-        customerEmail: String(customer.email || ""),
-      },
-    });
+    try {
+      const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
+      const rpOrder = await razorpay.orders.create({
+        amount: amountPaise,
+        currency: "INR",
+        receipt: order.order_number.slice(0, 40),
+        notes: {
+          order_header_id: order.id,
+          order_number: order.order_number,
+          itemCount: String(normalizedLines.length),
+          customerEmail: String(customer.email || ""),
+        },
+      });
 
-    const { error: linkErr } = await supabase
-      .from("order_headers")
-      .update({
+      const { error: linkErr } = await supabase
+        .from("order_headers")
+        .update({
+          razorpay_order_id: rpOrder.id,
+          payment_status: "created",
+          updated_at: new Date().toISOString(),
+          pricing_snapshot: { ...pricingSnapshot, razorpay_order_id: rpOrder.id },
+        })
+        .eq("id", order.id);
+      if (linkErr) throw linkErr;
+
+      await supabase.from("payments").insert({
+        order_id: order.id,
+        provider: "razorpay",
         razorpay_order_id: rpOrder.id,
-        payment_status: "created",
-        updated_at: new Date().toISOString(),
-        pricing_snapshot: { ...pricingSnapshot, razorpay_order_id: rpOrder.id },
-      })
-      .eq("id", order.id);
-    if (linkErr) throw linkErr;
+        amount: grandTotal,
+        currency: "INR",
+        status: "created",
+        raw_response: { create: rpOrder },
+      });
 
-    await supabase.from("payments").insert({
-      order_id: order.id,
-      provider: "razorpay",
-      razorpay_order_id: rpOrder.id,
-      amount: grandTotal,
-      currency: "INR",
-      status: "created",
-      raw_response: { create: rpOrder },
-    });
-
-    return json(200, {
-      success: true,
-      keyId,
-      order: rpOrder,
-      amount: grandTotal,
-      amountPaise,
-      orderHeaderId: order.id,
-      orderNumber: order.order_number,
-      accessToken: order.access_token,
-      totals: {
-        subtotal,
-        gstTotal,
-        shippingTotal,
-        discountTotal,
-        grandTotal,
-        couponCode: coupon.code,
-      },
-      items: normalizedLines.map((l) => ({
-        productId: l.product_id,
-        productName: l.product_name,
-        quantity: l.quantity,
-        unitPrice: l.unit_price,
-      })),
-    });
+      return json(req, 200, {
+        success: true,
+        keyId,
+        order: rpOrder,
+        amount: grandTotal,
+        amountPaise,
+        orderHeaderId: order.id,
+        orderNumber: order.order_number,
+        accessToken: order.access_token,
+        totals: {
+          subtotal,
+          gstTotal,
+          shippingTotal,
+          discountTotal,
+          grandTotal,
+          couponCode: coupon.code,
+        },
+        items: normalizedLines.map((l) => ({
+          productId: l.product_id,
+          productName: l.product_name,
+          quantity: l.quantity,
+          unitPrice: l.unit_price,
+        })),
+      });
+    } catch (rzpErr) {
+      await releaseHolds();
+      await supabase
+        .from("order_headers")
+        .update({
+          status: "failed",
+          payment_status: "failed",
+          stock_reserved: false,
+          coupon_reserved: false,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", order.id);
+      throw rzpErr;
+    }
   } catch (e) {
-    return json(500, { success: false, error: String(e) });
+    return json(req, 500, { success: false, error: publicError(e, "Unable to create payment order. Please try again.") });
   }
 });

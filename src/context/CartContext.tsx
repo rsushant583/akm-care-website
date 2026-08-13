@@ -1,6 +1,6 @@
 /**
- * Rewrite CartContext with auth-aware persistence + guest merge.
- * Public API (addToCart, etc.) stays compatible with existing shop UI.
+ * CartContext — storefront cart with auth-aware persistence.
+ * Display totals are estimates; Razorpay/Edge Functions remain authoritative.
  */
 import {
   createContext,
@@ -14,6 +14,13 @@ import {
 } from "react";
 import type { CartLineItem, CatalogProduct, SavedForLaterItem } from "@/lib/ecommerce/types";
 import { calcCartTotals, getEffectivePrice } from "@/lib/ecommerce/pricing";
+import { getAvailableQuantity, isProductInStock } from "@/lib/ecommerce/availability";
+import {
+  DEFAULT_SHIPPING_CONFIG,
+  estimateShippingTotal,
+  loadStorefrontShippingConfig,
+  type StorefrontShippingConfig,
+} from "@/lib/ecommerce/shippingSettings";
 import { toast } from "@/components/ui/sonner";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -21,6 +28,7 @@ import {
   mergeCartLines,
   syncCartToDatabase,
 } from "@/services/cartService";
+import { getProductById } from "@/services/productService";
 
 const CART_KEY = "akm_shop_cart_v1";
 const SAVED_KEY = "akm_shop_saved_v1";
@@ -35,6 +43,12 @@ type AddPayload = {
   variantName?: string;
 };
 
+export type CartRefreshResult = {
+  priceChanged: boolean;
+  stockChanged: boolean;
+  unavailableNames: string[];
+};
+
 type CartContextValue = {
   items: CartLineItem[];
   savedForLater: SavedForLaterItem[];
@@ -46,6 +60,8 @@ type CartContextValue = {
   shippingMethod: "standard" | "express";
   setShippingMethod: (m: "standard" | "express") => void;
   shippingTotal: number;
+  shippingConfig: StorefrontShippingConfig;
+  refreshing: boolean;
   addToCart: (payload: AddPayload) => void;
   updateQuantity: (productId: string, quantity: number, colorId?: string, variantId?: string) => void;
   removeFromCart: (productId: string, colorId?: string, variantId?: string) => void;
@@ -54,6 +70,7 @@ type CartContextValue = {
   moveToCart: (productId: string, colorId?: string, variantId?: string) => void;
   removeSaved: (productId: string, colorId?: string, variantId?: string) => void;
   buyNowLine: (payload: AddPayload) => CartLineItem[];
+  refreshCartFromCatalog: () => Promise<CartRefreshResult>;
   sessionId: string;
 };
 
@@ -69,7 +86,7 @@ function matchesLine(line: CartLineItem, productId: string, colorId?: string, va
 
 function toLine(payload: AddPayload): CartLineItem {
   const { product, quantity = 1, colorId, colorName, variantId, variantName } = payload;
-  const max = Math.max(1, product.stock_quantity || 10);
+  const max = Math.max(1, getAvailableQuantity(product));
   return {
     productId: product.id,
     slug: product.slug,
@@ -100,16 +117,16 @@ function readSessionId() {
   }
 }
 
-const SHIPPING_RATES = { standard: 49, express: 99 } as const;
-
 export function CartProvider({ children }: { children: ReactNode }) {
   const { user, isAuthenticated } = useAuth();
   const [items, setItems] = useState<CartLineItem[]>([]);
   const [savedForLater, setSavedForLater] = useState<SavedForLaterItem[]>([]);
   const [couponCode, setCouponCode] = useState("");
   const [shippingMethod, setShippingMethod] = useState<"standard" | "express">("standard");
+  const [shippingConfig, setShippingConfig] = useState<StorefrontShippingConfig>(DEFAULT_SHIPPING_CONFIG);
   const [sessionId] = useState(readSessionId);
   const [hydrated, setHydrated] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const mergedForUser = useRef<string | null>(null);
 
   useEffect(() => {
@@ -131,7 +148,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Merge guest cart after login
+  useEffect(() => {
+    void loadStorefrontShippingConfig().then(setShippingConfig);
+  }, []);
+
   useEffect(() => {
     if (!hydrated || !isAuthenticated || !user) return;
     if (mergedForUser.current === user.id) return;
@@ -167,7 +187,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [savedForLater, hydrated]);
 
   useEffect(() => {
-    // DB cart sync only for authenticated users (guest carts stay in localStorage — C3)
     if (!hydrated || !user?.id) return;
     let cancelled = false;
     const t = window.setTimeout(() => {
@@ -189,7 +208,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [items, savedForLater, sessionId, user?.id, hydrated]);
 
   const addToCart = useCallback((payload: AddPayload) => {
-    if (payload.product.stock_quantity <= 0) {
+    if (!isProductInStock(payload.product)) {
       toast.error("This product is currently out of stock.");
       return;
     }
@@ -206,7 +225,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
       };
       return next;
     });
-    toast.success("Added to cart");
+    toast.success("Added to cart", {
+      action: {
+        label: "View Cart",
+        onClick: () => {
+          window.location.assign("/cart");
+        },
+      },
+    });
   }, []);
 
   const updateQuantity = useCallback(
@@ -250,8 +276,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const line = prev.find((l) => matchesLine(l, productId, colorId, variantId));
       if (!line) return prev;
       setItems((cart) => {
-        const exists = cart.some((c) => matchesLine(c, productId, colorId, variantId));
-        return exists ? cart : [...cart, line];
+        const idx = cart.findIndex((c) => matchesLine(c, productId, colorId, variantId));
+        if (idx === -1) return [...cart, line];
+        const next = [...cart];
+        const max = next[idx].maxQuantity || 100;
+        next[idx] = {
+          ...next[idx],
+          quantity: Math.min(max, next[idx].quantity + line.quantity),
+        };
+        return next;
       });
       return prev.filter((l) => !matchesLine(l, productId, colorId, variantId));
     });
@@ -268,28 +301,77 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return [line];
   }, []);
 
-  const shippingTotal = items.length === 0 ? 0 : SHIPPING_RATES[shippingMethod];
+  const refreshCartFromCatalog = useCallback(async (): Promise<CartRefreshResult> => {
+    setRefreshing(true);
+    const result: CartRefreshResult = { priceChanged: false, stockChanged: false, unavailableNames: [] };
+    try {
+      const current = items;
+      if (current.length === 0) return result;
+
+      const refreshed: CartLineItem[] = [];
+      for (const line of current) {
+        let product: CatalogProduct | null = null;
+        try {
+          product = await getProductById(line.productId);
+        } catch {
+          product = null;
+        }
+        if (!product || !isProductInStock(product)) {
+          result.unavailableNames.push(line.name);
+          result.stockChanged = true;
+          continue;
+        }
+        const nextPrice = getEffectivePrice(product);
+        const max = Math.max(1, getAvailableQuantity(product));
+        if (Math.abs(nextPrice - line.unitPrice) > 0.009) result.priceChanged = true;
+        if (max !== line.maxQuantity || line.quantity > max) result.stockChanged = true;
+        refreshed.push({
+          ...line,
+          name: product.name,
+          slug: product.slug || line.slug,
+          image: product.image_url || product.images[0]?.src || line.image,
+          sku: product.sku || line.sku,
+          unitPrice: nextPrice,
+          mrp: product.mrp,
+          gstPercent: product.gstPercent,
+          maxQuantity: max,
+          quantity: Math.max(1, Math.min(max, line.quantity)),
+        });
+      }
+      setItems(refreshed);
+      return result;
+    } finally {
+      setRefreshing(false);
+    }
+  }, [items]);
+
+  const subtotal = useMemo(
+    () => items.reduce((n, l) => n + l.unitPrice * l.quantity, 0),
+    [items],
+  );
+
+  // Coupon codes are validated server-side at payment — do not apply client discounts to charged totals.
+  const shippingTotal =
+    items.length === 0
+      ? 0
+      : estimateShippingTotal(shippingMethod, subtotal, shippingConfig, false);
 
   const totals = useMemo(
     () =>
       calcCartTotals(items, {
-        // Shipping is chosen at checkout — keep cart/nav totals product-only
         shippingEstimate: null,
-        couponDiscount:
-          couponCode.trim().toUpperCase() === "AKMCARE10"
-            ? Math.round(items.reduce((n, l) => n + l.unitPrice * l.quantity, 0) * 0.1)
-            : 0,
+        couponDiscount: 0,
       }),
-    [items, couponCode],
+    [items],
   );
 
   const checkoutTotals = useMemo(
     () =>
       calcCartTotals(items, {
         shippingEstimate: shippingTotal,
-        couponDiscount: totals.couponDiscount,
+        couponDiscount: 0,
       }),
-    [items, shippingTotal, totals.couponDiscount],
+    [items, shippingTotal],
   );
 
   const value: CartContextValue = {
@@ -303,6 +385,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     shippingMethod,
     setShippingMethod,
     shippingTotal,
+    shippingConfig,
+    refreshing,
     addToCart,
     updateQuantity,
     removeFromCart,
@@ -311,6 +395,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     moveToCart,
     removeSaved,
     buyNowLine,
+    refreshCartFromCatalog,
     sessionId,
   };
 

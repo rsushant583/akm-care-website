@@ -14,7 +14,7 @@ import { CompareProvider } from "@/context/CompareContext";
 import { RecentlyViewedProvider } from "@/context/RecentlyViewedContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
-const Index = lazy(() => import("./pages/Index"));
+import Index from "./pages/Index";
 const About = lazy(() => import("./pages/About"));
 const Training = lazy(() => import("./pages/Training"));
 const Services = lazy(() => import("./pages/Services"));

@@ -207,12 +207,4 @@ export const allCatalogProducts: CatalogProduct[] = [
   ...legacyCatalogProducts,
 ];
 
-export const SHOP_CATEGORIES = [
-  { id: "all", label: "All" },
-  { id: "sarees", label: "Sarees" },
-  { id: "apparel", label: "Apparel" },
-  { id: "imitation-jewelry", label: "Imitation Jewelry" },
-  { id: "food", label: "Food" },
-  { id: "organic", label: "Organic" },
-  { id: "local", label: "Local" },
-] as const;
+export { OFFICIAL_SHOP_CATEGORIES as SHOP_CATEGORIES } from "@/data/catalog/categories";

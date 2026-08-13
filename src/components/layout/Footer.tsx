@@ -1,21 +1,31 @@
 import { Link } from "react-router-dom";
 import { Youtube, MessageCircle, Facebook, Phone, Mail, MapPin } from "lucide-react";
 import logo from "@/assets/akm-logo.jpeg";
+import { OFFICIAL_BROWSABLE_CATEGORIES, shopCategoryPath, shopCollectionPath } from "@/data/catalog/categories";
 
-const quickLinks = [
-  { label: "Home", path: "/" },
-  { label: "About Us", path: "/about" },
-  { label: "Services", path: "/services" },
-  { label: "Training", path: "/training" },
-  { label: "Shop", path: "/shop" },
+const shopLinks = [
+  { label: "All Products", path: "/shop" },
+  { label: "Deals", path: shopCollectionPath("deals") },
+  { label: "New Arrivals", path: shopCollectionPath("new-arrivals") },
+  { label: "Best Sellers", path: shopCollectionPath("best-sellers") },
+  { label: "Wishlist", path: "/wishlist" },
+  { label: "Cart", path: "/cart" },
 ];
 
 const serviceLinks = [
-  "Training & Education",
-  "Placement Services",
-  "Manpower Deployment",
-  "Compliance Consulting",
-  "Policy Formation",
+  { label: "Services", path: "/services" },
+  { label: "Training", path: "/training" },
+  { label: "Personal Booking", path: "/personal-booking" },
+];
+
+const companyLinks = [
+  { label: "About", path: "/about" },
+  { label: "CSR", path: "/csr" },
+  { label: "Media", path: "/media" },
+  { label: "Motivation", path: "/motivation" },
+  { label: "Careers", path: "/careers" },
+  { label: "FAQ", path: "/faq" },
+  { label: "Contact", path: "/contact" },
 ];
 
 export default function Footer() {
@@ -23,11 +33,11 @@ export default function Footer() {
     <footer className="relative bg-[#1A1A1A] text-white pt-2 pb-24 lg:pb-10">
       <div className="h-1 w-full bg-[#E8621A]" aria-hidden />
       <div className="container-premium pt-12 lg:pt-14">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-8">
           <div>
             <img src={logo} alt="AKM Care" width={160} height={64} loading="lazy" decoding="async" className="h-14 object-contain mb-4" />
             <p className="text-sm text-white/65 leading-relaxed mb-6">
-              A milestone for the training industry, HR, sales & marketing, and industrial solutions.
+              Marketplace for authentic fashion and village products — with AKM Care training, HR and industrial solutions.
             </p>
             <div className="flex gap-3">
               <a
@@ -35,6 +45,7 @@ export default function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#E8621A] transition-all duration-300"
+                aria-label="AKM Care on YouTube"
               >
                 <Youtube size={16} />
               </a>
@@ -43,6 +54,7 @@ export default function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#E8621A] transition-all duration-300"
+                aria-label="WhatsApp"
               >
                 <MessageCircle size={16} />
               </a>
@@ -59,12 +71,20 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="font-heading text-lg mb-4 text-white">Quick Links</h4>
+            <h4 className="font-heading text-lg mb-4 text-white">Shop</h4>
             <ul className="space-y-2.5">
-              {quickLinks.map((link) => (
+              {shopLinks.map((link) => (
                 <li key={link.path}>
                   <Link to={link.path} className="text-sm text-white/65 hover:text-[#F5A623] transition-colors">
                     {link.label}
+                  </Link>
+                </li>
+              ))}
+              <li className="pt-2 text-[11px] font-semibold uppercase tracking-wide text-white/40">Categories</li>
+              {OFFICIAL_BROWSABLE_CATEGORIES.map((cat) => (
+                <li key={cat.id}>
+                  <Link to={shopCategoryPath(cat.id)} className="text-sm text-white/65 hover:text-[#F5A623] transition-colors">
+                    {cat.label}
                   </Link>
                 </li>
               ))}
@@ -72,12 +92,30 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="font-heading text-lg mb-4 text-white">Our Services</h4>
+            <h4 className="font-heading text-lg mb-4 text-white">Services</h4>
             <ul className="space-y-2.5">
-              {serviceLinks.map((s) => (
-                <li key={s}>
-                  <Link to="/services" className="text-sm text-white/65 hover:text-[#F5A623] transition-colors">
-                    {s}
+              {serviceLinks.map((link) => (
+                <li key={link.path}>
+                  <Link to={link.path} className="text-sm text-white/65 hover:text-[#F5A623] transition-colors">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+              <li className="pt-3">
+                <Link to="/sell-your-product" className="text-sm font-semibold text-[#F5A623] hover:underline">
+                  Sell With Us
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-heading text-lg mb-4 text-white">Company</h4>
+            <ul className="space-y-2.5">
+              {companyLinks.map((link) => (
+                <li key={link.path}>
+                  <Link to={link.path} className="text-sm text-white/65 hover:text-[#F5A623] transition-colors">
+                    {link.label}
                   </Link>
                 </li>
               ))}

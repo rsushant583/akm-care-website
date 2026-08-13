@@ -1,5 +1,6 @@
 import type { CatalogProduct, ShopFilters, SortOption } from "./types";
 import { getEffectivePrice } from "./pricing";
+import { categoryMatchesProduct } from "@/data/catalog/categories";
 
 export const DEFAULT_FILTERS: ShopFilters = {
   category: "all",
@@ -16,8 +17,7 @@ export function filterProducts(products: CatalogProduct[], filters: ShopFilters)
 
   return products.filter((p) => {
     if (filters.category !== "all") {
-      const cat = filters.category.toLowerCase();
-      if (p.category !== cat && p.categoryLabel.toLowerCase() !== cat) return false;
+      if (!categoryMatchesProduct(filters.category, p)) return false;
     }
 
     const price = getEffectivePrice(p);

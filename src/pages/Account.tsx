@@ -144,7 +144,15 @@ export default function AccountPage() {
                 </p>
               ) : (
                 orders.map((o) => (
-                  <Link key={o.id} to={`/order-success?order=${o.order_number}`} className="block rounded-2xl border border-black/[0.06] p-4 hover:border-[#E8621A]/40">
+                  <Link
+                    key={o.id}
+                    to={
+                      o.access_token
+                        ? `/order-success?order=${encodeURIComponent(o.order_number)}&token=${encodeURIComponent(o.access_token)}`
+                        : `/order-success?order=${encodeURIComponent(o.order_number)}`
+                    }
+                    className="block rounded-2xl border border-black/[0.06] p-4 hover:border-[#E8621A]/40"
+                  >
                     <div className="flex justify-between gap-3">
                       <div>
                         <p className="font-semibold">{o.order_number}</p>

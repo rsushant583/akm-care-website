@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
+  Bell,
+  Check,
+  GitCompare,
   Heart,
   Minus,
   Plus,
+  RotateCcw,
+  Share2,
+  ShieldCheck,
   ShoppingCart,
   Star,
   Truck,
-  ShieldCheck,
   Zap,
-  Share2,
-  GitCompare,
-  RotateCcw,
 } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { breadcrumbSchema } from "@/lib/schemas";
@@ -19,7 +21,9 @@ import { useCatalogProduct } from "@/hooks/useCatalogProduct";
 import { useRelatedCatalogProducts } from "@/hooks/useCatalogProducts";
 import { productSeo, shopBreadcrumbs } from "@/lib/ecommerce/seo";
 import { formatINR, getEffectivePrice } from "@/lib/ecommerce/pricing";
+import { getAvailableQuantity, isProductInStock } from "@/lib/ecommerce/availability";
 import { shareProduct } from "@/lib/ecommerce/share";
+import { isValidIndianPincode, mockDeliveryAvailable } from "@/lib/pincodeDelivery";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { useCompare } from "@/context/CompareContext";
@@ -36,11 +40,37 @@ import {
 } from "@/components/shop";
 import { cn } from "@/lib/utils";
 
+const LOW_STOCK_THRESHOLD = 5;
+
+function isMeaningful(value?: string | number | null): boolean {
+  if (value == null) return false;
+  const t = String(value).trim();
+  if (!t) return false;
+  const lower = t.toLowerCase();
+  return !(
+    lower === "na" ||
+    lower === "n/a" ||
+    lower === "—" ||
+    lower === "-" ||
+    lower === "null" ||
+    lower === "undefined"
+  );
+}
+
+function displayWarranty(raw?: string | null): string | null {
+  if (raw == null) return null;
+  const t = raw.trim();
+  if (!t) return null;
+  const lower = t.toLowerCase();
+  if (lower === "na" || lower === "n/a") return "No warranty";
+  return t;
+}
+
 export default function ProductDetails() {
   const { slug = "" } = useParams();
   const navigate = useNavigate();
   const { product, loading, error, refetch } = useCatalogProduct(slug);
-  const related = useRelatedCatalogProducts(product?.id, 4);
+  const related = useRelatedCatalogProducts(product?.id, 8);
   const { addToCart, buyNowLine } = useCart();
   const { isWishlisted, toggleWishlist } = useWishlist();
   const { isCompared, toggleCompare } = useCompare();
@@ -50,11 +80,25 @@ export default function ProductDetails() {
   const [colorId, setColorId] = useState<string | undefined>();
   const [variantId, setVariantId] = useState<string | undefined>();
   const [showSticky, setShowSticky] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
+  const [pinInput, setPinInput] = useState("");
+  const [pinStatus, setPinStatus] = useState<"idle" | "invalid" | "ok" | "no">("idle");
+  const [openSection, setOpenSection] = useState<"shipping" | "returns" | "warranty" | null>("shipping");
   const actionsRef = useRef<HTMLDivElement>(null);
+  const addLockRef = useRef(false);
 
   useEffect(() => {
     if (product) track(product);
   }, [product, track]);
+
+  useEffect(() => {
+    setQty(1);
+    setColorId(undefined);
+    setVariantId(undefined);
+    setJustAdded(false);
+    setPinStatus("idle");
+  }, [product?.id]);
 
   useEffect(() => {
     const el = actionsRef.current;
@@ -99,6 +143,11 @@ export default function ProductDetails() {
       <section className="section-padding bg-white">
         <div className="container-premium">
           <ErrorState description={error} onRetry={refetch} />
+          <p className="text-center mt-6">
+            <Link to="/shop" className="text-[#E8621A] font-semibold hover:underline">
+              Back to Shop
+            </Link>
+          </p>
         </div>
       </section>
     );
@@ -121,12 +170,21 @@ export default function ProductDetails() {
 
   const price = getEffectivePrice(product);
   const savings = Math.max(0, product.mrp - price);
-  const inStock = product.stock_quantity > 0;
+  const availableQty = getAvailableQuantity(product);
+  const inStock = isProductInStock(product);
+  const lowStock = inStock && availableQty > 0 && availableQty <= LOW_STOCK_THRESHOLD;
+  const maxQty = Math.max(1, availableQty);
   const seo = productSeo(product);
   const crumbs = shopBreadcrumbs([
     { name: product.categoryLabel, url: `/shop?category=${product.category}` },
     { name: product.name, url: seo.canonical },
   ]);
+  const wishlisted = isWishlisted(product.id);
+  const compared = isCompared(product.id);
+  const hasRealReviews = (product.reviewCount ?? 0) > 0 && product.rating != null;
+  const warrantyLabel = displayWarranty(product.warranty);
+  const returnLabel = isMeaningful(product.returnPolicy) ? product.returnPolicy!.trim() : null;
+  const shippingLabel = isMeaningful(product.shippingTime) ? product.shippingTime.trim() : null;
 
   const selection = {
     product,
@@ -136,6 +194,52 @@ export default function ProductDetails() {
     variantId: selectedVariant?.id,
     variantName: selectedVariant?.name,
   };
+
+  const handleAdd = () => {
+    if (!inStock || addLockRef.current) return;
+    addLockRef.current = true;
+    setAdding(true);
+    addToCart(selection);
+    setJustAdded(true);
+    window.setTimeout(() => {
+      setAdding(false);
+      addLockRef.current = false;
+    }, 600);
+    window.setTimeout(() => setJustAdded(false), 4000);
+  };
+
+  const handleBuy = () => {
+    if (!inStock || adding) return;
+    buyNowLine(selection);
+    navigate("/checkout");
+  };
+
+  const checkPincode = () => {
+    const p = pinInput.trim();
+    if (!isValidIndianPincode(p)) {
+      setPinStatus("invalid");
+      return;
+    }
+    setPinStatus(mockDeliveryAvailable(p) ? "ok" : "no");
+  };
+
+  const specs: Array<[string, string]> = [
+    ["Brand", product.brand || "AKM Care"],
+    ["Category", product.categoryLabel],
+    isMeaningful(product.productCode) ? ["Product Code", product.productCode] : null,
+    isMeaningful(product.sku) ? ["SKU", product.sku] : null,
+    selectedVariant?.name && isMeaningful(selectedVariant.name)
+      ? ["Variant", selectedVariant.name]
+      : null,
+    selectedColor?.name && isMeaningful(selectedColor.name) ? ["Colour", selectedColor.name] : null,
+    isMeaningful(product.dimensions) ? ["Dimensions / Length", product.dimensions] : null,
+    isMeaningful(product.weight) ? ["Weight", String(product.weight)] : null,
+    isMeaningful(product.packingType) ? ["Packaging", String(product.packingType)] : null,
+    product.gstPercent > 0 ? ["GST", `${product.gstPercent}% (included in price where applicable)`] : null,
+    isMeaningful(product.hsn) ? ["HSN", product.hsn] : null,
+    warrantyLabel ? ["Warranty", warrantyLabel] : null,
+    shippingLabel ? ["Shipping duration", shippingLabel] : null,
+  ].filter(Boolean) as Array<[string, string]>;
 
   return (
     <>
@@ -149,44 +253,51 @@ export default function ProductDetails() {
         schema={[seo.schema, breadcrumbSchema(crumbs)]}
       />
 
-      <section className="section-padding bg-white pt-6">
+      <section className="section-padding bg-white pt-4 sm:pt-6 pb-[calc(7rem+env(safe-area-inset-bottom,0px))] lg:pb-16">
         <div className="container-premium">
-          <ShopBreadcrumbs items={crumbs} className="mb-6" />
+          <ShopBreadcrumbs items={crumbs} className="mb-4 sm:mb-6" />
 
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
-            <ProductGallery
-              images={galleryImages.length ? galleryImages : product.images}
-              productName={product.name}
-            />
+          <div className="grid lg:grid-cols-2 gap-6 lg:gap-12 items-start">
+            <div className="lg:sticky lg:top-[calc(var(--nav-height,4.5rem)+1rem)]">
+              <ProductGallery
+                images={galleryImages.length ? galleryImages : product.images}
+                productName={product.name}
+              />
+            </div>
 
-            <div className="space-y-5">
+            <div className="space-y-5 min-w-0">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-[#E8621A]">
+                <p className="type-meta text-[#E8621A]">
                   {product.brand || "AKM Care"} · {product.categoryLabel}
                 </p>
-                <h1 className="font-heading text-3xl sm:text-4xl text-[#1A1A1A] mt-1">{product.name}</h1>
-                <p className="text-[#6B6B6B] mt-2">{product.shortDescription}</p>
+                <h1 className="type-product text-2xl sm:text-3xl lg:text-[2rem] text-[#1A1A1A] mt-1.5 leading-snug">
+                  {product.name}
+                </h1>
+                {isMeaningful(product.productCode) && (
+                  <p className="type-meta text-[#6B6B6B] mt-2">
+                    Product Code: <span className="text-[#1A1A1A]">{product.productCode}</span>
+                  </p>
+                )}
+                {isMeaningful(product.shortDescription) && (
+                  <p className="text-sm text-[#6B6B6B] mt-2 leading-relaxed">{product.shortDescription}</p>
+                )}
               </div>
 
-              <div className="flex items-center gap-2 text-sm">
-                <Star size={14} className="text-amber-500 fill-amber-500" />
-                <span>{(product.rating ?? 4.5).toFixed(1)}</span>
-                <span className="text-[#6B6B6B]">· Reviews coming soon</span>
-                <span
-                  className={cn(
-                    "ml-auto text-xs font-semibold px-2 py-1 rounded-full",
-                    inStock ? "bg-emerald-50 text-emerald-700" : "bg-destructive/10 text-destructive",
-                  )}
-                >
-                  {inStock ? "In Stock" : "Out of Stock"}
-                </span>
-              </div>
+              {hasRealReviews && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Star size={14} className="text-amber-500 fill-amber-500" aria-hidden />
+                  <span className="font-medium">{Number(product.rating).toFixed(1)}</span>
+                  <span className="text-[#6B6B6B]">({product.reviewCount} reviews)</span>
+                </div>
+              )}
 
-              <div className="rounded-2xl border border-black/[0.06] bg-[#FAF8F5] p-4 space-y-2">
+              <div className="space-y-1.5">
                 <div className="flex items-baseline gap-3 flex-wrap">
-                  <span className="text-3xl font-semibold text-[#E8621A]">{formatINR(price)}</span>
+                  <span className="type-price text-3xl sm:text-4xl text-[#E8621A]">{formatINR(price)}</span>
                   {product.mrp > price && (
-                    <span className="text-lg text-[#6B6B6B] line-through">{formatINR(product.mrp)}</span>
+                    <span className="text-base sm:text-lg text-[#6B6B6B] line-through">
+                      MRP {formatINR(product.mrp)}
+                    </span>
                   )}
                   {product.discountPercent > 0 && (
                     <span className="text-xs font-bold px-2 py-1 rounded-md bg-[#E8621A]/10 text-[#E8621A]">
@@ -195,239 +306,356 @@ export default function ProductDetails() {
                   )}
                 </div>
                 {savings > 0 && (
-                  <p className="text-sm text-emerald-700 font-medium">
-                    You save {formatINR(savings)} (AKM Care Price)
-                  </p>
+                  <p className="text-sm text-emerald-700 font-medium">You Save {formatINR(savings)}</p>
                 )}
-                <div className="grid grid-cols-2 gap-2 text-xs text-[#6B6B6B] pt-1">
-                  <p>
-                    SKU: <span className="text-[#1A1A1A] font-medium">{product.sku}</span>
-                  </p>
-                  <p>
-                    HSN: <span className="text-[#1A1A1A] font-medium">{product.hsn || "—"}</span>
-                  </p>
-                  <p>
-                    GST: <span className="text-[#1A1A1A] font-medium">{product.gstPercent}%</span>
-                  </p>
-                  <p>
-                    Code: <span className="text-[#1A1A1A] font-medium">{product.productCode}</span>
-                  </p>
-                </div>
+                {product.gstPercent > 0 && (
+                  <p className="text-xs text-[#6B6B6B]">Inclusive of taxes where applicable</p>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={cn(
+                    "text-xs font-semibold px-2.5 py-1 rounded-full",
+                    inStock ? "bg-emerald-50 text-emerald-700" : "bg-destructive/10 text-destructive",
+                  )}
+                >
+                  {inStock ? "In Stock" : "Out of Stock"}
+                </span>
+                {lowStock && (
+                  <span className="text-xs font-medium text-amber-700">Only {availableQty} left</span>
+                )}
               </div>
 
               {product.colors.length > 0 && (
                 <div>
                   <p className="text-sm font-semibold mb-2">
-                    Color: <span className="font-normal text-[#6B6B6B]">{selectedColor?.name}</span>
+                    Colour:{" "}
+                    <span className="font-normal text-[#6B6B6B]">{selectedColor?.name}</span>
                   </p>
-                  <div className="flex flex-wrap gap-2">
-                    {product.colors.map((c) => (
-                      <button
-                        key={c.id}
-                        type="button"
-                        title={c.name}
-                        onClick={() => setColorId(c.id)}
-                        className={cn(
-                          "h-9 w-9 rounded-full border-2",
-                          (colorId ?? product.colors[0]?.id) === c.id
-                            ? "border-[#E8621A] ring-2 ring-[#E8621A]/25"
-                            : "border-black/10",
-                        )}
-                        style={{ backgroundColor: c.hex }}
-                      />
-                    ))}
+                  <div className="flex flex-wrap gap-2" role="listbox" aria-label="Colour">
+                    {product.colors.map((c) => {
+                      const selected = (colorId ?? product.colors[0]?.id) === c.id;
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          role="option"
+                          aria-selected={selected}
+                          aria-label={c.name}
+                          title={c.name}
+                          onClick={() => setColorId(c.id)}
+                          className={cn(
+                            "h-10 w-10 rounded-full border-2 transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40",
+                            selected ? "border-[#E8621A] ring-2 ring-[#E8621A]/25" : "border-black/10",
+                          )}
+                          style={{ backgroundColor: c.hex }}
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
               {product.variants.length > 0 && (
                 <div>
-                  <p className="text-sm font-semibold mb-2">Variant</p>
-                  <div className="flex flex-wrap gap-2">
-                    {product.variants.map((v) => (
-                      <button
-                        key={v.id}
-                        type="button"
-                        onClick={() => setVariantId(v.id)}
-                        className={cn(
-                          "px-3 py-1.5 rounded-full text-sm font-medium border",
-                          (variantId ?? product.variants[0]?.id) === v.id
-                            ? "border-[#E8621A] bg-[#E8621A]/10 text-[#E8621A]"
-                            : "border-black/10 text-[#6B6B6B]",
-                        )}
-                      >
-                        {v.name}
-                      </button>
-                    ))}
+                  <p className="text-sm font-semibold mb-2">
+                    Variant
+                    {selectedVariant?.name ? (
+                      <span className="font-normal text-[#6B6B6B]">: {selectedVariant.name}</span>
+                    ) : null}
+                  </p>
+                  <div className="flex flex-wrap gap-2" role="listbox" aria-label="Variant">
+                    {product.variants.map((v) => {
+                      const selected = (variantId ?? product.variants[0]?.id) === v.id;
+                      return (
+                        <button
+                          key={v.id}
+                          type="button"
+                          role="option"
+                          aria-selected={selected}
+                          onClick={() => setVariantId(v.id)}
+                          className={cn(
+                            "min-h-10 px-3.5 py-2 rounded-full text-sm font-medium border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40",
+                            selected
+                              ? "border-[#E8621A] bg-[#E8621A]/10 text-[#E8621A]"
+                              : "border-black/10 text-[#6B6B6B] hover:border-black/20",
+                          )}
+                        >
+                          {v.name}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
               <div>
                 <p className="text-sm font-semibold mb-2">Quantity</p>
-                <div className="inline-flex items-center gap-3 rounded-full border border-black/10 px-2 py-1">
+                <div className="inline-flex items-center gap-1 rounded-full border border-black/10 p-1">
                   <button
                     type="button"
                     aria-label="Decrease quantity"
+                    disabled={!inStock || qty <= 1}
                     onClick={() => setQty((q) => Math.max(1, q - 1))}
-                    className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-black/[0.04]"
+                    className="h-10 w-10 rounded-full flex items-center justify-center hover:bg-black/[0.04] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40"
                   >
-                    <Minus size={14} />
+                    <Minus size={16} aria-hidden />
                   </button>
-                  <span className="w-8 text-center font-semibold">{qty}</span>
+                  <span className="w-10 text-center font-semibold tabular-nums" aria-live="polite">
+                    {qty}
+                  </span>
                   <button
                     type="button"
                     aria-label="Increase quantity"
-                    onClick={() => setQty((q) => Math.min(product.stock_quantity || 10, q + 1))}
-                    className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-black/[0.04]"
+                    disabled={!inStock || qty >= maxQty}
+                    onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
+                    className="h-10 w-10 rounded-full flex items-center justify-center hover:bg-black/[0.04] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40"
                   >
-                    <Plus size={14} />
+                    <Plus size={16} aria-hidden />
                   </button>
                 </div>
-                <p className="text-xs text-[#6B6B6B] mt-2">
-                  {inStock ? `${product.stock_quantity} available` : "Currently out of stock"}
-                </p>
               </div>
 
-              <div ref={actionsRef} className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  disabled={!inStock}
-                  onClick={() => addToCart(selection)}
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-[#E8621A] text-white font-semibold disabled:opacity-50 shadow-md shadow-[#E8621A]/20"
-                >
-                  <ShoppingCart size={18} /> Add to Cart
-                </button>
-                <button
-                  type="button"
-                  disabled={!inStock}
-                  onClick={() => {
-                    buyNowLine(selection);
-                    navigate("/checkout");
-                  }}
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-[#1A1A1A] text-white font-semibold disabled:opacity-50"
-                >
-                  <Zap size={18} /> Buy Now
-                </button>
-                <button
-                  type="button"
-                  onClick={() => toggleWishlist(product.id, product.name)}
-                  className="inline-flex items-center gap-2 px-4 py-3 rounded-full border border-black/10 font-semibold"
-                >
-                  <Heart
-                    size={18}
-                    className="text-[#E8621A]"
-                    fill={isWishlisted(product.id) ? "currentColor" : "none"}
+              <div className="rounded-xl border border-black/[0.06] bg-[#FAF8F5] p-3.5 space-y-2">
+                <p className="text-sm font-semibold">Deliver to</p>
+                <div className="flex gap-2">
+                  <label className="sr-only" htmlFor="pdp-pincode">
+                    Pincode
+                  </label>
+                  <input
+                    id="pdp-pincode"
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="Enter pincode"
+                    value={pinInput}
+                    onChange={(e) => {
+                      setPinInput(e.target.value.replace(/\D/g, "").slice(0, 6));
+                      setPinStatus("idle");
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") checkPincode();
+                    }}
+                    className="flex-1 min-w-0 h-11 rounded-full border border-black/10 bg-white px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/35"
                   />
-                  Wishlist
-                </button>
-                <button
-                  type="button"
-                  onClick={() => toggleCompare(product)}
-                  className={cn(
-                    "inline-flex items-center gap-2 px-4 py-3 rounded-full border font-semibold",
-                    isCompared(product.id)
-                      ? "border-[#E8621A]/40 text-[#E8621A] bg-[#E8621A]/5"
-                      : "border-black/10",
-                  )}
-                >
-                  <GitCompare size={18} /> Compare
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void shareProduct({ name: product.name, slug: product.slug })}
-                  className="inline-flex items-center gap-2 px-4 py-3 rounded-full border border-black/10 font-semibold"
-                >
-                  <Share2 size={18} /> Share
-                </button>
+                  <button type="button" onClick={checkPincode} className="btn-secondary h-11 px-4 shrink-0">
+                    Check
+                  </button>
+                </div>
+                {pinStatus === "invalid" && (
+                  <p className="text-xs text-destructive">Enter a valid 6-digit Indian pincode.</p>
+                )}
+                {pinStatus === "ok" && (
+                  <p className="text-xs text-emerald-700">
+                    We deliver to this pincode. Exact delivery date is confirmed at checkout.
+                  </p>
+                )}
+                {pinStatus === "no" && (
+                  <p className="text-xs text-amber-800">
+                    This pincode may not be serviceable yet. Try another pincode or contact support.
+                  </p>
+                )}
+                {shippingLabel && (
+                  <p className="text-xs text-[#6B6B6B] flex items-center gap-1.5 pt-0.5">
+                    <Truck size={14} className="text-[#E8621A]" aria-hidden />
+                    Shipping: {shippingLabel}
+                  </p>
+                )}
               </div>
 
-              <div className="hidden lg:flex sticky bottom-4 z-10 gap-3 rounded-2xl border border-black/10 bg-white/95 backdrop-blur-md p-3 shadow-lg">
-                <button
-                  type="button"
-                  disabled={!inStock}
-                  onClick={() => addToCart(selection)}
-                  className="flex-1 py-3 rounded-full bg-[#E8621A] text-white font-semibold disabled:opacity-50"
-                >
-                  Add to Cart · {formatINR(price)}
-                </button>
-                <button
-                  type="button"
-                  disabled={!inStock}
-                  onClick={() => {
-                    buyNowLine(selection);
-                    navigate("/checkout");
-                  }}
-                  className="flex-1 py-3 rounded-full bg-[#1A1A1A] text-white font-semibold disabled:opacity-50"
-                >
-                  Buy Now
-                </button>
+              <div ref={actionsRef} className="space-y-3">
+                {inStock ? (
+                  <div className="flex flex-col sm:flex-row gap-2.5">
+                    <button
+                      type="button"
+                      disabled={adding}
+                      onClick={handleAdd}
+                      className="btn-primary flex-1 h-12 inline-flex items-center justify-center gap-2 disabled:opacity-60"
+                    >
+                      {justAdded && !adding ? (
+                        <>
+                          <Check size={18} aria-hidden /> Added to cart
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingCart size={18} aria-hidden />
+                          {adding ? "Adding…" : "Add to Cart"}
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={adding}
+                      onClick={handleBuy}
+                      className="btn-secondary flex-1 h-12 inline-flex items-center justify-center gap-2 disabled:opacity-60"
+                    >
+                      <Zap size={18} aria-hidden /> Buy Now
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate(`/shop?interest=${encodeURIComponent(product.name)}`)
+                    }
+                    className="btn-primary w-full h-12 inline-flex items-center justify-center gap-2"
+                  >
+                    <Bell size={18} aria-hidden /> Notify Me
+                  </button>
+                )}
+
+                {justAdded && (
+                  <p className="text-sm text-emerald-700">
+                    Added to cart.{" "}
+                    <Link to="/cart" className="font-semibold underline underline-offset-2">
+                      View Cart
+                    </Link>
+                  </p>
+                )}
+
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    aria-pressed={wishlisted}
+                    aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                    onClick={() => toggleWishlist(product.id, product.name)}
+                    className={cn(
+                      "btn-tertiary h-11 px-4 inline-flex items-center gap-2",
+                      wishlisted && "border-[#E8621A]/40 text-[#E8621A] bg-[#E8621A]/5",
+                    )}
+                  >
+                    <Heart size={16} fill={wishlisted ? "currentColor" : "none"} aria-hidden />
+                    {wishlisted ? "Wishlisted" : "Wishlist"}
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={compared}
+                    aria-label={compared ? "Remove from compare" : "Add to compare"}
+                    onClick={() => toggleCompare(product)}
+                    className={cn(
+                      "btn-tertiary h-11 px-4 inline-flex items-center gap-2",
+                      compared && "border-[#E8621A]/40 text-[#E8621A] bg-[#E8621A]/5",
+                    )}
+                  >
+                    <GitCompare size={16} aria-hidden />
+                    {compared ? "Comparing" : "Compare"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void shareProduct({ name: product.name, slug: product.slug })}
+                    className="btn-tertiary h-11 px-4 inline-flex items-center gap-2"
+                  >
+                    <Share2 size={16} aria-hidden /> Share
+                  </button>
+                </div>
               </div>
 
-              <div className="grid sm:grid-cols-3 gap-3 text-sm">
-                <div className="rounded-xl border border-black/[0.06] p-3 flex gap-3">
-                  <Truck className="text-[#E8621A] shrink-0" size={20} />
-                  <div>
-                    <p className="font-semibold">Shipping Estimate</p>
-                    <p className="text-[#6B6B6B] text-xs mt-0.5">{product.shippingTime}</p>
-                  </div>
-                </div>
-                <div className="rounded-xl border border-black/[0.06] p-3 flex gap-3">
-                  <ShieldCheck className="text-[#E8621A] shrink-0" size={20} />
-                  <div>
-                    <p className="font-semibold">Warranty</p>
-                    <p className="text-[#6B6B6B] text-xs mt-0.5">{product.warranty}</p>
-                  </div>
-                </div>
-                <div className="rounded-xl border border-black/[0.06] p-3 flex gap-3">
-                  <RotateCcw className="text-[#E8621A] shrink-0" size={20} />
-                  <div>
-                    <p className="font-semibold">Return Policy</p>
-                    <p className="text-[#6B6B6B] text-xs mt-0.5">
-                      {product.returnPolicy || "7 days return — unused with original packing"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-12 grid lg:grid-cols-2 gap-8">
-            <div>
-              <h2 className="font-heading text-xl mb-3">Product Description</h2>
-              <p className="text-[#6B6B6B] leading-relaxed whitespace-pre-line">{product.detailedDescription}</p>
-            </div>
-            <div>
-              <h2 className="font-heading text-xl mb-3">Specifications</h2>
-              <dl className="rounded-2xl border border-black/[0.06] divide-y divide-black/[0.06] text-sm shadow-sm">
+              <ul className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] sm:text-xs text-[#6B6B6B]">
                 {[
-                  ["Brand", product.brand || "AKM Care"],
-                  ["Category", product.categoryLabel],
-                  ["SKU", product.sku],
-                  ["Product Code", product.productCode],
-                  ["Dimensions", product.dimensions],
-                  ["Weight", product.weight || "—"],
-                  ["Packing", product.packingType || "—"],
-                  ["Variant", selectedVariant?.name || "—"],
-                  ["Colors available", String(product.colors.length || "—")],
-                  ["GST %", `${product.gstPercent}%`],
-                  ["GSTIN", product.gstNumber || "—"],
-                  ["HSN", product.hsn || "—"],
-                  ["Freight", product.freightCost || "Calculated at checkout"],
-                ].map(([k, v]) => (
-                  <div key={k} className="flex justify-between gap-4 px-4 py-3">
-                    <dt className="text-[#6B6B6B]">{k}</dt>
-                    <dd className="font-medium text-[#1A1A1A] text-right">{v}</dd>
-                  </div>
-                ))}
-              </dl>
+                  shippingLabel ? "Fast shipping" : null,
+                  returnLabel ? "Easy returns" : null,
+                  "Secure payment",
+                  "Genuine products",
+                ]
+                  .filter(Boolean)
+                  .map((label) => (
+                    <li
+                      key={label as string}
+                      className="rounded-lg border border-black/[0.06] px-2.5 py-2 text-center font-medium"
+                    >
+                      {label}
+                    </li>
+                  ))}
+              </ul>
             </div>
           </div>
 
-          <RelatedProducts products={related} currentId={product.id} />
-          <RecentlyViewedStrip excludeId={product.id} />
+          <div className="mt-10 sm:mt-14 grid lg:grid-cols-2 gap-8 lg:gap-12">
+            <div className="space-y-4">
+              <h2 className="type-section">About this product</h2>
+              {isMeaningful(product.detailedDescription) ? (
+                <p className="text-[#6B6B6B] leading-relaxed whitespace-pre-line text-sm sm:text-base">
+                  {product.detailedDescription}
+                </p>
+              ) : isMeaningful(product.shortDescription) ? (
+                <p className="text-[#6B6B6B] leading-relaxed text-sm sm:text-base">
+                  {product.shortDescription}
+                </p>
+              ) : (
+                <p className="text-[#6B6B6B] text-sm">
+                  Explore authentic {product.categoryLabel.toLowerCase()} from AKM Care.
+                </p>
+              )}
 
-          <p className="text-center text-sm text-[#6B6B6B] mt-8 pb-16 lg:pb-0">
+              <div className="divide-y divide-black/[0.06] rounded-2xl border border-black/[0.06] overflow-hidden">
+                {(
+                  [
+                    ["shipping", "Shipping", shippingLabel, Truck],
+                    ["returns", "Returns", returnLabel, RotateCcw],
+                    ["warranty", "Warranty", warrantyLabel, ShieldCheck],
+                  ] as const
+                )
+                  .filter(([, , value]) => Boolean(value))
+                  .map(([key, title, value, Icon]) => {
+                    const open = openSection === key;
+                    return (
+                      <div key={key}>
+                        <button
+                          type="button"
+                          aria-expanded={open}
+                          onClick={() => setOpenSection(open ? null : key)}
+                          className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-black/[0.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E8621A]/30"
+                        >
+                          <Icon size={18} className="text-[#E8621A] shrink-0" aria-hidden />
+                          <span className="font-semibold text-sm flex-1">{title}</span>
+                          <span className="text-xs text-[#6B6B6B]">{open ? "Hide" : "Show"}</span>
+                        </button>
+                        <div
+                          className={cn(
+                            "grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
+                            open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+                          )}
+                        >
+                          <div className="overflow-hidden">
+                            <p className="px-4 pb-3.5 pl-[2.75rem] text-sm text-[#6B6B6B] leading-relaxed">
+                              {value}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+
+            <div>
+              <h2 className="type-section mb-4">Specifications</h2>
+              {specs.length > 0 ? (
+                <dl className="rounded-2xl border border-black/[0.06] divide-y divide-black/[0.06] text-sm">
+                  {specs.map(([k, v]) => (
+                    <div key={k} className="flex justify-between gap-4 px-4 py-3">
+                      <dt className="text-[#6B6B6B] shrink-0">{k}</dt>
+                      <dd className="font-medium text-[#1A1A1A] text-right">{v}</dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : (
+                <p className="text-sm text-[#6B6B6B]">Specifications will appear as product data is updated.</p>
+              )}
+            </div>
+          </div>
+
+          <RelatedProducts
+            products={related}
+            currentId={product.id}
+            category={product.category}
+            limit={4}
+          />
+          <div className="mt-10">
+            <RecentlyViewedStrip excludeId={product.id} />
+          </div>
+
+          <p className="text-center text-sm text-[#6B6B6B] mt-8">
             <Link to="/shop" className="text-[#E8621A] font-semibold hover:underline">
               ← Back to Shop
             </Link>
@@ -440,11 +668,9 @@ export default function ProductDetails() {
         price={price}
         inStock={inStock}
         productName={product.name}
-        onAdd={() => addToCart(selection)}
-        onBuy={() => {
-          buyNowLine(selection);
-          navigate("/checkout");
-        }}
+        adding={adding}
+        onAdd={handleAdd}
+        onBuy={handleBuy}
       />
     </>
   );

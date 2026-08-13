@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Package,
@@ -30,15 +30,18 @@ import {
   getSalesSeries,
 } from "@/services/adminDashboardService";
 import { formatINR } from "@/lib/ecommerce/pricing";
+import { useAdminOrderAlerts } from "@/context/AdminOrderAlertsContext";
 
 const COLORS = ["#E8621A", "#0f172a", "#10b981", "#6366f1", "#f59e0b", "#94a3b8"];
 
 export default function AdminDashboardPage() {
+  const { lastEvent } = useAdminOrderAlerts();
   const [stats, setStats] = useState<Awaited<ReturnType<typeof getDashboardStats>> | null>(null);
   const [series, setSeries] = useState<Awaited<ReturnType<typeof getSalesSeries>>>([]);
   const [dist, setDist] = useState<Awaited<ReturnType<typeof getCategoryDistribution>>>([]);
+  const skipFirstReconnect = useRef(true);
 
-  useEffect(() => {
+  const refresh = () => {
     void Promise.all([getDashboardStats(), getSalesSeries(14), getCategoryDistribution()]).then(
       ([s, ser, d]) => {
         setStats(s);
@@ -46,7 +49,21 @@ export default function AdminDashboardPage() {
         setDist(d);
       },
     );
+  };
+
+  useEffect(() => {
+    refresh();
   }, []);
+
+  useEffect(() => {
+    if (!lastEvent) return;
+    if (lastEvent.type === "reconnect" && skipFirstReconnect.current) {
+      skipFirstReconnect.current = false;
+      return;
+    }
+    const t = window.setTimeout(refresh, 400);
+    return () => window.clearTimeout(t);
+  }, [lastEvent]);
 
   const cards = [
     { label: "Total Products", value: stats?.totalProducts ?? "—", icon: Package, to: "/admin/products" },

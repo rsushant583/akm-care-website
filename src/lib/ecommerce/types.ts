@@ -4,11 +4,18 @@ export type ProductAvailability = "available" | "sold_out" | "coming_soon" | "dr
 
 export type ProductCategorySlug =
   | "sarees"
+  | "ladies-gown"
+  | "stitched-lehenga"
+  | "unstitched-lehenga"
+  | "3-piece-suits"
+  | "mens-jeans"
+  /** Legacy / seed catalog values — still readable */
   | "apparel"
   | "imitation-jewelry"
   | "food"
   | "organic"
-  | "local";
+  | "local"
+  | string;
 
 export interface ProductImage {
   /** Public URL path, e.g. /catalog/akmc-sani-1007/01.png */

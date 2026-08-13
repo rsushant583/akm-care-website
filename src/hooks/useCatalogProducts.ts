@@ -5,6 +5,7 @@ import { getSupabaseClient } from "@/lib/supabaseClient";
 import {
   countCatalogProducts,
   getBestSellerProducts,
+  getDealProducts,
   getFeaturedProducts,
   getFilterFacets,
   getNewArrivalProducts,
@@ -13,6 +14,8 @@ import {
   listProducts,
 } from "@/services/productService";
 import { allCatalogProducts } from "@/data/catalog/products";
+import type { ShopCollectionId } from "@/data/catalog/categories";
+import { filterProducts, sortProducts } from "@/lib/ecommerce/filters";
 
 type CatalogState = {
   data: CatalogProduct[];
@@ -37,11 +40,13 @@ export function useCatalogProducts(options?: {
   sort?: SortOption;
   pageSize?: number;
   enablePagination?: boolean;
+  collection?: ShopCollectionId | null;
 }) {
   const filters = options?.filters ?? DEFAULT_FILTERS;
   const sort = options?.sort ?? "newest";
   const pageSize = options?.pageSize ?? PAGE_SIZE;
   const enablePagination = options?.enablePagination ?? true;
+  const collection = options?.collection ?? null;
 
   const [state, setState] = useState<CatalogState>({
     data: [],
@@ -55,8 +60,22 @@ export function useCatalogProducts(options?: {
     source: "empty",
   });
 
-  const filtersKey = useMemo(() => JSON.stringify({ filters, sort, pageSize }), [filters, sort, pageSize]);
+  const filtersKey = useMemo(
+    () => JSON.stringify({ filters, sort, pageSize, collection }),
+    [filters, sort, pageSize, collection],
+  );
   const requestId = useRef(0);
+
+  const offlineSlice = useCallback(() => {
+    let list = [...allCatalogProducts];
+    if (collection === "featured") list = list.filter((p) => p.isFeatured);
+    if (collection === "best-sellers") list = list.filter((p) => p.isBestSeller);
+    if (collection === "new-arrivals") list = list.filter((p) => p.isNewArrival);
+    if (collection === "deals") list = list.filter((p) => (p.discountPercent ?? 0) > 0);
+    list = filterProducts(list, filters);
+    list = sortProducts(list, sort);
+    return list;
+  }, [collection, filters, sort]);
 
   const fetchPage = useCallback(
     async (page: number, append: boolean) => {
@@ -64,9 +83,10 @@ export function useCatalogProducts(options?: {
       const client = getSupabaseClient();
 
       if (!client) {
+        const list = offlineSlice();
         setState({
-          data: allCatalogProducts,
-          total: allCatalogProducts.length,
+          data: list,
+          total: list.length,
           page: 1,
           hasMore: false,
           loading: false,
@@ -90,6 +110,10 @@ export function useCatalogProducts(options?: {
           pageSize: enablePagination ? pageSize : 500,
           filters,
           sort,
+          featuredOnly: collection === "featured",
+          bestSellerOnly: collection === "best-sellers",
+          newArrivalOnly: collection === "new-arrivals",
+          dealsOnly: collection === "deals",
         });
 
         if (id !== requestId.current) return;
@@ -98,9 +122,10 @@ export function useCatalogProducts(options?: {
         if (result.total === 0 && page === 1) {
           const remoteCount = await countCatalogProducts().catch(() => 0);
           if (remoteCount === 0) {
+            const list = offlineSlice();
             setState({
-              data: allCatalogProducts,
-              total: allCatalogProducts.length,
+              data: list,
+              total: list.length,
               page: 1,
               hasMore: false,
               loading: false,
@@ -126,9 +151,10 @@ export function useCatalogProducts(options?: {
         }));
       } catch (err) {
         if (id !== requestId.current) return;
+        const list = offlineSlice();
         setState({
-          data: allCatalogProducts,
-          total: allCatalogProducts.length,
+          data: list,
+          total: list.length,
           page: 1,
           hasMore: false,
           loading: false,
@@ -139,7 +165,7 @@ export function useCatalogProducts(options?: {
         });
       }
     },
-    [enablePagination, filters, pageSize, sort],
+    [collection, enablePagination, filters, offlineSlice, pageSize, sort],
   );
 
   useEffect(() => {
@@ -195,10 +221,11 @@ export function useCatalogProducts(options?: {
   };
 }
 
-export function useCatalogMerchandising() {
+export function useCatalogMerchandising(limit = 8) {
   const [featured, setFeatured] = useState<CatalogProduct[]>([]);
   const [bestSellers, setBestSellers] = useState<CatalogProduct[]>([]);
   const [newArrivals, setNewArrivals] = useState<CatalogProduct[]>([]);
+  const [deals, setDeals] = useState<CatalogProduct[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -208,26 +235,30 @@ export function useCatalogMerchandising() {
         const client = getSupabaseClient();
         if (!client) {
           if (!cancelled) {
-            setFeatured(allCatalogProducts.filter((p) => p.isFeatured).slice(0, 4));
-            setBestSellers(allCatalogProducts.filter((p) => p.isBestSeller).slice(0, 4));
-            setNewArrivals(allCatalogProducts.filter((p) => p.isNewArrival).slice(0, 4));
+            setFeatured(allCatalogProducts.filter((p) => p.isFeatured).slice(0, limit));
+            setBestSellers(allCatalogProducts.filter((p) => p.isBestSeller).slice(0, limit));
+            setNewArrivals(allCatalogProducts.filter((p) => p.isNewArrival).slice(0, limit));
+            setDeals(allCatalogProducts.filter((p) => (p.discountPercent ?? 0) > 0).slice(0, limit));
           }
           return;
         }
-        const [f, b, n] = await Promise.all([
-          getFeaturedProducts(4),
-          getBestSellerProducts(4),
-          getNewArrivalProducts(4),
+        const [f, b, n, d] = await Promise.all([
+          getFeaturedProducts(limit),
+          getBestSellerProducts(limit),
+          getNewArrivalProducts(limit),
+          getDealProducts(limit),
         ]);
         if (cancelled) return;
-        setFeatured(f.length ? f : allCatalogProducts.filter((p) => p.isFeatured).slice(0, 4));
-        setBestSellers(b.length ? b : allCatalogProducts.filter((p) => p.isBestSeller).slice(0, 4));
-        setNewArrivals(n.length ? n : allCatalogProducts.filter((p) => p.isNewArrival).slice(0, 4));
+        setFeatured(f.length ? f : allCatalogProducts.filter((p) => p.isFeatured).slice(0, limit));
+        setBestSellers(b.length ? b : allCatalogProducts.filter((p) => p.isBestSeller).slice(0, limit));
+        setNewArrivals(n.length ? n : allCatalogProducts.filter((p) => p.isNewArrival).slice(0, limit));
+        setDeals(d.length ? d : allCatalogProducts.filter((p) => (p.discountPercent ?? 0) > 0).slice(0, limit));
       } catch {
         if (!cancelled) {
-          setFeatured(allCatalogProducts.filter((p) => p.isFeatured).slice(0, 4));
-          setBestSellers(allCatalogProducts.filter((p) => p.isBestSeller).slice(0, 4));
-          setNewArrivals(allCatalogProducts.filter((p) => p.isNewArrival).slice(0, 4));
+          setFeatured(allCatalogProducts.filter((p) => p.isFeatured).slice(0, limit));
+          setBestSellers(allCatalogProducts.filter((p) => p.isBestSeller).slice(0, limit));
+          setNewArrivals(allCatalogProducts.filter((p) => p.isNewArrival).slice(0, limit));
+          setDeals(allCatalogProducts.filter((p) => (p.discountPercent ?? 0) > 0).slice(0, limit));
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -236,9 +267,9 @@ export function useCatalogMerchandising() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [limit]);
 
-  return { featured, bestSellers, newArrivals, loading };
+  return { featured, bestSellers, newArrivals, deals, loading };
 }
 
 export function useCatalogFacets() {

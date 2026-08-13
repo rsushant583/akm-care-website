@@ -1,6 +1,7 @@
 import type { CatalogProduct, ShopFilters, SortOption } from "@/lib/ecommerce/types";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { mapCatalogRow, type CatalogListRow } from "@/services/mappers/catalogMapper";
+import { getCategoryMatchTerms } from "@/data/catalog/categories";
 
 export type ProductListParams = {
   page?: number;
@@ -10,6 +11,7 @@ export type ProductListParams = {
   featuredOnly?: boolean;
   bestSellerOnly?: boolean;
   newArrivalOnly?: boolean;
+  dealsOnly?: boolean;
 };
 
 export type ProductListResult = {
@@ -43,7 +45,15 @@ function applyFilters(query: any, filters?: Partial<ShopFilters>) {
   if (!filters) return query;
 
   if (filters.category && filters.category !== "all") {
-    query = query.or(`category_slug.eq.${filters.category},category_label.ilike.%${filters.category}%`);
+    const terms = getCategoryMatchTerms(filters.category);
+    const clauses = [
+      `category_slug.eq.${filters.category}`,
+      ...terms.map((term) => {
+        const safe = term.replace(/%/g, "").replace(/,/g, " ").replace(/'/g, "");
+        return `category_label.ilike.%${safe}%`;
+      }),
+    ];
+    query = query.or([...new Set(clauses)].join(","));
   }
   if (filters.priceMin != null) query = query.gte("akm_care_price", filters.priceMin);
   if (filters.priceMax != null) query = query.lte("akm_care_price", filters.priceMax);
@@ -81,6 +91,7 @@ export async function listProducts(params: ProductListParams = {}): Promise<Prod
   if (params.featuredOnly) query = query.eq("is_featured", true);
   if (params.bestSellerOnly) query = query.eq("is_best_seller", true);
   if (params.newArrivalOnly) query = query.eq("is_new_arrival", true);
+  if (params.dealsOnly) query = query.gt("discount_percent", 0);
 
   query = applyFilters(query, params.filters);
   query = applySort(query, params.sort);
@@ -170,6 +181,11 @@ export async function getBestSellerProducts(limit = 8): Promise<CatalogProduct[]
 
 export async function getNewArrivalProducts(limit = 8): Promise<CatalogProduct[]> {
   const result = await listProducts({ page: 1, pageSize: limit, newArrivalOnly: true, sort: "newest" });
+  return result.items;
+}
+
+export async function getDealProducts(limit = 8): Promise<CatalogProduct[]> {
+  const result = await listProducts({ page: 1, pageSize: limit, dealsOnly: true, sort: "discount" });
   return result.items;
 }
 

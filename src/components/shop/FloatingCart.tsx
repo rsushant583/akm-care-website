@@ -20,9 +20,10 @@ export function FloatingCart() {
     <Link
       to="/cart"
       className={cn(
-        "fixed z-[90] right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] lg:bottom-6",
+        "fixed z-[90] right-4 bottom-[calc(5.25rem+env(safe-area-inset-bottom,0px))] lg:bottom-6",
         "inline-flex items-center gap-2 pl-3 pr-4 py-2.5 rounded-full",
         "bg-[#1A1A1A] text-white shadow-xl shadow-black/20 hover:brightness-110 transition-all",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40",
       )}
       aria-label={`Open cart, ${itemCount} items`}
     >

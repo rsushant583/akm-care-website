@@ -10,6 +10,7 @@ export function ProductGrid({
   className,
   emptyTitle = "No products found",
   emptyDescription = "Try adjusting filters or search to discover more AKM Care products.",
+  onClearFilters,
 }: {
   products: CatalogProduct[];
   onQuickView?: (product: CatalogProduct) => void;
@@ -17,9 +18,16 @@ export function ProductGrid({
   className?: string;
   emptyTitle?: string;
   emptyDescription?: string;
+  onClearFilters?: () => void;
 }) {
   if (products.length === 0) {
-    return <EmptyState title={emptyTitle} description={emptyDescription} />;
+    return (
+      <EmptyState
+        title={emptyTitle}
+        description={emptyDescription}
+        onClearFilters={onClearFilters}
+      />
+    );
   }
 
   return (
@@ -27,7 +35,7 @@ export function ProductGrid({
       className={cn(
         view === "list"
           ? "flex flex-col gap-3 sm:gap-4"
-          : "grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5",
+          : "grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6",
         className,
       )}
     >

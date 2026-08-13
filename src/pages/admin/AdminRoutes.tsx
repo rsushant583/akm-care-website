@@ -8,6 +8,7 @@ import AdminCategoriesPage from "@/pages/admin/AdminCategories";
 import AdminBrandsPage from "@/pages/admin/AdminBrands";
 import AdminInventoryPage from "@/pages/admin/AdminInventory";
 import AdminOrdersPage from "@/pages/admin/AdminOrders";
+import AdminOrderDetailPage from "@/pages/admin/AdminOrderDetail";
 import AdminCustomersPage from "@/pages/admin/AdminCustomers";
 import AdminBannersPage from "@/pages/admin/AdminBanners";
 import AdminCouponsPage from "@/pages/admin/AdminCoupons";
@@ -39,6 +40,7 @@ export default function AdminRoutes() {
         <Route path="brands" element={<AdminBrandsPage />} />
         <Route path="inventory" element={<AdminInventoryPage />} />
         <Route path="orders" element={<AdminOrdersPage />} />
+        <Route path="orders/:id" element={<AdminOrderDetailPage />} />
         <Route path="customers" element={<AdminCustomersPage />} />
         <Route path="banners" element={<AdminBannersPage />} />
         <Route path="coupons" element={<AdminCouponsPage />} />

@@ -1,58 +1,30 @@
 import { Link } from "react-router-dom";
-import { motion, useReducedMotion } from "framer-motion";
 import { SHOP_CATEGORIES } from "@/data/catalog/products";
+import { cn } from "@/lib/utils";
+import type { ReactNode } from "react";
 
-const HERO_IMG = "/shop/shop-subheading-hero.png";
-
+/** Compact shop page intro — catalog is the hero, not a corporate banner. */
 export function ShopHero() {
-  const reduce = useReducedMotion();
-
   return (
-    <section className="section-padding pt-6 sm:pt-8 lg:pt-10 bg-[#F5F0EB]">
-      <div className="container-premium grid lg:grid-cols-2 gap-8 items-center">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#E8621A] mb-3">
-            AKM Care Shop
-          </p>
-          <h1 className="font-heading text-4xl sm:text-5xl lg:text-[2.75rem] text-[#1A1A1A] leading-tight mb-4">
-            Authentic Village Products
-          </h1>
-          <p className="text-lg text-[#6B6B6B] mb-6 max-w-xl">
-            We sell online, Authentic Various Domestic Food Items, Fancy Sarees & Textile Products.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <a
-              href="#shop-catalog"
-              className="inline-flex px-5 py-2.5 rounded-full bg-[#E8621A] text-white text-sm font-semibold shadow-md shadow-[#E8621A]/20"
-            >
-              Shop Collection
-            </a>
-            <Link
-              to="/sell-your-product"
-              className="inline-flex px-5 py-2.5 rounded-full border border-black/10 bg-white text-sm font-semibold text-[#1A1A1A]"
-            >
-              Sell with AKM Care
-            </Link>
-          </div>
+    <section className="bg-[#F5F0EB] border-b border-black/[0.04]">
+      <div className="container-premium py-6 sm:py-8 lg:py-10">
+        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-[#E8621A] mb-2">
+          AKM Care Shop
+        </p>
+        <p className="type-display max-w-2xl mb-2" style={{ textWrap: "balance" }}>
+          Authentic fashion &amp; textile products
+        </p>
+        <p className="text-sm sm:text-base text-[#6B6B6B] max-w-xl mb-5">
+          Browse sarees, lehengas, gowns, suits and jeans — live pricing and stock.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <a href="#shop-catalog" className="btn-primary h-10 px-4 text-sm">
+            Browse collection
+          </a>
+          <Link to="/sell-your-product" className="btn-secondary h-10 px-4 text-sm">
+            Sell with AKM Care
+          </Link>
         </div>
-        <motion.div
-          initial={reduce ? false : { opacity: 0, x: 24 }}
-          whileInView={reduce ? undefined : { opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="relative"
-        >
-          <img
-            src={HERO_IMG}
-            alt=""
-            width={900}
-            height={560}
-            loading="eager"
-            decoding="async"
-            className="w-full h-48 sm:h-56 lg:h-64 object-cover rounded-2xl border border-black/[0.06] shadow-lg"
-            aria-hidden
-          />
-        </motion.div>
       </div>
     </section>
   );
@@ -66,19 +38,26 @@ export function CategoryStrip({
   onSelect: (id: string) => void;
 }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div
+      className="-mx-4 px-4 sm:mx-0 sm:px-0 flex gap-2 overflow-x-auto scrollbar-hide pb-0.5"
+      role="group"
+      aria-label="Shop categories"
+    >
       {SHOP_CATEGORIES.map((cat) => (
         <button
           key={cat.id}
           type="button"
+          aria-pressed={active === cat.id}
           onClick={() => onSelect(cat.id)}
-          className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+          className={cn(
+            "shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40",
             active === cat.id
-              ? "bg-[#E8621A] text-white shadow-md"
-              : "bg-[#FAF8F5] border border-black/[0.08] text-[#6B6B6B] hover:border-[#E8621A]/30"
-          }`}
+              ? "bg-[#E8621A] text-white shadow-sm shadow-[#E8621A]/25"
+              : "bg-white text-[#6B6B6B] ring-1 ring-black/[0.08] hover:ring-[#E8621A]/35",
+          )}
         >
-          {cat.label}
+          {cat.label === "All" ? "All Products" : cat.label}
         </button>
       ))}
     </div>
@@ -93,14 +72,14 @@ export function ProductSection({
 }: {
   title: string;
   subtitle?: string;
-  children: React.ReactNode;
+  children: ReactNode;
   id?: string;
 }) {
   return (
-    <section id={id} className="space-y-4">
+    <section id={id} className="space-y-5">
       <div>
-        <h2 className="font-heading text-2xl sm:text-3xl text-[#1A1A1A]">{title}</h2>
-        {subtitle && <p className="text-sm text-[#6B6B6B] mt-1">{subtitle}</p>}
+        <h2 className="type-section">{title}</h2>
+        {subtitle && <p className="type-meta mt-1.5 text-sm">{subtitle}</p>}
       </div>
       {children}
     </section>
