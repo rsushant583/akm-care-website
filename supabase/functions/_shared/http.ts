@@ -5,15 +5,18 @@ export function allowedOrigin(req: Request): string {
     .map((s) => s.trim())
     .filter(Boolean);
   const defaults = [
+    "https://akmcare.in",
+    "https://www.akmcare.in",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:4173",
-    "https://akmcare.in",
-    "https://www.akmcare.in",
   ];
   const allow = configured.length ? configured : defaults;
   if (origin && allow.includes(origin)) return origin;
-  return allow[0] || "*";
+  // Never default ACAO to localhost — that confuses CORS debugging on production.
+  // Echoing a non-allowed origin is unsafe; use first production origin as inert fallback.
+  const prod = allow.find((o) => o.startsWith("https://akmcare.in")) || "https://akmcare.in";
+  return prod;
 }
 
 export function corsHeadersFor(req: Request) {

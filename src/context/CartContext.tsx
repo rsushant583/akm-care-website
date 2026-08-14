@@ -229,7 +229,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       action: {
         label: "View Cart",
         onClick: () => {
-          window.location.assign("/cart");
+          // Same-origin relative path — never hardcode localhost
+          window.location.assign(`${window.location.origin}/cart`);
         },
       },
     });

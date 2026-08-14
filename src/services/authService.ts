@@ -1,5 +1,6 @@
 import type { Session, User, AuthError } from "@supabase/supabase-js";
 import { getSupabaseClient } from "@/lib/supabaseClient";
+import { getAuthRedirectUrl } from "@/lib/config/siteUrl";
 
 export type AuthResult = { error: AuthError | null };
 
@@ -29,7 +30,8 @@ export async function signUpWithEmail(params: {
     password: params.password,
     options: {
       data: { full_name: params.fullName ?? "" },
-      emailRedirectTo: `${window.location.origin}/account`,
+      // Public callback route — never localhost in production (see getSiteOrigin)
+      emailRedirectTo: getAuthRedirectUrl("/auth/callback?next=/account"),
     },
   });
   return { error };
@@ -47,7 +49,7 @@ export async function signInWithGoogle(): Promise<AuthResult> {
   if (!client) return { error: { message: "Supabase not configured", name: "ConfigError", status: 500 } as AuthError };
   const { error } = await client.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo: `${window.location.origin}/account` },
+    options: { redirectTo: getAuthRedirectUrl("/auth/callback?next=/account") },
   });
   return { error };
 }
@@ -56,7 +58,7 @@ export async function resetPassword(email: string): Promise<AuthResult> {
   const client = getSupabaseClient();
   if (!client) return { error: { message: "Supabase not configured", name: "ConfigError", status: 500 } as AuthError };
   const { error } = await client.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/auth/reset-password`,
+    redirectTo: getAuthRedirectUrl("/auth/reset-password"),
   });
   return { error };
 }

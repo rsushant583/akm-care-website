@@ -56,13 +56,33 @@ export async function markOrderFailed(orderId: string, accessToken: string, note
 
 export async function getOrderById(orderId: string) {
   const client = getSupabaseClient();
-  if (!client) return null;
-  const { data: order, error } = await client.from("order_headers").select("*").eq("id", orderId).maybeSingle();
+  if (!client || !orderId) return null;
+  const { data: auth } = await client.auth.getUser();
+  if (!auth.user?.id) return null;
+  const { data: order, error } = await client
+    .from("order_headers")
+    .select(
+      "id,order_number,user_id,customer_name,customer_email,customer_phone,shipping_address,subtotal,gst_total,shipping_total,discount_total,coupon_code,grand_total,status,payment_status,shipping_method,created_at",
+    )
+    .eq("id", orderId)
+    .eq("user_id", auth.user.id)
+    .maybeSingle();
   if (error) throw error;
   if (!order) return null;
-  const { data: items } = await client.from("order_items").select("*").eq("order_id", orderId);
-  const { data: payment } = await client.from("payments").select("*").eq("order_id", orderId).maybeSingle();
-  const { data: ship } = await client.from("shipping").select("*").eq("order_id", orderId).maybeSingle();
+  const { data: items } = await client
+    .from("order_items")
+    .select("id,product_id,product_name,sku,quantity,unit_price,line_total,image_url,color_name,variant_name")
+    .eq("order_id", orderId);
+  const { data: payment } = await client
+    .from("payments")
+    .select("provider,status,method,amount,razorpay_payment_id,razorpay_order_id")
+    .eq("order_id", orderId)
+    .maybeSingle();
+  const { data: ship } = await client
+    .from("shipping")
+    .select("method,status,carrier,tracking_number,estimated_days")
+    .eq("order_id", orderId)
+    .maybeSingle();
   return { order: order as OrderHeader, items: items || [], payment, shipping: ship };
 }
 
@@ -84,13 +104,18 @@ export async function getOrderByNumber(_orderNumber: string) {
   return null;
 }
 
+/** @deprecated Prefer listMyOrders() which binds to auth.getUser() and omits access_token. */
 export async function listOrdersForUser(userId: string): Promise<OrderHeader[]> {
   const client = getSupabaseClient();
   if (!client) return [];
+  const { data: auth } = await client.auth.getUser();
+  if (!auth.user?.id || auth.user.id !== userId) return [];
   const { data, error } = await client
     .from("order_headers")
-    .select("*")
-    .eq("user_id", userId)
+    .select(
+      "id,order_number,user_id,customer_name,customer_email,customer_phone,subtotal,gst_total,shipping_total,discount_total,coupon_code,grand_total,status,payment_status,shipping_method,created_at",
+    )
+    .eq("user_id", auth.user.id)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data || []) as OrderHeader[];

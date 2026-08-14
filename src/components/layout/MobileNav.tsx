@@ -20,7 +20,7 @@ const items = [
     match: (p: string, s: string) => p === "/shop" && !s.includes("category="),
   },
   { label: "Wishlist", path: "/wishlist", icon: Heart, match: (p: string) => p === "/wishlist" },
-  { label: "Account", path: "/account", icon: User, match: (p: string) => p === "/account" || p === "/auth" },
+  { label: "Account", path: "/account", icon: User, match: (p: string) => p.startsWith("/account") || p === "/auth" },
 ];
 
 export default function MobileNav() {

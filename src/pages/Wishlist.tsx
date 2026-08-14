@@ -46,10 +46,17 @@ export default function WishlistPage() {
           {loading ? (
             <p className="text-sm text-[#6B6B6B]">Loading wishlist…</p>
           ) : products.length === 0 ? (
-            <EmptyState title="Your wishlist is empty" description="Tap the heart on any product to save it here." />
+            <EmptyState
+              title="Your wishlist is empty"
+              description="Tap the heart on any product to save it here."
+              actionLabel="Continue Shopping"
+              actionHref="/shop"
+            />
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {products.map((p) => (
+              {products.map((p) => {
+                const inStock = p.stock_quantity > 0;
+                return (
                 <article key={p.id} className="rounded-2xl border border-black/[0.06] overflow-hidden bg-[#FAF8F5]">
                   <Link to={productPath(p.slug)} className="block aspect-[3/4] bg-white">
                     <img src={p.image_url || p.images[0]?.src || "/placeholder.svg"} alt={p.name} className="h-full w-full object-cover" loading="lazy" />
@@ -59,26 +66,28 @@ export default function WishlistPage() {
                       {p.name}
                     </Link>
                     <p className="mt-2 font-semibold text-[#E8621A]">{formatINR(getEffectivePrice(p))}</p>
+                    {!inStock && <p className="text-xs font-semibold text-red-600 mt-1">Out of stock</p>}
                     <div className="mt-3 flex gap-2">
                       <button
                         type="button"
-                        disabled={p.stock_quantity <= 0}
+                        disabled={!inStock}
                         onClick={() => addToCart({ product: p })}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-[#E8621A] text-white text-xs font-semibold px-3 py-2 disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 rounded-full bg-[#E8621A] text-white text-xs font-semibold px-3 py-2 disabled:opacity-50 min-h-11"
                       >
                         <ShoppingCart size={14} /> Add to Cart
                       </button>
                       <button
                         type="button"
                         onClick={() => remove(p.id)}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-black/10 text-xs font-semibold px-3 py-2"
+                        className="inline-flex items-center gap-1.5 rounded-full border border-black/10 text-xs font-semibold px-3 py-2 min-h-11"
                       >
                         <Trash2 size={14} /> Remove
                       </button>
                     </div>
                   </div>
                 </article>
-              ))}
+              );
+              })}
             </div>
           )}
 

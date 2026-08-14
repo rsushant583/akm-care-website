@@ -38,8 +38,11 @@ export default function AuthPage() {
         const { error } = await signUp(email, password, fullName);
         if (error) toast.error(error);
         else {
-          toast.success("Account created. Please verify your email if required.");
-          navigate(from, { replace: true });
+          toast.success(
+            "Account created. Check your email to verify — the link opens akmcare.in (not localhost).",
+          );
+          setMode("login");
+          setPassword("");
         }
         return;
       }

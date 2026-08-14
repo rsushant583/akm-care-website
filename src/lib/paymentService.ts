@@ -58,7 +58,12 @@ async function readJsonSafe(response: Response) {
 function friendlyHttpError(status: number, fallback?: string) {
   if (status === 409) return fallback || "Some items are no longer available.";
   if (status === 400) return fallback || "Please check your details and try again.";
-  if (status >= 500) return "We couldn't start the payment. Please try again.";
+  if (status >= 500) {
+    if (fallback && /server env missing for payments/i.test(fallback)) {
+      return "Online payments are temporarily unavailable. Your cart is safe — please try again later.";
+    }
+    return fallback || "We couldn't start the payment. Please try again.";
+  }
   return fallback || "Something went wrong. Please try again.";
 }
 

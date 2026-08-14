@@ -13,6 +13,7 @@ import { WishlistProvider } from "@/context/WishlistContext";
 import { CompareProvider } from "@/context/CompareContext";
 import { RecentlyViewedProvider } from "@/context/RecentlyViewedContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 
 import Index from "./pages/Index";
 const About = lazy(() => import("./pages/About"));
@@ -23,7 +24,14 @@ const ProductDetails = lazy(() => import("./pages/ProductDetails"));
 const Cart = lazy(() => import("./pages/Cart"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const Auth = lazy(() => import("./pages/Auth"));
-const Account = lazy(() => import("./pages/Account"));
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+const AccountLayout = lazy(() => import("./components/account/AccountLayout"));
+const AccountOverview = lazy(() => import("./pages/account/AccountOverview"));
+const AccountOrders = lazy(() => import("./pages/account/AccountOrders"));
+const AccountOrderDetail = lazy(() => import("./pages/account/AccountOrderDetail"));
+const AccountWishlist = lazy(() => import("./pages/account/AccountWishlist"));
+const AccountAddresses = lazy(() => import("./pages/account/AccountAddresses"));
+const AccountProfile = lazy(() => import("./pages/account/AccountProfile"));
 const Wishlist = lazy(() => import("./pages/Wishlist"));
 const OrderSuccess = lazy(() => import("./pages/OrderSuccess"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
@@ -80,19 +88,34 @@ function AppRoutes() {
         <Route path="/shop" element={<Shop />} />
         <Route path="/shop/product/:slug" element={<ProductDetails />} />
         <Route path="/cart" element={<Cart />} />
-        <Route path="/checkout" element={<Checkout />} />
+        <Route
+          path="/checkout"
+          element={
+            <RouteErrorBoundary title="Checkout problem">
+              <Checkout />
+            </RouteErrorBoundary>
+          }
+        />
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/auth/reset-password" element={<ResetPassword />} />
         <Route path="/order-success" element={<OrderSuccess />} />
         <Route
           path="/account"
           element={
             <ProtectedRoute>
-              <Account />
+              <AccountLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<AccountOverview />} />
+          <Route path="orders" element={<AccountOrders />} />
+          <Route path="orders/:id" element={<AccountOrderDetail />} />
+          <Route path="wishlist" element={<AccountWishlist />} />
+          <Route path="addresses" element={<AccountAddresses />} />
+          <Route path="profile" element={<AccountProfile />} />
+        </Route>
         <Route path="/sell-your-product" element={<SellYourProduct />} />
         <Route path="/personal-booking" element={<PersonalBooking />} />
         <Route path="/media" element={<Media />} />

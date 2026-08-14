@@ -451,7 +451,22 @@ export default function Checkout() {
       });
 
       if (!created?.success || !created.order || !created.orderHeaderId || !created.accessToken) {
-        toast.error(created?.error || "We couldn't start the payment. Please try again.");
+        const raw = created?.error || "We couldn't start the payment. Please try again.";
+        const msg = /server env missing for payments/i.test(raw)
+          ? "Online payments are temporarily unavailable. Your cart is safe — please try again later or contact support."
+          : raw;
+        toast.error(msg);
+        unlock();
+        return;
+      }
+
+      if (!created.keyId) {
+        toast.error(
+          "Payment gateway is not configured. Your cart is safe — please try again later or contact support.",
+        );
+        if (created.orderHeaderId && created.accessToken) {
+          await markOrderFailed(created.orderHeaderId, created.accessToken, "missing razorpay keyId");
+        }
         unlock();
         return;
       }

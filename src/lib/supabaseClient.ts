@@ -13,7 +13,14 @@ const missingEnvWarning =
  */
 export const supabase: SupabaseClient | null =
   supabaseUrl && supabaseAnonKey
-    ? createClient(supabaseUrl, supabaseAnonKey)
+    ? createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          detectSessionInUrl: true,
+          persistSession: true,
+          autoRefreshToken: true,
+          flowType: "pkce",
+        },
+      })
     : null;
 
 export function getSupabaseClient() {

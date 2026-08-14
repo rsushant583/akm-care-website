@@ -101,7 +101,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (patch: Partial<Profile>) => {
       if (!user) return { error: "Not signed in" };
       try {
-        const next = await upsertProfile({ id: user.id, ...profile, ...patch });
+        const next = await upsertProfile({
+          id: user.id,
+          full_name: patch.full_name !== undefined ? patch.full_name : profile?.full_name ?? null,
+          phone: patch.phone !== undefined ? patch.phone : profile?.phone ?? null,
+        });
         setProfile(next);
         return { error: null };
       } catch (e) {
