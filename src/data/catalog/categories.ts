@@ -12,6 +12,8 @@ export type OfficialCategoryId =
 export type OfficialShopCategory = {
   id: OfficialCategoryId;
   label: string;
+  /** Optional merchandising image. Leave unset until a real asset exists. */
+  imageSrc?: string;
 };
 
 export const OFFICIAL_SHOP_CATEGORIES: readonly OfficialShopCategory[] = [

@@ -649,11 +649,9 @@ export default function ProductDetails() {
             products={related}
             currentId={product.id}
             category={product.category}
-            limit={4}
+            limit={8}
           />
-          <div className="mt-10">
-            <RecentlyViewedStrip excludeId={product.id} />
-          </div>
+          <RecentlyViewedStrip excludeId={product.id} className="mt-10" />
 
           <p className="text-center text-sm text-[#6B6B6B] mt-8">
             <Link to="/shop" className="text-[#E8621A] font-semibold hover:underline">

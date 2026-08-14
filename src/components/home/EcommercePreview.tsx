@@ -1,148 +1,151 @@
-import { Link } from "react-router-dom";
 import { useMemo } from "react";
 import { useCatalogMerchandising, useCatalogProducts } from "@/hooks/useCatalogProducts";
-import { ProductGrid, ProductGridSkeleton, RecentlyViewedStrip } from "@/components/shop";
+import { ProductRail, RecentlyViewedStrip } from "@/components/shop";
+import Hero from "@/components/home/Hero";
+import HomeCategoryStrip from "@/components/home/HomeCategoryStrip";
+import TrustStrip from "@/components/home/TrustStrip";
+import CollectionBanner from "@/components/home/CollectionBanner";
+import { pickCategoryImages, pickHeroTiles, uniqueProducts } from "@/lib/ecommerce/merchandising";
 import { shopCollectionPath } from "@/data/catalog/categories";
-import type { CatalogProduct } from "@/lib/ecommerce/types";
 
-function dedupeById(lists: CatalogProduct[][], excludeIds?: Set<string>): CatalogProduct[] {
-  const seen = new Set<string>(excludeIds ? [...excludeIds] : []);
-  const out: CatalogProduct[] = [];
-  for (const list of lists) {
-    for (const p of list) {
-      if (seen.has(p.id)) continue;
-      seen.add(p.id);
-      out.push(p);
-    }
-  }
-  return out;
-}
+const MIN_SECTION = 2;
 
 /** Homepage catalog — same catalog SoT as Shop; hide empty / duplicate merch rows. */
 export default function EcommercePreview() {
   const { featured, bestSellers, deals, newArrivals, loading: merchLoading } = useCatalogMerchandising(8);
   const { data: catalogPreview, loading: catalogLoading } = useCatalogProducts({
-    pageSize: 8,
+    pageSize: 24,
     enablePagination: false,
   });
 
   const loading = merchLoading || catalogLoading;
 
+  const categoryImages = useMemo(
+    () => pickCategoryImages([...catalogPreview, ...featured, ...newArrivals, ...deals, ...bestSellers]),
+    [catalogPreview, featured, newArrivals, deals, bestSellers],
+  );
+
   const primary = useMemo(() => {
-    if (featured.length > 0) return featured;
+    if (featured.length > 0) return featured.slice(0, 8);
     return catalogPreview.slice(0, 8);
   }, [featured, catalogPreview]);
 
+  const heroTiles = useMemo(
+    () => pickHeroTiles([...featured, ...catalogPreview, ...newArrivals], 3),
+    [featured, catalogPreview, newArrivals],
+  );
+
   const primaryIds = useMemo(() => new Set(primary.map((p) => p.id)), [primary]);
 
-  const uniqueNew = useMemo(
-    () => dedupeById([newArrivals], primaryIds).slice(0, 8),
-    [newArrivals, primaryIds],
-  );
   const uniqueDeals = useMemo(
-    () => dedupeById([deals], new Set([...primaryIds, ...uniqueNew.map((p) => p.id)])).slice(0, 8),
-    [deals, primaryIds, uniqueNew],
+    () => uniqueProducts([deals], primaryIds).slice(0, 8),
+    [deals, primaryIds],
+  );
+  const uniqueNew = useMemo(
+    () => uniqueProducts([newArrivals], new Set([...primaryIds, ...uniqueDeals.map((p) => p.id)])).slice(0, 8),
+    [newArrivals, primaryIds, uniqueDeals],
   );
   const uniqueBest = useMemo(() => {
-    const exclude = new Set([...primaryIds, ...uniqueNew.map((p) => p.id), ...uniqueDeals.map((p) => p.id)]);
-    return dedupeById([bestSellers], exclude).slice(0, 8);
-  }, [bestSellers, primaryIds, uniqueNew, uniqueDeals]);
+    const exclude = new Set([
+      ...primaryIds,
+      ...uniqueDeals.map((p) => p.id),
+      ...uniqueNew.map((p) => p.id),
+    ]);
+    return uniqueProducts([bestSellers], exclude).slice(0, 8);
+  }, [bestSellers, primaryIds, uniqueDeals, uniqueNew]);
 
-  const showPrimary = primary.length > 0;
   const catalogIsTiny = catalogPreview.length > 0 && catalogPreview.length <= 8;
-  /** Avoid repeating the same small catalog under multiple merch headings. */
   const allowExtraMerch = !catalogIsTiny || featured.length > 0;
+
+  const showDeals = allowExtraMerch && uniqueDeals.length >= MIN_SECTION;
+  const showNew = allowExtraMerch && uniqueNew.length >= MIN_SECTION;
+  const showBest = allowExtraMerch && uniqueBest.length >= MIN_SECTION;
+  const bannerImage = uniqueDeals[0]?.images[0]?.src || uniqueDeals[0]?.image_url;
 
   return (
     <div>
-      <section className="bg-[#FAF8F5] py-8 sm:py-10 lg:py-12" aria-labelledby="featured-products-heading">
-        <div className="container-premium space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-            <div>
-              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-[#E8621A] mb-2">
-                {featured.length > 0 ? "Featured" : "Shop"}
-              </p>
-              <h2 id="featured-products-heading" className="type-section">
-                {featured.length > 0 ? "Handpicked for you" : "Shop our products"}
-              </h2>
-              <p className="type-meta mt-1.5 text-sm">Live catalog pricing, images, and stock</p>
-            </div>
-            <Link to="/shop" className="btn-tertiary">
-              Shop all
-            </Link>
-          </div>
-          {loading ? (
-            <ProductGridSkeleton count={4} />
-          ) : showPrimary ? (
-            <ProductGrid products={primary} />
-          ) : (
-            <p className="text-sm text-[#6B6B6B]">Products will appear here once published in Admin.</p>
-          )}
-        </div>
-      </section>
+      <Hero tiles={heroTiles} />
+      <HomeCategoryStrip images={categoryImages} />
+      <TrustStrip />
 
-      {allowExtraMerch && !loading && uniqueNew.length >= 2 && (
-        <section className="section-padding pt-2 pb-8 bg-white" aria-labelledby="new-arrivals-heading">
-          <div className="container-premium space-y-6">
-            <div className="flex items-end justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#E8621A] mb-2">Just in</p>
-                <h2 id="new-arrivals-heading" className="font-heading text-2xl sm:text-3xl">
-                  New arrivals
-                </h2>
-              </div>
-              <Link to={shopCollectionPath("new-arrivals")} className="text-sm font-semibold text-[#E8621A] hover:underline">
-                See all
-              </Link>
-            </div>
-            <ProductGrid products={uniqueNew} />
-          </div>
-        </section>
-      )}
-
-      {allowExtraMerch && !loading && uniqueDeals.length >= 2 && (
-        <section className="section-padding pt-2 pb-8 bg-[#FAF8F5]" aria-labelledby="deals-heading">
-          <div className="container-premium space-y-6">
-            <div className="flex items-end justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#E8621A] mb-2">Offers</p>
-                <h2 id="deals-heading" className="font-heading text-2xl sm:text-3xl">
-                  Deals &amp; discounts
-                </h2>
-              </div>
-              <Link to={shopCollectionPath("deals")} className="text-sm font-semibold text-[#E8621A] hover:underline">
-                See all
-              </Link>
-            </div>
-            <ProductGrid products={uniqueDeals} />
-          </div>
-        </section>
-      )}
-
-      {allowExtraMerch && !loading && uniqueBest.length >= 2 && (
-        <section className="section-padding pt-2 pb-8 bg-white" aria-labelledby="best-sellers-heading">
-          <div className="container-premium space-y-6">
-            <div className="flex items-end justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#E8621A] mb-2">Bestsellers</p>
-                <h2 id="best-sellers-heading" className="font-heading text-2xl sm:text-3xl">
-                  Customer favourites
-                </h2>
-              </div>
-              <Link to={shopCollectionPath("best-sellers")} className="text-sm font-semibold text-[#E8621A] hover:underline">
-                See all
-              </Link>
-            </div>
-            <ProductGrid products={uniqueBest} />
-          </div>
-        </section>
-      )}
-
-      <section className="section-padding pt-2 pb-6 bg-white">
+      <div className="bg-[#FAF8F5] home-section">
         <div className="container-premium">
-          <RecentlyViewedStrip />
+          <ProductRail
+            id="featured-products"
+            eyebrow="Featured"
+            title={featured.length > 0 ? "Handpicked for you" : "Shop our products"}
+            products={primary}
+            loading={loading}
+            minItems={1}
+            ctaLabel="Shop all"
+            ctaHref="/shop"
+            emptyLabel="Products will appear here once published in Admin."
+          />
         </div>
-      </section>
+      </div>
+
+      {showDeals && (
+        <div className="bg-white home-section">
+          <div className="container-premium">
+            <ProductRail
+              id="deals"
+              eyebrow="Offers"
+              title="Deals & discounts"
+              products={uniqueDeals}
+              ctaLabel="See all"
+              ctaHref={shopCollectionPath("deals")}
+            />
+          </div>
+        </div>
+      )}
+
+      {showNew && (
+        <div className="bg-[#FAF8F5] home-section">
+          <div className="container-premium">
+            <ProductRail
+              id="new-arrivals"
+              eyebrow="Just in"
+              title="New arrivals"
+              products={uniqueNew}
+              ctaLabel="See all"
+              ctaHref={shopCollectionPath("new-arrivals")}
+            />
+          </div>
+        </div>
+      )}
+
+      {showBest && (
+        <div className="bg-white home-section">
+          <div className="container-premium">
+            <ProductRail
+              id="best-sellers"
+              eyebrow="Bestsellers"
+              title="Customer favourites"
+              products={uniqueBest}
+              ctaLabel="See all"
+              ctaHref={shopCollectionPath("best-sellers")}
+            />
+          </div>
+        </div>
+      )}
+
+      {showDeals && (
+        <CollectionBanner
+          eyebrow="Collection"
+          title="Seasonal deals"
+          description="Shop discounted sarees, lehengas and more from the current catalog."
+          href={shopCollectionPath("deals")}
+          ctaLabel="Browse deals"
+          imageSrc={bannerImage}
+          imageAlt={uniqueDeals[0]?.name}
+        />
+      )}
+
+      <div className="bg-white">
+        <div className="container-premium">
+          <RecentlyViewedStrip className="home-section" />
+        </div>
+      </div>
     </div>
   );
 }

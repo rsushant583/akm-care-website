@@ -4,88 +4,118 @@
         xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
         http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
   <url>
-    <loc>https://akmcare.com/</loc>
-    <lastmod>2026-04-12</lastmod>
+    <loc>https://akmcare.in/</loc>
+    <lastmod>2026-08-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://akmcare.com/about</loc>
+    <loc>https://akmcare.in/about</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://akmcare.com/services</loc>
+    <loc>https://akmcare.in/services</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://akmcare.com/training</loc>
+    <loc>https://akmcare.in/training</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://akmcare.com/shop</loc>
+    <loc>https://akmcare.in/shop</loc>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
   </url>
   <url>
-    <loc>https://akmcare.com/shop/product/akmc-sani-1007</loc>
+    <loc>https://akmcare.in/shop?category=sarees</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://akmcare.in/shop?category=ladies-gown</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://akmcare.in/shop?category=stitched-lehenga</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://akmcare.in/shop?category=unstitched-lehenga</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://akmcare.in/shop?category=3-piece-suits</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://akmcare.in/shop?category=mens-jeans</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://akmcare.in/shop/product/akmc-sani-1007</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://akmcare.com/shop/product/akmc-rooh-0002</loc>
+    <loc>https://akmcare.in/shop/product/akmc-rooh-0002</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://akmcare.com/cart</loc>
+    <loc>https://akmcare.in/cart</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://akmcare.com/sell-your-product</loc>
+    <loc>https://akmcare.in/sell-your-product</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://akmcare.com/personal-booking</loc>
+    <loc>https://akmcare.in/personal-booking</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://akmcare.com/media</loc>
+    <loc>https://akmcare.in/media</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://akmcare.com/motivation</loc>
+    <loc>https://akmcare.in/motivation</loc>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://akmcare.com/csr</loc>
+    <loc>https://akmcare.in/csr</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://akmcare.com/careers</loc>
+    <loc>https://akmcare.in/careers</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://akmcare.com/faq</loc>
+    <loc>https://akmcare.in/faq</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://akmcare.com/contact</loc>
+    <loc>https://akmcare.in/contact</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://akmcare.com/disclaimer</loc>
+    <loc>https://akmcare.in/disclaimer</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>

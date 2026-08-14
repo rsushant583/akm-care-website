@@ -9,12 +9,8 @@ export function FloatingCart() {
   const { itemCount, totals } = useCart();
   const location = useLocation();
 
-  const onShopSurface =
-    location.pathname.startsWith("/shop") ||
-    location.pathname === "/cart" ||
-    location.pathname.startsWith("/checkout");
-
-  if (!onShopSurface || itemCount === 0) return null;
+  const onListing = location.pathname === "/shop";
+  if (!onListing || itemCount === 0) return null;
 
   return (
     <Link

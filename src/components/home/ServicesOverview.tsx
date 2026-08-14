@@ -68,12 +68,12 @@ export default function ServicesOverview() {
   }, [loading, services]);
 
   return (
-    <section ref={sectionRef} className="section-padding section-shell min-h-0 bg-[#FAF8F5]">
+    <section ref={sectionRef} className="py-8 sm:py-10 section-shell min-h-0 bg-[#FAF8F5]">
       <div className="absolute inset-0 bg-gradient-to-b from-[#FAF8F5] via-[#F5F0EB]/80 to-[#FAF8F5] pointer-events-none" />
       <div className="container-premium relative z-10">
         <div
           ref={headerRef}
-          className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5 lg:gap-10 mb-10 lg:mb-12 max-w-6xl mx-auto lg:mx-0 lg:max-w-none"
+          className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3 lg:gap-8 mb-6 lg:mb-8 max-w-6xl mx-auto lg:mx-0 lg:max-w-none"
         >
           <div className="max-w-xl">
             <div data-svc-head>

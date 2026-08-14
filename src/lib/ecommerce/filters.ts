@@ -1,6 +1,6 @@
 import type { CatalogProduct, ShopFilters, SortOption } from "./types";
 import { getEffectivePrice } from "./pricing";
-import { categoryMatchesProduct } from "@/data/catalog/categories";
+import { categoryMatchesProduct, OFFICIAL_BROWSABLE_CATEGORIES } from "@/data/catalog/categories";
 
 export const DEFAULT_FILTERS: ShopFilters = {
   category: "all",
@@ -76,6 +76,18 @@ export function sortProducts(products: CatalogProduct[], sort: SortOption): Cata
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() || a.displayOrder - b.displayOrder,
       );
   }
+}
+
+export function matchOfficialCategories(query: string, limit = 4) {
+  const q = query.trim().toLowerCase();
+  const list = OFFICIAL_BROWSABLE_CATEGORIES;
+  if (!q) return list.slice(0, limit);
+  return list
+    .filter((c) => {
+      const hay = `${c.id} ${c.label} ${c.id.replace(/-/g, " ")}`.toLowerCase();
+      return hay.includes(q);
+    })
+    .slice(0, limit);
 }
 
 export function searchSuggestions(products: CatalogProduct[], query: string, limit = 8): CatalogProduct[] {

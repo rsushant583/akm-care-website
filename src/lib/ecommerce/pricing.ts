@@ -17,6 +17,12 @@ export function getEffectivePrice(product: CatalogProduct): number {
   return product.akmCarePrice || product.sellingPrice || product.price;
 }
 
+/** Display-only rounding. Does not change stored catalog discount. */
+export function displayDiscountPercent(value: number | null | undefined): number {
+  if (value == null || !Number.isFinite(value)) return 0;
+  return Math.max(0, Math.round(value));
+}
+
 export function calcLineSubtotal(line: CartLineItem): number {
   return line.unitPrice * line.quantity;
 }

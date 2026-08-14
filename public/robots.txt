@@ -6,4 +6,4 @@ Disallow: /admin/*
 Disallow: /.env
 Disallow: /api/
 
-Sitemap: https://akmcare.com/sitemap.xml
+Sitemap: https://akmcare.in/sitemap.xml

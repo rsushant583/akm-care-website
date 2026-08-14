@@ -45,7 +45,13 @@ export default function FeedbackWidget() {
     }
   };
 
+  const hideOn =
+    location.pathname === "/cart" ||
+    location.pathname.startsWith("/checkout") ||
+    location.pathname.startsWith("/auth");
   const onProductDetail = location.pathname.startsWith("/shop/product/");
+
+  if (hideOn) return null;
 
   return (
     <>

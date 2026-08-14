@@ -83,11 +83,11 @@ export default function Navbar() {
             height={40}
             loading="eager"
             decoding="async"
-            className="h-9 w-auto object-contain"
+            className="h-8 w-auto object-contain"
           />
         </Link>
 
-        <nav className="hidden xl:flex flex-1 min-w-0 items-center justify-center gap-0.5" aria-label="Primary">
+        <nav className="hidden xl:flex items-center gap-0.5 shrink-0 ml-1" aria-label="Primary">
           <Link
             to="/shop"
             className={linkClass(location.pathname === "/shop" && !location.search.includes("collection="))}
@@ -113,16 +113,6 @@ export default function Navbar() {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-
-          <div className="hidden 2xl:block w-[min(16rem,20vw)] mx-2">
-            <ProductSearch
-              navigateToShop
-              value=""
-              onChange={() => {}}
-              placeholder="Search products…"
-              className="[&_input]:h-9 [&_input]:py-1.5 [&_input]:text-sm [&_input]:rounded-full"
-            />
-          </div>
 
           <Link to={shopCollectionPath("deals")} className={linkClass(location.search.includes("collection=deals"))}>
             Deals
@@ -151,23 +141,23 @@ export default function Navbar() {
           </DropdownMenu>
         </nav>
 
-        <div className="flex flex-1 xl:flex-none items-center justify-end gap-1.5 sm:gap-2 min-w-0">
-          <div className="flex-1 xl:hidden max-w-[min(52vw,14rem)] sm:max-w-xs">
+        <div className="flex flex-1 items-center justify-end gap-1.5 sm:gap-2 min-w-0">
+          <div className="hidden md:block flex-1 max-w-[16rem] lg:max-w-[18rem] xl:max-w-[20rem]">
+            <ProductSearch
+              navigateToShop
+              value=""
+              onChange={() => {}}
+              placeholder="Search products…"
+              className="[&_input]:h-9 [&_input]:py-1.5 [&_input]:text-sm [&_input]:rounded-full"
+            />
+          </div>
+          <div className="flex-1 md:hidden max-w-[min(52vw,14rem)]">
             <ProductSearch
               navigateToShop
               value=""
               onChange={() => {}}
               placeholder="Search…"
               className="[&_input]:h-9 [&_input]:py-1.5 [&_input]:text-sm [&_input]:rounded-full [&_input]:pl-9"
-            />
-          </div>
-          <div className="hidden xl:block 2xl:hidden w-40">
-            <ProductSearch
-              navigateToShop
-              value=""
-              onChange={() => {}}
-              placeholder="Search…"
-              className="[&_input]:h-9 [&_input]:py-1.5 [&_input]:text-sm [&_input]:rounded-full"
             />
           </div>
 

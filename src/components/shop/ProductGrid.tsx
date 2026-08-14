@@ -39,8 +39,14 @@ export function ProductGrid({
         className,
       )}
     >
-      {products.map((product) => (
-        <ProductCard key={product.id} product={product} onQuickView={onQuickView} view={view} />
+      {products.map((product, index) => (
+        <ProductCard
+          key={product.id}
+          product={product}
+          onQuickView={onQuickView}
+          view={view}
+          priority={index < 4}
+        />
       ))}
     </div>
   );

@@ -32,7 +32,7 @@ export default function CTABanner() {
   }, []);
 
   return (
-    <section ref={rootRef} className="section-padding bg-primary">
+    <section ref={rootRef} className="py-8 sm:py-10 bg-primary">
       <div className="container-premium text-center">
         <h2 data-cta-reveal className="font-heading text-3xl sm:text-4xl lg:text-5xl text-primary-foreground mb-4">
           Ready to Transform Your Business?

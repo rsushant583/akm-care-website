@@ -5,7 +5,7 @@ import { SEO } from "@/components/SEO";
 import { useCart } from "@/context/CartContext";
 import { formatINR } from "@/lib/ecommerce/pricing";
 import { productPath } from "@/lib/ecommerce/slug";
-import { EmptyState, ShopBreadcrumbs } from "@/components/shop";
+import { EmptyState, RecentlyViewedStrip, ShopBreadcrumbs } from "@/components/shop";
 import { shopBreadcrumbs } from "@/lib/ecommerce/seo";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
@@ -142,12 +142,13 @@ export default function CartPage() {
           {items.length === 0 ? (
             <div>
               <EmptyState
-                title="Your cart is empty"
-                description="Browse the shop and add sarees, textiles, or village products to get started."
+                title="Your cart is waiting."
+                description="Browse sarees, lehengas, gowns and more — your bag is ready when you are."
                 actionLabel="Continue Shopping"
                 actionHref="/shop"
               />
               <SavedSection />
+              <RecentlyViewedStrip className="mt-10" />
             </div>
           ) : (
             <div className="grid lg:grid-cols-[1fr_340px] gap-8 items-start">

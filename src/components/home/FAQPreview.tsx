@@ -50,7 +50,7 @@ export default function FAQPreview() {
   }, [loading, previewFaqs.length]);
 
   return (
-    <section ref={rootRef} className="section-padding bg-gradient-to-b from-warm-beige to-background">
+    <section ref={rootRef} className="py-8 sm:py-10 bg-gradient-to-b from-warm-beige to-background">
       <div className="container-premium max-w-3xl">
         <div className="text-center">
           <div
@@ -60,7 +60,7 @@ export default function FAQPreview() {
             Need Help?
           </div>
         </div>
-        <h2 data-faq-reveal className="font-heading text-3xl sm:text-4xl text-center mb-10">
+        <h2 data-faq-reveal className="font-heading text-3xl sm:text-4xl text-center mb-6">
           Common Questions
         </h2>
 

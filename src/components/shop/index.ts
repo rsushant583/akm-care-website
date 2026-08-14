@@ -4,6 +4,7 @@ export { ProductGrid } from "./ProductGrid";
 export { ProductFilters } from "./ProductFilters";
 export { ProductSearch } from "./ProductSearch";
 export { ShopHero, CategoryStrip, ProductSection } from "./ShopHero";
+export { ProductRail } from "./ProductRail";
 export { QuickViewModal } from "./QuickViewModal";
 export { ShopBreadcrumbs } from "./ShopBreadcrumbs";
 export { RelatedProducts } from "./RelatedProducts";

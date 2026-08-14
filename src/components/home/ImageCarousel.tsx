@@ -70,7 +70,7 @@ export default function ImageCarousel() {
   }, []);
 
   return (
-    <section ref={rootRef} className="section-padding relative overflow-hidden py-10 sm:py-12">
+    <section ref={rootRef} className="relative overflow-hidden py-8 sm:py-10">
       <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.06] via-warm-beige to-background pointer-events-none" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(90vw,720px)] h-[min(90vw,720px)] rounded-full bg-primary/[0.04] blur-3xl pointer-events-none" />
 

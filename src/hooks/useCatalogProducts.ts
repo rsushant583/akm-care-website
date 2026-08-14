@@ -299,7 +299,7 @@ export function useCatalogFacets() {
   return facets;
 }
 
-export function useRelatedCatalogProducts(productId?: string, limit = 4) {
+export function useRelatedCatalogProducts(productId?: string, limit = 8) {
   const [items, setItems] = useState<CatalogProduct[]>([]);
 
   useEffect(() => {

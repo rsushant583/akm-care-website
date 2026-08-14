@@ -1,34 +1,37 @@
 import type { CatalogProduct } from "@/lib/ecommerce/types";
-import { ProductGrid } from "./ProductGrid";
+import { ProductRail } from "./ProductRail";
+import { categoryMatchesProduct } from "@/data/catalog/categories";
 
 export function RelatedProducts({
   products,
   currentId,
   category,
-  limit = 4,
+  limit = 8,
 }: {
   products: CatalogProduct[];
   currentId: string;
-  /** Prefer same category when present */
   category?: string;
   limit?: number;
 }) {
   const pool = products.filter((p) => p.id !== currentId);
   const sameCategory = category
-    ? pool.filter((p) => p.category === category || p.categoryLabel === category)
+    ? pool.filter((p) => p.category === category || categoryMatchesProduct(category, p))
     : [];
-  const related = (sameCategory.length >= 2 ? sameCategory : pool)
-    .sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
-    .slice(0, limit);
+  const rest = sameCategory.length ? pool.filter((p) => !sameCategory.some((s) => s.id === p.id)) : pool;
+  const related = [...sameCategory, ...rest].slice(0, limit);
 
   if (related.length === 0) return null;
 
   return (
-    <section className="mt-12 sm:mt-16" aria-labelledby="related-products-heading">
-      <h2 id="related-products-heading" className="type-section mb-5">
-        Related products
-      </h2>
-      <ProductGrid products={related} />
-    </section>
+    <ProductRail
+      id="related-products"
+      title={sameCategory.length >= 2 ? "More from this category" : "Related products"}
+      subtitle="Similar pieces from the AKM Care catalog"
+      products={related}
+      minItems={1}
+      ctaLabel="Shop all"
+      ctaHref={category ? `/shop?category=${encodeURIComponent(category)}` : "/shop"}
+      className="mt-12 sm:mt-16"
+    />
   );
 }

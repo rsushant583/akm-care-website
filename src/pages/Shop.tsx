@@ -28,7 +28,7 @@ import {
   ProductGrid,
   ProductGridSkeleton,
   ProductSearch,
-  ProductSection,
+  ProductRail,
   QuickViewModal,
   RecentlyViewedStrip,
   ShopBreadcrumbs,
@@ -242,7 +242,7 @@ export default function Shop() {
     if (filters.priceMax != null) {
       list.push({
         key: "max",
-        label: `Max ${formatINR(filters.priceMax)}`,
+        label: `Under ${formatINR(filters.priceMax)}`,
         onRemove: () => commitUrl({ filters: { ...filters, priceMax: null }, sort }),
       });
     }
@@ -341,9 +341,11 @@ export default function Shop() {
     <>
       <SEO
         title={
-          categoryLabel
-            ? `${categoryLabel} — Shop | AKM Care`
-            : "Shop — Sarees, Lehengas, Gowns, Suits & Jeans | AKM Care"
+          collectionLabel
+            ? `${collectionLabel} — Shop`
+            : categoryLabel
+              ? `${categoryLabel} — Shop`
+              : "Shop — Sarees, Lehengas, Gowns, Suits & Jeans"
         }
         description="Shop authentic fashion and village products online — sarees, lehengas, gowns, 3-piece suits and men's jeans. Delivered pan-India by AKM Care."
         keywords="buy sarees online, lehenga, ladies gown, 3 piece suit, mens jeans, AKM Care shop"
@@ -361,24 +363,9 @@ export default function Shop() {
             <CategoryStrip active={filters.category} onSelect={setCategory} />
             <div className="flex items-center gap-2 w-full lg:w-auto">
               <ProductSearch value={filters.query} onChange={setQuery} className="flex-1 lg:w-80" />
-              <button
-                type="button"
-                className="lg:hidden inline-flex items-center gap-2 px-3 py-3 rounded-xl border border-black/[0.08] text-sm font-semibold relative"
-                onClick={() => setShowMobileFilters(true)}
-                aria-expanded={showMobileFilters}
-                aria-controls="shop-mobile-filters"
-              >
-                <SlidersHorizontal size={16} aria-hidden />
-                Filters
-                {activeFilterCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 h-5 min-w-5 px-1 rounded-full bg-[#E8621A] text-white text-[10px] font-bold flex items-center justify-center">
-                    {activeFilterCount}
-                  </span>
-                )}
-              </button>
               <Link
                 to="/cart"
-                className="inline-flex items-center gap-2 px-3 py-3 rounded-xl bg-[#E8621A] text-white text-sm font-semibold"
+                className="inline-flex items-center gap-2 px-3 py-3 min-h-11 bg-[#E8621A] text-white text-sm font-semibold"
               >
                 <ShoppingCart size={16} aria-hidden />
                 <span className="hidden sm:inline">Cart</span> ({itemCount})
@@ -393,25 +380,43 @@ export default function Shop() {
           ) : (
             <>
               {merchFeatured.length > 0 && (
-                <ProductSection title="Featured Products" subtitle="Handpicked from the AKM Care catalog">
-                  <ProductGrid products={merchFeatured} onQuickView={setQuickView} />
-                </ProductSection>
+                <ProductRail
+                  title="Featured Products"
+                  subtitle="Handpicked from the AKM Care catalog"
+                  products={merchFeatured}
+                  onQuickView={setQuickView}
+                  minItems={1}
+                  ctaLabel="Shop all"
+                  ctaHref="/shop?collection=featured"
+                />
               )}
 
               {merchNew.length > 0 && (
-                <ProductSection title="New Arrivals" subtitle="Latest additions to the collection">
-                  <ProductGrid products={merchNew} onQuickView={setQuickView} />
-                </ProductSection>
+                <ProductRail
+                  title="New Arrivals"
+                  subtitle="Latest additions to the collection"
+                  products={merchNew}
+                  onQuickView={setQuickView}
+                  minItems={1}
+                  ctaLabel="See all"
+                  ctaHref="/shop?collection=new-arrivals"
+                />
               )}
 
               {merchBest.length > 0 && (
-                <ProductSection title="Best Sellers" subtitle="Customer favourites">
-                  <ProductGrid products={merchBest} onQuickView={setQuickView} />
-                </ProductSection>
+                <ProductRail
+                  title="Best Sellers"
+                  subtitle="Marked as bestsellers in the catalog"
+                  products={merchBest}
+                  onQuickView={setQuickView}
+                  minItems={1}
+                  ctaLabel="See all"
+                  ctaHref="/shop?collection=best-sellers"
+                />
               )}
 
               <div id="shop-catalog" className="grid lg:grid-cols-[260px_1fr] gap-8 pt-2">
-                <div className="hidden lg:block sticky top-24 self-start rounded-2xl border border-black/[0.06] p-4 bg-[#FAF8F5] shadow-sm">
+                <div className="hidden lg:block sticky top-24 self-start ring-1 ring-black/[0.06] p-4 bg-[#FAF8F5]">
                   <ProductFilters
                     filters={filters}
                     sort={sort}
@@ -424,6 +429,42 @@ export default function Shop() {
                 </div>
 
                 <div className="space-y-4">
+                  <div className="lg:hidden sticky top-14 z-30 -mx-4 px-4 py-2.5 bg-white/95 backdrop-blur-md border-y border-black/[0.06] flex items-center gap-2">
+                    <p className="text-sm font-semibold tabular-nums flex-1" aria-live="polite">
+                      {resultCount} {resultCount === 1 ? "product" : "products"}
+                    </p>
+                    <label className="sr-only" htmlFor="shop-mobile-sort">
+                      Sort products
+                    </label>
+                    <select
+                      id="shop-mobile-sort"
+                      value={sort}
+                      onChange={(e) => setSort(e.target.value as SortOption)}
+                      className="min-h-10 px-2.5 py-2 border border-black/[0.08] bg-white text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/35"
+                    >
+                      {SHOP_SORT_OPTIONS.map((opt) => (
+                        <option key={opt.id} value={opt.id}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className="relative inline-flex items-center gap-1.5 min-h-10 px-3 py-2 border border-black/[0.08] text-sm font-semibold"
+                      onClick={() => setShowMobileFilters(true)}
+                      aria-expanded={showMobileFilters}
+                      aria-controls="shop-mobile-filters"
+                    >
+                      <SlidersHorizontal size={16} aria-hidden />
+                      Filter
+                      {activeFilterCount > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 h-5 min-w-5 px-1 rounded-full bg-[#E8621A] text-white text-[10px] font-bold flex items-center justify-center">
+                          {activeFilterCount}
+                        </span>
+                      )}
+                    </button>
+                  </div>
+
                   <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wide text-[#6B6B6B] mb-1">Shop</p>
@@ -434,7 +475,7 @@ export default function Shop() {
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="hidden lg:flex items-center gap-2 flex-wrap">
                       <label className="sr-only" htmlFor="shop-toolbar-sort">
                         Sort products
                       </label>

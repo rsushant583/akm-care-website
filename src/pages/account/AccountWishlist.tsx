@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { ShoppingCart, Trash2 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ShoppingCart, Trash2, Zap } from "lucide-react";
 import { useWishlist } from "@/context/WishlistContext";
 import { useCart } from "@/context/CartContext";
 import { getProductById } from "@/services/productService";
@@ -11,7 +11,8 @@ import { isProductInStock } from "@/lib/ecommerce/availability";
 
 export default function AccountWishlistPage() {
   const { ids, count, remove } = useWishlist();
-  const { addToCart } = useCart();
+  const { addToCart, buyNowLine } = useCart();
+  const navigate = useNavigate();
   const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -79,15 +80,30 @@ export default function AccountWishlistPage() {
                     {p.name}
                   </Link>
                   <p className="mt-2 font-semibold text-[#E8621A]">{formatINR(getEffectivePrice(p))}</p>
-                  {!inStock && <p className="text-xs font-semibold text-red-600 mt-1">Out of stock</p>}
+                  {inStock ? (
+                    <p className="text-xs font-medium text-emerald-700 mt-1">In stock</p>
+                  ) : (
+                    <p className="text-xs font-semibold text-red-600 mt-1">Currently unavailable</p>
+                  )}
                   <div className="mt-3 flex flex-wrap gap-2">
                     <button
                       type="button"
                       disabled={!inStock}
                       onClick={() => addToCart({ product: p })}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-[#E8621A] text-white text-xs font-semibold px-3 py-2.5 min-h-11 disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-[#1A1A1A] text-white text-xs font-semibold px-3 py-2.5 min-h-11 disabled:opacity-50"
                     >
                       <ShoppingCart size={14} aria-hidden /> Add to Cart
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!inStock}
+                      onClick={() => {
+                        buyNowLine({ product: p });
+                        navigate("/checkout");
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-[#E8621A] text-white text-xs font-semibold px-3 py-2.5 min-h-11 disabled:opacity-50"
+                    >
+                      <Zap size={14} aria-hidden /> Buy Now
                     </button>
                     <button
                       type="button"

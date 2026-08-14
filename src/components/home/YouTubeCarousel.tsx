@@ -78,7 +78,7 @@ export default function YouTubeCarousel() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="section-padding section-shell min-h-0 bg-white">
+    <section ref={sectionRef} className="py-8 sm:py-10 section-shell min-h-0 bg-white">
       <div className="absolute inset-0 bg-gradient-to-b from-[#FAF8F5] via-white to-[#FAF8F5] pointer-events-none" />
       <div className="container-premium relative z-10">
         <div ref={headerRef} className="text-center mb-8 max-w-2xl mx-auto">

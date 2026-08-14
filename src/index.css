@@ -74,9 +74,18 @@
   }
 
   body {
-    @apply bg-background text-foreground font-body antialiased;
+    @apply bg-background text-foreground font-body antialiased overflow-x-hidden;
     scroll-behavior: smooth;
     text-rendering: geometricPrecision;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    body {
+      scroll-behavior: auto;
+    }
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -89,8 +98,8 @@
     @apply bg-gradient-to-r from-primary to-amber-500 bg-clip-text text-transparent;
   }
 
-  .section-padding {
-    @apply px-4 sm:px-6 lg:px-8 pt-8 pb-10 sm:pt-10 sm:pb-12 lg:pt-12 lg:pb-16;
+  .home-section {
+    @apply py-6 sm:py-8;
   }
 
   .card-shadow {
