@@ -15,10 +15,10 @@ export const supabase: SupabaseClient | null =
   supabaseUrl && supabaseAnonKey
     ? createClient(supabaseUrl, supabaseAnonKey, {
         auth: {
+          // Consume both PKCE (?code=) and legacy hash tokens from email/OAuth redirects.
           detectSessionInUrl: true,
           persistSession: true,
           autoRefreshToken: true,
-          flowType: "pkce",
         },
       })
     : null;
