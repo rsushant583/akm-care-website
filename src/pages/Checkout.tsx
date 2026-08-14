@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { Minus, Plus, Pencil, Trash2 } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
