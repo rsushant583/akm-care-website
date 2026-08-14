@@ -84,7 +84,7 @@ export function ProductFilters({
               aria-pressed={filters.category === cat.id}
               onClick={() => onChange({ ...filters, category: cat.id })}
               className={cn(
-                "px-3 py-1.5 rounded-full text-xs font-semibold border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40",
+                "px-3 py-1.5 min-h-9 rounded-full text-xs font-semibold border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40",
                 filters.category === cat.id
                   ? "bg-[#E8621A] text-white border-[#E8621A]"
                   : "bg-white text-[#6B6B6B] border-black/[0.08] hover:border-[#E8621A]/40",
@@ -151,7 +151,7 @@ export function ProductFilters({
                 aria-pressed={filters.colors.includes(color)}
                 onClick={() => toggleList("colors", color)}
                 className={cn(
-                  "px-3 py-1.5 rounded-full text-xs font-medium border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40",
+                  "px-3 py-1.5 min-h-9 rounded-full text-xs font-medium border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40",
                   filters.colors.includes(color)
                     ? "border-[#E8621A] bg-[#E8621A]/10 text-[#E8621A]"
                     : "border-black/[0.08] text-[#6B6B6B]",
@@ -177,7 +177,7 @@ export function ProductFilters({
                 aria-pressed={filters.variants.includes(variant)}
                 onClick={() => toggleList("variants", variant)}
                 className={cn(
-                  "px-3 py-1.5 rounded-full text-xs font-medium border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40",
+                  "px-3 py-1.5 min-h-9 rounded-full text-xs font-medium border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40",
                   filters.variants.includes(variant)
                     ? "border-[#E8621A] bg-[#E8621A]/10 text-[#E8621A]"
                     : "border-black/[0.08] text-[#6B6B6B]",

@@ -34,7 +34,7 @@ function HeroMosaic({ tiles, priority }: { tiles: HeroTile[]; priority?: boolean
       <img
         src={tile.src}
         alt={tile.alt}
-        className="absolute inset-0 h-full w-full object-cover object-[center_22%]"
+        className="absolute inset-0 h-full w-full product-photo"
         loading={eager ? "eager" : "lazy"}
         fetchPriority={eager ? "high" : undefined}
         decoding="async"

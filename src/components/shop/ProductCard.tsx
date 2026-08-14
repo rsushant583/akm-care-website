@@ -32,6 +32,8 @@ export function ProductCard({
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgFailed, setImgFailed] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
 
   const price = getEffectivePrice(product);
   const inStock = isProductInStock(product);
@@ -57,6 +59,15 @@ export function ProductCard({
     navigate("/checkout");
   };
 
+  const handleAdd = () => {
+    if (!inStock || adding) return;
+    setAdding(true);
+    addToCart({ product });
+    setJustAdded(true);
+    window.setTimeout(() => setAdding(false), 450);
+    window.setTimeout(() => setJustAdded(false), 1800);
+  };
+
   if (view === "list") {
     return (
       <article className="group flex gap-4 sm:gap-5 p-3 sm:p-4 border border-black/[0.06] bg-white">
@@ -78,7 +89,7 @@ export function ProductCard({
               setImgLoaded(true);
             }}
             className={cn(
-              "h-full w-full object-cover object-[center_22%] transition-opacity duration-300",
+              "h-full w-full product-photo transition-opacity duration-300",
               imgLoaded ? "opacity-100" : "opacity-0",
             )}
           />
@@ -123,15 +134,17 @@ export function ProductCard({
               <>
                 <button
                   type="button"
-                  onClick={() => addToCart({ product })}
-                  className="inline-flex items-center gap-1.5 min-h-11 px-3 py-2 rounded-full bg-[#1A1A1A] text-white text-xs font-semibold"
+                  onClick={handleAdd}
+                  disabled={adding}
+                  className="inline-flex items-center gap-1.5 min-h-11 px-3 py-2 rounded-full bg-[#1A1A1A] text-white text-xs font-semibold disabled:opacity-60"
                 >
-                  <ShoppingCart size={14} aria-hidden /> Add to Cart
+                  <ShoppingCart size={14} aria-hidden /> {justAdded ? "Added" : adding ? "Adding…" : "Add to Cart"}
                 </button>
                 <button
                   type="button"
                   onClick={buyNow}
-                  className="inline-flex items-center gap-1.5 min-h-11 px-3 py-2 rounded-full bg-[#E8621A] text-white text-xs font-semibold"
+                  disabled={adding}
+                  className="inline-flex items-center gap-1.5 min-h-11 px-3 py-2 rounded-full bg-[#E8621A] text-white text-xs font-semibold disabled:opacity-60"
                 >
                   <Zap size={14} aria-hidden /> Buy Now
                 </button>
@@ -190,7 +203,7 @@ export function ProductCard({
               setImgLoaded(true);
             }}
             className={cn(
-              "absolute inset-0 h-full w-full object-cover object-[center_22%] transition-opacity duration-300",
+              "absolute inset-0 h-full w-full product-photo transition-opacity duration-300",
               imgLoaded && !showSwap ? "opacity-100" : "opacity-0",
             )}
           />
@@ -203,7 +216,7 @@ export function ProductCard({
               loading="lazy"
               decoding="async"
               aria-hidden
-              className="absolute inset-0 h-full w-full object-cover object-[center_22%]"
+              className="absolute inset-0 h-full w-full product-photo"
             />
           )}
         </Link>
@@ -223,7 +236,7 @@ export function ProductCard({
       </div>
 
       <div className={cn("px-2.5 py-2.5 sm:px-3 sm:py-3 flex flex-col flex-1", compact ? "min-h-0" : "")}>
-        <Link to={href} className="type-product line-clamp-2 hover:text-[#E8621A]">
+        <Link to={href} className="type-product line-clamp-2 min-h-[2.5rem] hover:text-[#E8621A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40">
           {product.name}
         </Link>
         {!compact && meta ? <p className="type-meta mt-1 line-clamp-1">{meta}</p> : null}
@@ -260,19 +273,21 @@ export function ProductCard({
             <>
               <button
                 type="button"
-                onClick={() => addToCart({ product })}
+                onClick={handleAdd}
+                disabled={adding}
                 className={cn(
-                  "h-10 text-xs font-semibold border border-black/15 text-[#1A1A1A] hover:border-[#E8621A]/40 hover:text-[#E8621A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40",
+                  "h-10 text-xs font-semibold border border-black/15 text-[#1A1A1A] hover:border-[#E8621A]/40 hover:text-[#E8621A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40 disabled:opacity-60",
                   compact && "col-span-1",
                 )}
               >
-                Add to Cart
+                {justAdded ? "Added" : adding ? "Adding…" : "Add to Cart"}
               </button>
               {!compact && (
                 <button
                   type="button"
                   onClick={buyNow}
-                  className="h-10 inline-flex items-center justify-center gap-1 text-xs font-semibold bg-[#E8621A] text-white hover:brightness-105 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40"
+                  disabled={adding}
+                  className="h-10 inline-flex items-center justify-center gap-1 text-xs font-semibold bg-[#E8621A] text-white hover:brightness-105 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40 disabled:opacity-60"
                 >
                   <Zap size={12} aria-hidden /> Buy Now
                 </button>
@@ -313,7 +328,7 @@ function IconBtn({
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        "h-9 w-9 rounded-full border border-black/10 flex items-center justify-center text-[#6B6B6B] hover:text-[#E8621A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40",
+        "h-10 w-10 rounded-full border border-black/10 flex items-center justify-center text-[#6B6B6B] hover:text-[#E8621A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40",
         active && "text-[#E8621A] border-[#E8621A]/30 bg-[#E8621A]/5",
         className,
       )}

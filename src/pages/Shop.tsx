@@ -150,6 +150,7 @@ export default function Shop() {
     total,
     loading,
     loadingMore,
+    refreshing,
     hasMore,
     error,
     offline,
@@ -347,7 +348,7 @@ export default function Shop() {
               ? `${categoryLabel} — Shop`
               : "Shop — Sarees, Lehengas, Gowns, Suits & Jeans"
         }
-        description="Shop authentic fashion and village products online — sarees, lehengas, gowns, 3-piece suits and men's jeans. Delivered pan-India by AKM Care."
+        description="Shop authentic fashion online — sarees, lehengas, gowns, 3-piece suits and men's jeans. Live pricing and stock, delivered pan-India by AKM Care."
         keywords="buy sarees online, lehenga, ladies gown, 3 piece suit, mens jeans, AKM Care shop"
         canonical="/shop"
         schema={breadcrumbSchema(crumbs)}
@@ -373,9 +374,7 @@ export default function Shop() {
             </div>
           </div>
 
-          {loading ? (
-            <ProductGridSkeleton />
-          ) : error ? (
+          {error && filtered.length === 0 ? (
             <ErrorState description="Unable to load products right now. Please try again." onRetry={refetch} />
           ) : (
             <>
@@ -431,7 +430,9 @@ export default function Shop() {
                 <div className="space-y-4">
                   <div className="lg:hidden sticky top-14 z-30 -mx-4 px-4 py-2.5 bg-white/95 backdrop-blur-md border-y border-black/[0.06] flex items-center gap-2">
                     <p className="text-sm font-semibold tabular-nums flex-1" aria-live="polite">
-                      {resultCount} {resultCount === 1 ? "product" : "products"}
+                      {loading && filtered.length === 0
+                        ? "Loading…"
+                        : `${resultCount} ${resultCount === 1 ? "product" : "products"}`}
                     </p>
                     <label className="sr-only" htmlFor="shop-mobile-sort">
                       Sort products
@@ -470,8 +471,11 @@ export default function Shop() {
                       <p className="text-xs font-semibold uppercase tracking-wide text-[#6B6B6B] mb-1">Shop</p>
                       <h1 className="font-heading text-2xl sm:text-3xl text-[#1A1A1A]">{heading}</h1>
                       <p className="text-sm text-[#6B6B6B] mt-1" aria-live="polite">
-                        {resultCount} {resultCount === 1 ? "Product" : "Products"}
+                        {loading && filtered.length === 0
+                          ? "Loading products…"
+                          : `${resultCount} ${resultCount === 1 ? "product" : "products"}`}
                         {offline ? " · offline catalog" : ""}
+                        {refreshing ? " · updating" : ""}
                       </p>
                     </div>
 
@@ -544,14 +548,20 @@ export default function Shop() {
                     </div>
                   )}
 
-                  <ProductGrid
-                    products={filtered}
-                    onQuickView={setQuickView}
-                    view={view}
-                    emptyTitle={emptyTitle}
-                    emptyDescription={emptyDescription}
-                    onClearFilters={activeFilterCount > 0 ? resetFilters : undefined}
-                  />
+                  {loading && filtered.length === 0 ? (
+                    <ProductGridSkeleton />
+                  ) : (
+                    <div aria-busy={refreshing} className={refreshing ? "opacity-80 motion-safe:transition-opacity" : undefined}>
+                      <ProductGrid
+                        products={filtered}
+                        onQuickView={setQuickView}
+                        view={view}
+                        emptyTitle={emptyTitle}
+                        emptyDescription={emptyDescription}
+                        onClearFilters={activeFilterCount > 0 ? resetFilters : undefined}
+                      />
+                    </div>
+                  )}
                   {hasMore && filtered.length > 0 && (
                     <div className="flex justify-center pt-4">
                       <button

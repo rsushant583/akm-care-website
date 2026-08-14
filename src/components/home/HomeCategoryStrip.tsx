@@ -42,11 +42,13 @@ export default function HomeCategoryStrip({ images }: { images?: Record<string, 
         >
           {OFFICIAL_BROWSABLE_CATEGORIES.map((cat) => {
             const src = images?.[cat.id] || cat.imageSrc;
+            const label = shortLabel[cat.id] || cat.label;
             return (
               <Link
                 key={cat.id}
                 to={shopCategoryPath(cat.id)}
                 role="listitem"
+                aria-label={`Shop ${cat.label}`}
                 className="snap-start shrink-0 w-[9.25rem] sm:w-[10.75rem] lg:w-auto lg:shrink
                   group relative aspect-[4/5] overflow-hidden bg-[#F5F0EB]
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40"
@@ -55,15 +57,17 @@ export default function HomeCategoryStrip({ images }: { images?: Record<string, 
                   <img
                     src={src}
                     alt=""
-                    className="absolute inset-0 h-full w-full object-cover object-[center_22%] motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-[1.04]"
+                    className="absolute inset-0 h-full w-full product-photo motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-[1.04]"
                     loading="lazy"
                     decoding="async"
                   />
                 ) : (
                   <div
-                    className="absolute inset-0 bg-gradient-to-b from-[#EDE8E2] to-[#E8DFD6]"
+                    className="absolute inset-0 bg-gradient-to-b from-[#EDE8E2] to-[#E8DFD6] flex items-center justify-center"
                     aria-hidden
-                  />
+                  >
+                    <span className="font-heading text-3xl text-[#1A1A1A]/20">{label.slice(0, 1)}</span>
+                  </div>
                 )}
                 <div
                   className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"
@@ -71,7 +75,7 @@ export default function HomeCategoryStrip({ images }: { images?: Record<string, 
                 />
                 <div className="relative z-10 flex h-full flex-col justify-end p-2.5 lg:p-3">
                   <p className="font-heading text-[0.95rem] lg:text-base text-white leading-snug">
-                    {shortLabel[cat.id] || cat.label}
+                    {label}
                   </p>
                   <p className="text-[11px] text-white/80 mt-0.5 line-clamp-1">{categoryHints[cat.id]}</p>
                 </div>

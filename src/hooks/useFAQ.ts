@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { faqs as fallbackFaqs } from "@/data/fallback";
 import { getSupabaseClient } from "@/lib/supabaseClient";
+import { polishStorefrontFaq } from "@/lib/ecommerce/customerCopy";
 import { FAQItem } from "@/lib/types";
 
 const mapFallbackFaqs = () =>
@@ -20,7 +21,7 @@ export function useFAQ() {
   const fetchData = async () => {
     const client = getSupabaseClient();
     if (!client) {
-      setData(mapFallbackFaqs());
+      setData(mapFallbackFaqs().map(polishStorefrontFaq));
       setLoading(false);
       return;
     }
@@ -32,11 +33,12 @@ export function useFAQ() {
         .eq("is_active", true)
         .order("display_order", { ascending: true });
       if (dbError) throw dbError;
-      setData(rows && rows.length > 0 ? rows : mapFallbackFaqs());
+      const source = rows && rows.length > 0 ? rows : mapFallbackFaqs();
+      setData(source.map(polishStorefrontFaq));
       setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load FAQs");
-      setData(mapFallbackFaqs());
+    } catch {
+      setError("Unable to load FAQs right now.");
+      setData(mapFallbackFaqs().map(polishStorefrontFaq));
     } finally {
       setLoading(false);
     }

@@ -16,6 +16,7 @@ import {
 import { allCatalogProducts } from "@/data/catalog/products";
 import type { ShopCollectionId } from "@/data/catalog/categories";
 import { filterProducts, sortProducts } from "@/lib/ecommerce/filters";
+import { customerSafeMessage } from "@/lib/ecommerce/customerCopy";
 
 type CatalogState = {
   data: CatalogProduct[];
@@ -24,6 +25,7 @@ type CatalogState = {
   hasMore: boolean;
   loading: boolean;
   loadingMore: boolean;
+  refreshing: boolean;
   error: string | null;
   offline: boolean;
   source: "supabase" | "offline-fallback" | "empty";
@@ -55,6 +57,7 @@ export function useCatalogProducts(options?: {
     hasMore: false,
     loading: true,
     loadingMore: false,
+    refreshing: false,
     error: null,
     offline: false,
     source: "empty",
@@ -91,6 +94,7 @@ export function useCatalogProducts(options?: {
           hasMore: false,
           loading: false,
           loadingMore: false,
+          refreshing: false,
           error: null,
           offline: true,
           source: "offline-fallback",
@@ -101,7 +105,12 @@ export function useCatalogProducts(options?: {
       if (append) {
         setState((s) => ({ ...s, loadingMore: true, error: null }));
       } else {
-        setState((s) => ({ ...s, loading: true, error: null }));
+        setState((s) => ({
+          ...s,
+          loading: s.data.length === 0,
+          refreshing: s.data.length > 0,
+          error: null,
+        }));
       }
 
       try {
@@ -130,6 +139,7 @@ export function useCatalogProducts(options?: {
               hasMore: false,
               loading: false,
               loadingMore: false,
+              refreshing: false,
               error: null,
               offline: true,
               source: "offline-fallback",
@@ -145,6 +155,7 @@ export function useCatalogProducts(options?: {
           hasMore: result.hasMore,
           loading: false,
           loadingMore: false,
+          refreshing: false,
           error: null,
           offline: false,
           source: "supabase",
@@ -159,7 +170,8 @@ export function useCatalogProducts(options?: {
           hasMore: false,
           loading: false,
           loadingMore: false,
-          error: err instanceof Error ? err.message : "Failed to load products",
+          refreshing: false,
+          error: customerSafeMessage(err, "Unable to load products right now."),
           offline: true,
           source: "offline-fallback",
         });
@@ -211,6 +223,7 @@ export function useCatalogProducts(options?: {
     hasMore: state.hasMore,
     loading: state.loading,
     loadingMore: state.loadingMore,
+    refreshing: state.refreshing,
     error: state.error,
     offline: state.offline,
     source: state.source,

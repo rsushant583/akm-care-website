@@ -39,7 +39,7 @@ export default function CollectionBanner({
               <img
                 src={imageSrc}
                 alt={imageAlt || ""}
-                className="absolute inset-0 h-full w-full object-cover object-[center_22%]"
+                className="absolute inset-0 h-full w-full product-photo"
                 loading="lazy"
                 decoding="async"
               />

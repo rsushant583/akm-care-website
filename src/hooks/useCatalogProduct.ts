@@ -40,11 +40,11 @@ export function useCatalogProduct(slug: string) {
         setOffline(Boolean(local));
         if (!local) setError("Product not found");
       }
-    } catch (err) {
+    } catch {
       const local = allCatalogProducts.find((p) => p.slug === slug) ?? null;
       setProduct(local);
       setOffline(true);
-      setError(err instanceof Error ? err.message : "Failed to load product");
+      if (!local) setError("Unable to load this product right now.");
     } finally {
       setLoading(false);
     }

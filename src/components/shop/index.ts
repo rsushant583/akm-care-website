@@ -9,7 +9,7 @@ export { QuickViewModal } from "./QuickViewModal";
 export { ShopBreadcrumbs } from "./ShopBreadcrumbs";
 export { RelatedProducts } from "./RelatedProducts";
 export { EmptyState, ErrorState } from "./EmptyState";
-export { ProductGridSkeleton, ProductCardSkeleton } from "./ProductSkeleton";
+export { ProductGridSkeleton, ProductCardSkeleton, ProductPdpSkeleton } from "./ProductSkeleton";
 export { FloatingCart } from "./FloatingCart";
 export { CompareTray } from "./CompareTray";
 export { RecentlyViewedStrip } from "./RecentlyViewedStrip";

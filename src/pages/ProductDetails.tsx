@@ -20,8 +20,10 @@ import { breadcrumbSchema } from "@/lib/schemas";
 import { useCatalogProduct } from "@/hooks/useCatalogProduct";
 import { useRelatedCatalogProducts } from "@/hooks/useCatalogProducts";
 import { productSeo, shopBreadcrumbs } from "@/lib/ecommerce/seo";
-import { formatINR, getEffectivePrice } from "@/lib/ecommerce/pricing";
+import { formatINR, getEffectivePrice, displayDiscountPercent } from "@/lib/ecommerce/pricing";
 import { getAvailableQuantity, isProductInStock } from "@/lib/ecommerce/availability";
+import { getStockLabel } from "@/lib/ecommerce/badges";
+import { customerSafeMessage } from "@/lib/ecommerce/customerCopy";
 import { shareProduct } from "@/lib/ecommerce/share";
 import { isValidIndianPincode, mockDeliveryAvailable } from "@/lib/pincodeDelivery";
 import { useCart } from "@/context/CartContext";
@@ -32,15 +34,13 @@ import {
   EmptyState,
   ErrorState,
   ProductGallery,
-  ProductGridSkeleton,
+  ProductPdpSkeleton,
   RecentlyViewedStrip,
   RelatedProducts,
   ShopBreadcrumbs,
   StickyBuyBar,
 } from "@/components/shop";
 import { cn } from "@/lib/utils";
-
-const LOW_STOCK_THRESHOLD = 5;
 
 function isMeaningful(value?: string | number | null): boolean {
   if (value == null) return false;
@@ -132,17 +132,17 @@ export default function ProductDetails() {
     return (
       <section className="section-padding bg-white">
         <div className="container-premium">
-          <ProductGridSkeleton count={2} />
+          <ProductPdpSkeleton />
         </div>
       </section>
     );
   }
 
-  if (error) {
+  if (error && !product) {
     return (
       <section className="section-padding bg-white">
         <div className="container-premium">
-          <ErrorState description={error} onRetry={refetch} />
+          <ErrorState description={customerSafeMessage(error, "Unable to load this product right now.")} onRetry={refetch} />
           <p className="text-center mt-6">
             <Link to="/shop" className="text-[#E8621A] font-semibold hover:underline">
               Back to Shop
@@ -172,7 +172,8 @@ export default function ProductDetails() {
   const savings = Math.max(0, product.mrp - price);
   const availableQty = getAvailableQuantity(product);
   const inStock = isProductInStock(product);
-  const lowStock = inStock && availableQty > 0 && availableQty <= LOW_STOCK_THRESHOLD;
+  const stock = getStockLabel(product);
+  const discountOff = displayDiscountPercent(product.discountPercent);
   const maxQty = Math.max(1, availableQty);
   const seo = productSeo(product);
   const crumbs = shopBreadcrumbs([
@@ -299,9 +300,9 @@ export default function ProductDetails() {
                       MRP {formatINR(product.mrp)}
                     </span>
                   )}
-                  {product.discountPercent > 0 && (
+                  {discountOff > 0 && (
                     <span className="text-xs font-bold px-2 py-1 rounded-md bg-[#E8621A]/10 text-[#E8621A]">
-                      {product.discountPercent}% OFF
+                      {discountOff}% OFF
                     </span>
                   )}
                 </div>
@@ -322,8 +323,8 @@ export default function ProductDetails() {
                 >
                   {inStock ? "In Stock" : "Out of Stock"}
                 </span>
-                {lowStock && (
-                  <span className="text-xs font-medium text-amber-700">Only {availableQty} left</span>
+                {stock?.tone === "low" && (
+                  <span className="text-xs font-medium text-amber-700">{stock.text}</span>
                 )}
               </div>
 

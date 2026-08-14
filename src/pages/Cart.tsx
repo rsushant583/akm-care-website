@@ -26,7 +26,7 @@ function SavedSection() {
             <img
               src={line.image || "/placeholder.svg"}
               alt=""
-              className="h-16 w-14 rounded-lg object-cover bg-[#F5F0EB]"
+              className="h-16 w-14 rounded-lg product-photo bg-[#F5F0EB]"
             />
             <div className="flex-1 min-w-0">
               <p className="font-heading text-sm line-clamp-1">{line.name}</p>
@@ -171,7 +171,7 @@ export default function CartPage() {
                         <img
                           src={line.image || "/placeholder.svg"}
                           alt=""
-                          className="h-full w-full object-contain object-center"
+                          className="h-full w-full product-photo"
                           loading="lazy"
                         />
                       </Link>
@@ -197,7 +197,7 @@ export default function CartPage() {
                                 aria-label="Decrease quantity"
                                 disabled={line.quantity <= 1 || qtyBusyKey === key}
                                 onClick={() => changeQty(line, line.quantity - 1)}
-                                className="h-9 w-9 rounded-full flex items-center justify-center disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40"
+                                className="h-10 w-10 rounded-full flex items-center justify-center disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40"
                               >
                                 <Minus size={14} aria-hidden />
                               </button>
@@ -209,7 +209,7 @@ export default function CartPage() {
                                 aria-label="Increase quantity"
                                 disabled={line.quantity >= line.maxQuantity || qtyBusyKey === key}
                                 onClick={() => changeQty(line, line.quantity + 1)}
-                                className="h-9 w-9 rounded-full flex items-center justify-center disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40"
+                                className="h-10 w-10 rounded-full flex items-center justify-center disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40"
                               >
                                 <Plus size={14} aria-hidden />
                               </button>
@@ -309,6 +309,7 @@ export default function CartPage() {
                 >
                   {checkoutBusy ? "Checking…" : "Proceed to Checkout"}
                 </button>
+                <p className="text-[11px] text-center text-[#6B6B6B]">Secure checkout · Pan-India delivery</p>
                 <Link to="/shop" className="block text-center text-sm font-semibold text-[#E8621A] hover:underline">
                   Continue shopping
                 </Link>

@@ -44,7 +44,7 @@ function LazyImage({
         }}
         className={cn(
           "h-full w-full transition-opacity duration-300",
-          fit === "contain" ? "object-contain object-center" : "object-cover object-top",
+          fit === "contain" ? "object-contain object-center" : "product-photo",
           loaded ? "opacity-100" : "opacity-0",
         )}
       />

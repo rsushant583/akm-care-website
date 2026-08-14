@@ -48,7 +48,7 @@ export function RecentlyViewedStrip({
               <img
                 src={item.image || "/placeholder.svg"}
                 alt=""
-                className="h-full w-full object-cover object-[center_22%]"
+                className="h-full w-full product-photo"
                 loading="lazy"
               />
             </div>
