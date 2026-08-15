@@ -1,6 +1,6 @@
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { getProductById } from "@/services/productService";
-import { isProductInStock } from "@/lib/ecommerce/availability";
+import { getAvailableQuantity, isProductInStock } from "@/lib/ecommerce/availability";
 import type { CatalogProduct } from "@/lib/ecommerce/types";
 
 /** Safe customer-facing order list row — no access_token. */
@@ -12,6 +12,7 @@ export type CustomerOrderListItem = {
   payment_status: string;
   created_at: string;
   shipping_method: string | null;
+  tracking_number: string | null;
   order_items: CustomerOrderItem[];
 };
 
@@ -54,6 +55,8 @@ export type CustomerOrderDetail = {
     amount: number | null;
     razorpay_payment_id: string | null;
     razorpay_order_id: string | null;
+    created_at: string | null;
+    updated_at: string | null;
   } | null;
   shipping: {
     method: string | null;
@@ -61,11 +64,13 @@ export type CustomerOrderDetail = {
     carrier: string | null;
     tracking_number: string | null;
     estimated_days: number | null;
+    shipped_at: string | null;
+    delivered_at: string | null;
   } | null;
   timeline: Array<{ id: string; status: string; note: string | null; created_at: string }>;
 };
 
-const LIST_SELECT = `
+const LIST_SELECT_CORE = `
   id,
   order_number,
   grand_total,
@@ -85,6 +90,11 @@ const LIST_SELECT = `
     color_name,
     variant_name
   )
+`;
+
+const LIST_SELECT = `
+  ${LIST_SELECT_CORE},
+  shipping(tracking_number)
 `;
 
 const HEADER_DETAIL_SELECT = `
@@ -119,6 +129,12 @@ const HEADER_DETAIL_SELECT = `
   )
 `;
 
+function firstEmbedded<T>(raw: unknown): T | null {
+  if (!raw) return null;
+  if (Array.isArray(raw)) return (raw[0] as T) || null;
+  return raw as T;
+}
+
 async function requireAuthUserId(): Promise<string | null> {
   const client = getSupabaseClient();
   if (!client) return null;
@@ -133,24 +149,39 @@ export async function listMyOrders(): Promise<CustomerOrderListItem[]> {
   const userId = await requireAuthUserId();
   if (!client || !userId) return [];
 
-  const { data, error } = await client
+  let { data, error } = await client
     .from("order_headers")
     .select(LIST_SELECT)
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(100);
 
+  if (error) {
+    const retry = await client
+      .from("order_headers")
+      .select(LIST_SELECT_CORE)
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    data = retry.data;
+    error = retry.error;
+  }
+
   if (error) throw error;
-  return (data || []).map((row) => ({
-    id: String(row.id),
-    order_number: String(row.order_number),
-    grand_total: Number(row.grand_total || 0),
-    status: String(row.status || "pending"),
-    payment_status: String(row.payment_status || "pending"),
-    created_at: String(row.created_at),
-    shipping_method: row.shipping_method ? String(row.shipping_method) : null,
-    order_items: ((row.order_items as CustomerOrderItem[]) || []).map(normalizeItem),
-  }));
+  return (data || []).map((row) => {
+    const ship = firstEmbedded<{ tracking_number?: string | null }>(row.shipping);
+    return {
+      id: String(row.id),
+      order_number: String(row.order_number),
+      grand_total: Number(row.grand_total || 0),
+      status: String(row.status || "pending"),
+      payment_status: String(row.payment_status || "pending"),
+      created_at: String(row.created_at),
+      shipping_method: row.shipping_method ? String(row.shipping_method) : null,
+      tracking_number: ship?.tracking_number ? String(ship.tracking_number) : null,
+      order_items: ((row.order_items as CustomerOrderItem[]) || []).map(normalizeItem),
+    };
+  });
 }
 
 function normalizeItem(it: Partial<CustomerOrderItem>): CustomerOrderItem {
@@ -190,14 +221,14 @@ export async function getMyOrderDetail(orderId: string): Promise<CustomerOrderDe
   const [payRes, shipRes, histRes] = await Promise.all([
     client
       .from("payments")
-      .select("provider,status,method,amount,razorpay_payment_id,razorpay_order_id")
+      .select("provider,status,method,amount,razorpay_payment_id,razorpay_order_id,created_at,updated_at")
       .eq("order_id", orderId)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
     client
       .from("shipping")
-      .select("method,status,carrier,tracking_number,estimated_days")
+      .select("method,status,carrier,tracking_number,estimated_days,shipped_at,delivered_at")
       .eq("order_id", orderId)
       .maybeSingle(),
     client
@@ -234,6 +265,8 @@ export async function getMyOrderDetail(orderId: string): Promise<CustomerOrderDe
           amount: payRes.data.amount != null ? Number(payRes.data.amount) : null,
           razorpay_payment_id: payRes.data.razorpay_payment_id ?? null,
           razorpay_order_id: payRes.data.razorpay_order_id ?? null,
+          created_at: payRes.data.created_at ? String(payRes.data.created_at) : null,
+          updated_at: payRes.data.updated_at ? String(payRes.data.updated_at) : null,
         }
       : null,
     shipping: shipRes.data
@@ -243,6 +276,8 @@ export async function getMyOrderDetail(orderId: string): Promise<CustomerOrderDe
           carrier: shipRes.data.carrier ?? null,
           tracking_number: shipRes.data.tracking_number ?? null,
           estimated_days: shipRes.data.estimated_days ?? null,
+          shipped_at: shipRes.data.shipped_at ? String(shipRes.data.shipped_at) : null,
+          delivered_at: shipRes.data.delivered_at ? String(shipRes.data.delivered_at) : null,
         }
       : null,
     timeline: (histRes.data || []) as CustomerOrderDetail["timeline"],
@@ -253,6 +288,17 @@ export type ReorderResult = {
   added: Array<{ name: string; quantity: number }>;
   unavailable: Array<{ name: string; reason: string }>;
 };
+
+function reorderUnavailableReason(product: CatalogProduct | null): string | null {
+  if (!product) return "This product is no longer in the catalog.";
+  if (product.status === "draft" || product.status === "coming_soon") {
+    return "This product is not currently available to purchase.";
+  }
+  if (!isProductInStock(product) || getAvailableQuantity(product) <= 0) {
+    return "Currently out of stock.";
+  }
+  return null;
+}
 
 /**
  * Buy Again: load current catalog products (live price/stock), never historical prices.
@@ -266,8 +312,9 @@ export async function prepareReorder(
     colorName?: string;
     variantName?: string;
   }) => void,
+  loaded?: CustomerOrderDetail | null,
 ): Promise<ReorderResult> {
-  const detail = await getMyOrderDetail(orderId);
+  const detail = loaded?.id === orderId ? loaded : await getMyOrderDetail(orderId);
   if (!detail) {
     return { added: [], unavailable: [{ name: "Order", reason: "Order not found or not accessible." }] };
   }
@@ -275,21 +322,24 @@ export async function prepareReorder(
   const added: ReorderResult["added"] = [];
   const unavailable: ReorderResult["unavailable"] = [];
 
+  const uniqueIds = [...new Set(detail.items.map((line) => line.product_id).filter(Boolean))] as string[];
+  const fetched = await Promise.all(uniqueIds.map((id) => getProductById(id).catch(() => null)));
+  const byId = new Map(uniqueIds.map((id, i) => [id, fetched[i]]));
+
   for (const line of detail.items) {
     if (!line.product_id) {
-      unavailable.push({ name: line.product_name, reason: "Product no longer linked." });
+      unavailable.push({ name: line.product_name, reason: "This item is no longer linked to a catalog product." });
       continue;
     }
-    const product = await getProductById(line.product_id).catch(() => null);
-    if (!product) {
-      unavailable.push({ name: line.product_name, reason: "Product is no longer available." });
+    const product = byId.get(line.product_id) ?? null;
+    const blocked = reorderUnavailableReason(product);
+    if (!product || blocked) {
+      unavailable.push({ name: product?.name || line.product_name, reason: blocked || "Currently unavailable." });
       continue;
     }
-    if (!isProductInStock(product)) {
-      unavailable.push({ name: product.name, reason: "Currently out of stock." });
-      continue;
-    }
-    const qty = Math.max(1, Math.min(line.quantity, product.stock_quantity || line.quantity));
+
+    const available = getAvailableQuantity(product);
+    const qty = Math.min(Math.max(1, line.quantity), available);
     addToCart({
       product,
       quantity: qty,
@@ -300,7 +350,7 @@ export async function prepareReorder(
     if (qty < line.quantity) {
       unavailable.push({
         name: product.name,
-        reason: `Only ${qty} available (ordered ${line.quantity}).`,
+        reason: `Only ${qty} available now (originally ordered ${line.quantity}). Current catalog price applies.`,
       });
     }
   }

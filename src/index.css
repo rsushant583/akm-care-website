@@ -181,9 +181,19 @@
     padding-bottom: max(var(--mobile-nav-height), calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px)));
   }
 
+  /* Keep focused/scrolled controls clear of the fixed header and mobile tab bar. */
+  html {
+    scroll-padding-top: calc(var(--nav-height) + env(safe-area-inset-top, 0px) + 0.75rem);
+    scroll-padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 0.75rem);
+  }
+
   @media (min-width: 1024px) {
     .mobile-nav-pad {
       padding-bottom: 0;
+    }
+
+    html {
+      scroll-padding-bottom: 0;
     }
   }
 

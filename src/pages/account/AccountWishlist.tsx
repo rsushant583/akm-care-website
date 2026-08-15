@@ -45,15 +45,22 @@ export default function AccountWishlistPage() {
       </div>
 
       {loading ? (
-        <div className="grid sm:grid-cols-2 gap-3" aria-busy="true">
+        <div className="grid sm:grid-cols-2 gap-3" aria-busy="true" role="status">
+          <span className="sr-only">Loading wishlist</span>
           {[1, 2].map((i) => (
             <div key={i} className="h-48 rounded-2xl bg-white border animate-pulse" />
           ))}
         </div>
       ) : products.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-black/15 bg-white p-10 text-center">
-          <p className="font-heading text-xl mb-2">Your wishlist is empty</p>
-          <p className="text-sm text-[#6B6B6B] mb-5">Tap the heart on any product to save it here.</p>
+          <p className="font-heading text-xl mb-2">
+            {count > 0 ? "Saved items are no longer in the catalog" : "Your wishlist is empty"}
+          </p>
+          <p className="text-sm text-[#6B6B6B] mb-5">
+            {count > 0
+              ? "Those products are not currently available to purchase."
+              : "Tap the heart on any product to save it here."}
+          </p>
           <Link
             to="/shop"
             className="inline-flex rounded-full bg-[#E8621A] text-white font-semibold px-5 py-2.5 text-sm min-h-11 items-center"
@@ -63,6 +70,11 @@ export default function AccountWishlistPage() {
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 gap-4">
+          {count > products.length ? (
+            <p className="sm:col-span-2 text-sm text-[#6B6B6B]">
+              {count - products.length} saved item{count - products.length === 1 ? "" : "s"} no longer appear in the catalog.
+            </p>
+          ) : null}
           {products.map((p) => {
             const inStock = isProductInStock(p);
             return (

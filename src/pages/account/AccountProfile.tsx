@@ -2,6 +2,13 @@ import { FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/components/ui/sonner";
+import { customerSafeMessage } from "@/lib/ecommerce/customerCopy";
+
+function isValidPhone(value: string) {
+  const trimmed = value.replace(/\s+/g, "");
+  if (!trimmed) return true;
+  return /^[6-9]\d{9}$/.test(trimmed);
+}
 
 export default function AccountProfilePage() {
   const { user, profile, updateProfile, resetPassword } = useAuth();
@@ -9,6 +16,7 @@ export default function AccountProfilePage() {
   const [phone, setPhone] = useState(profile?.phone || "");
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
 
   useEffect(() => {
     setFullName(profile?.full_name || "");
@@ -17,13 +25,22 @@ export default function AccountProfilePage() {
 
   const onSave = async (e: FormEvent) => {
     e.preventDefault();
+    if (!fullName.trim()) {
+      toast.error("Enter your full name.");
+      return;
+    }
+    if (!isValidPhone(phone)) {
+      setPhoneError("Enter a valid 10-digit Indian mobile number, or leave it blank.");
+      return;
+    }
+    setPhoneError(null);
     setSaving(true);
     const { error } = await updateProfile({
       full_name: fullName.trim(),
       phone: phone.trim(),
     });
     setSaving(false);
-    if (error) toast.error(error);
+    if (error) toast.error(customerSafeMessage(error, "Could not update profile. Please try again."));
     else toast.success("Profile updated");
   };
 
@@ -32,7 +49,7 @@ export default function AccountProfilePage() {
     setResetting(true);
     const { error } = await resetPassword(user.email);
     setResetting(false);
-    if (error) toast.error(error);
+    if (error) toast.error(customerSafeMessage(error, "Could not send the reset email. Please try again."));
     else toast.success("Password reset email sent. Check your inbox.");
   };
 
@@ -51,6 +68,7 @@ export default function AccountProfilePage() {
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             autoComplete="name"
+            required
           />
         </label>
         <label className="block text-sm">
@@ -58,10 +76,22 @@ export default function AccountProfilePage() {
           <input
             className="mt-1 w-full rounded-xl border border-black/10 px-3 py-2.5 min-h-11"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => {
+              setPhone(e.target.value);
+              if (phoneError) setPhoneError(null);
+            }}
             autoComplete="tel"
             inputMode="tel"
+            aria-invalid={Boolean(phoneError)}
+            aria-describedby={phoneError ? "profile-phone-error" : undefined}
           />
+          {phoneError ? (
+            <span id="profile-phone-error" className="text-xs text-red-600 mt-1 block">
+              {phoneError}
+            </span>
+          ) : (
+            <span className="text-xs text-[#6B6B6B] mt-1 block">10-digit Indian mobile number. Optional.</span>
+          )}
         </label>
         <label className="block text-sm">
           <span className="font-medium">Email</span>
@@ -71,7 +101,9 @@ export default function AccountProfilePage() {
             disabled
             readOnly
           />
-          <span className="text-xs text-[#6B6B6B] mt-1 block">Email is tied to your sign-in and cannot be changed here.</span>
+          <span className="text-xs text-[#6B6B6B] mt-1 block">
+            Email is tied to your sign-in and cannot be changed here.
+          </span>
         </label>
         <button
           type="submit"

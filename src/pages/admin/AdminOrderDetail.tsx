@@ -94,8 +94,8 @@ export default function AdminOrderDetailPage() {
   }
 
   const address = order.shipping_address || {};
-  const line1 = addrField(address, ["line1", "address_line1", "street"]);
-  const line2 = addrField(address, ["line2", "address_line2"]);
+  const line1 = addrField(address, ["line1", "address_line1", "street", "area"]);
+  const line2 = addrField(address, ["line2", "address_line2", "landmark"]);
   const city = addrField(address, ["city"]);
   const state = addrField(address, ["state"]);
   const pincode = addrField(address, ["pincode", "pin", "postal_code"]);

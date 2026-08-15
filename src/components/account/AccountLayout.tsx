@@ -66,7 +66,7 @@ export default function AccountLayout() {
                   end={item.end}
                   className={({ isActive }) =>
                     cn(
-                      "inline-flex items-center gap-2 rounded-full lg:rounded-xl px-4 py-2.5 text-sm font-semibold whitespace-nowrap border min-h-11 shrink-0",
+                      "inline-flex items-center gap-2 rounded-full lg:rounded-xl px-4 py-2.5 text-sm font-semibold whitespace-nowrap border min-h-11 shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E8621A]",
                       isActive
                         ? "bg-[#1A1A1A] text-white border-[#1A1A1A]"
                         : "bg-white text-[#1A1A1A] border-black/10 hover:border-[#E8621A]/40",

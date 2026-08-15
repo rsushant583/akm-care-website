@@ -86,6 +86,26 @@ export async function getOrderById(orderId: string) {
   return { order: order as OrderHeader, items: items || [], payment, shipping: ship };
 }
 
+function redactReceipt(data: unknown): OrderReceipt | null {
+  if (!data || typeof data !== "object") return null;
+  const raw = data as Record<string, unknown>;
+  const orderRaw = raw.order && typeof raw.order === "object" ? { ...(raw.order as Record<string, unknown>) } : null;
+  if (!orderRaw) return null;
+  delete orderRaw.access_token;
+  const paymentRaw =
+    raw.payment && typeof raw.payment === "object" ? { ...(raw.payment as Record<string, unknown>) } : null;
+  if (paymentRaw) {
+    delete paymentRaw.raw_response;
+    delete paymentRaw.razorpay_signature;
+  }
+  return {
+    order: orderRaw as unknown as OrderHeader,
+    items: Array.isArray(raw.items) ? (raw.items as Array<Record<string, unknown>>) : [],
+    payment: paymentRaw,
+    shipping: raw.shipping && typeof raw.shipping === "object" ? (raw.shipping as Record<string, unknown>) : null,
+  };
+}
+
 /** Secure receipt lookup — requires access_token from checkout response (C2). */
 export async function getOrderReceipt(orderNumber: string, accessToken: string): Promise<OrderReceipt | null> {
   const client = getSupabaseClient();
@@ -96,7 +116,7 @@ export async function getOrderReceipt(orderNumber: string, accessToken: string):
   });
   if (error) throw error;
   if (!data) return null;
-  return data as OrderReceipt;
+  return redactReceipt(data);
 }
 
 /** @deprecated Use getOrderReceipt(orderNumber, accessToken). */

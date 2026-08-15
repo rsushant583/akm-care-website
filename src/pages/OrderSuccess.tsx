@@ -1,9 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { CheckCircle2, Download, AlertCircle } from "lucide-react";
+import { CheckCircle2, Download, AlertCircle, Clock } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { getOrderReceipt } from "@/services/orderService";
 import { formatINR } from "@/lib/ecommerce/pricing";
+import {
+  formatCustomerOrderStatus,
+  formatCustomerPaymentStatus,
+} from "@/lib/account/orderDisplay";
+import { CustomerFulfillmentBadge, CustomerPaymentBadge } from "@/components/account/OrderStatusBadges";
 
 export default function OrderSuccessPage() {
   const [params] = useSearchParams();
@@ -11,16 +16,25 @@ export default function OrderSuccessPage() {
   const accessToken = params.get("token") || "";
   const [loading, setLoading] = useState(true);
   const [payload, setPayload] = useState<Awaited<ReturnType<typeof getOrderReceipt>>>(null);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     if (!orderNumber || !accessToken) {
       setLoading(false);
       setPayload(null);
+      setLoadError(false);
       return;
     }
+    setLoadError(false);
     void getOrderReceipt(orderNumber, accessToken)
-      .then(setPayload)
-      .catch(() => setPayload(null))
+      .then((row) => {
+        setPayload(row);
+        setLoadError(!row);
+      })
+      .catch(() => {
+        setPayload(null);
+        setLoadError(true);
+      })
       .finally(() => setLoading(false));
   }, [orderNumber, accessToken]);
 
@@ -71,19 +85,39 @@ export default function OrderSuccessPage() {
     URL.revokeObjectURL(url);
   };
 
-  const paid =
-    payload &&
-    (String(payload.order.payment_status).toLowerCase() === "paid" ||
-      String(payload.order.status).toLowerCase() === "paid");
+  const paymentStatus = payload ? String(payload.order.payment_status || "").toLowerCase() : "";
+  const paymentPaid = paymentStatus === "paid";
+  const paymentFailed = paymentStatus === "failed";
+  const paymentRefunded = paymentStatus === "refunded";
+
+  let title = "Order receipt";
+  let heading = "Order receipt";
+  let subtitle = "";
+  if (payload) {
+    if (paymentFailed) {
+      title = "Payment not completed";
+      heading = "Payment was not completed";
+      subtitle = `Order ${payload.order.order_number} is saved. Payment status: ${formatCustomerPaymentStatus(payload.order.payment_status)}.`;
+    } else if (paymentRefunded) {
+      title = "Refund recorded";
+      heading = "Refund recorded";
+      subtitle = `Order ${payload.order.order_number}. Payment: ${formatCustomerPaymentStatus(payload.order.payment_status)}. Order: ${formatCustomerOrderStatus(payload.order.status)}.`;
+    } else if (paymentPaid) {
+      title = "Payment received";
+      heading = "Payment received";
+      subtitle = `Order ${payload.order.order_number}. Payment: Paid. Order: ${formatCustomerOrderStatus(payload.order.status)}.`;
+    } else {
+      title = "Order receipt";
+      heading = "Order receipt";
+      subtitle = `Order ${payload.order.order_number}. Payment: ${formatCustomerPaymentStatus(payload.order.payment_status)}. Order: ${formatCustomerOrderStatus(payload.order.status)}.`;
+    }
+  }
+
+  const StatusIcon = paymentFailed ? AlertCircle : paymentPaid ? CheckCircle2 : Clock;
 
   return (
     <>
-      <SEO
-        title={paid ? "Order Confirmed" : "Order Receipt"}
-        description="Your AKM Care order receipt."
-        canonical="/order-success"
-        robots="noindex, follow"
-      />
+      <SEO title={title} description="Your AKM Care order receipt." canonical="/order-success" robots="noindex, follow" />
       <section className="section-padding bg-[#FAF8F5] min-h-[70vh] pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:pb-16">
         <div className="container-premium max-w-2xl mx-auto text-center">
           {loading ? (
@@ -92,18 +126,17 @@ export default function OrderSuccessPage() {
             </p>
           ) : payload ? (
             <>
-              <CheckCircle2
-                className={`mx-auto mb-4 ${paid ? "text-emerald-600" : "text-[#E8621A]"}`}
+              <StatusIcon
+                className={`mx-auto mb-4 ${paymentFailed ? "text-red-600" : paymentPaid ? "text-emerald-600" : "text-[#E8621A]"}`}
                 size={48}
                 aria-hidden
               />
-              <h1 className="font-heading text-3xl sm:text-4xl mb-2">
-                {paid ? "Order placed successfully" : "Order receipt"}
-              </h1>
-              <p className="text-[#6B6B6B] mb-8">
-                Order <span className="font-semibold text-[#1A1A1A]">{payload.order.order_number}</span>
-                {paid ? " is confirmed." : ` · Payment status: ${payload.order.payment_status}`}
-              </p>
+              <h1 className="font-heading text-3xl sm:text-4xl mb-2">{heading}</h1>
+              <p className="text-[#6B6B6B] mb-6">{subtitle}</p>
+              <div className="flex flex-wrap justify-center gap-2 mb-8">
+                <CustomerPaymentBadge value={payload.order.payment_status} />
+                <CustomerFulfillmentBadge value={payload.order.status} />
+              </div>
 
               <div className="rounded-2xl border border-[#E8E4DE] bg-white p-6 text-left mb-8">
                 <div className="flex flex-wrap gap-4 justify-between text-sm mb-4">
@@ -115,12 +148,12 @@ export default function OrderSuccessPage() {
                   </div>
                   <div>
                     <p className="text-[#6B6B6B]">Payment</p>
-                    <p className="font-semibold capitalize">{payload.order.payment_status}</p>
+                    <p className="font-semibold">{formatCustomerPaymentStatus(payload.order.payment_status)}</p>
                   </div>
                   {payload.shipping && (
                     <div>
                       <p className="text-[#6B6B6B]">Shipping</p>
-                      <p className="font-semibold capitalize">
+                      <p className="font-semibold">
                         {String((payload.shipping as { method?: string }).method || "standard")}
                       </p>
                     </div>
@@ -166,7 +199,7 @@ export default function OrderSuccessPage() {
                     </div>
                   )}
                   <div className="flex justify-between font-semibold text-[#1A1A1A] pt-1">
-                    <span>Total paid</span>
+                    <span>{paymentPaid ? "Total paid" : "Order total"}</span>
                     <span>{formatINR(Number(payload.order.grand_total))}</span>
                   </div>
                 </div>
@@ -177,7 +210,7 @@ export default function OrderSuccessPage() {
                 <button
                   type="button"
                   onClick={downloadInvoice}
-                  className="mt-6 inline-flex items-center gap-2 rounded-full border border-[#E8E4DE] px-4 py-2 text-sm font-semibold hover:bg-[#FAF8F5]"
+                  className="mt-6 inline-flex items-center gap-2 rounded-full border border-[#E8E4DE] px-4 py-2.5 text-sm font-semibold hover:bg-[#FAF8F5] min-h-11"
                 >
                   <Download size={16} aria-hidden /> Download receipt
                 </button>
@@ -190,16 +223,21 @@ export default function OrderSuccessPage() {
               <p className="text-sm text-[#6B6B6B] mb-6">
                 {!orderNumber || !accessToken
                   ? "This receipt link is incomplete. Use the confirmation link from checkout."
-                  : "We could not load this order. Check the link or view orders from your account."}
+                  : loadError
+                    ? "We could not load this order. Check the link or view orders from your account."
+                    : "We could not load this order. Check the link or view orders from your account."}
               </p>
             </>
           )}
 
           <div className="flex flex-wrap gap-3 justify-center">
-            <Link to="/shop" className="rounded-full bg-[#E8621A] text-white font-semibold px-5 py-3">
+            <Link to="/shop" className="rounded-full bg-[#E8621A] text-white font-semibold px-5 py-3 min-h-11 inline-flex items-center">
               Continue shopping
             </Link>
-            <Link to="/account" className="rounded-full border border-[#E8E4DE] font-semibold px-5 py-3">
+            <Link
+              to="/account"
+              className="rounded-full border border-[#E8E4DE] font-semibold px-5 py-3 min-h-11 inline-flex items-center"
+            >
               My account
             </Link>
           </div>

@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import {
   deleteAddress,
@@ -10,6 +10,17 @@ import {
 import { isValidIndianPincode } from "@/lib/pincodeDelivery";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
+import { customerSafeMessage } from "@/lib/ecommerce/customerCopy";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const EMPTY = {
   label: "home" as Address["label"],
@@ -25,16 +36,41 @@ const EMPTY = {
 
 const STATES = [
   "Andhra Pradesh",
-  "Delhi",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chhattisgarh",
+  "Goa",
   "Gujarat",
   "Haryana",
+  "Himachal Pradesh",
+  "Jharkhand",
   "Karnataka",
+  "Kerala",
+  "Madhya Pradesh",
   "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Punjab",
   "Rajasthan",
+  "Sikkim",
   "Tamil Nadu",
   "Telangana",
+  "Tripura",
   "Uttar Pradesh",
+  "Uttarakhand",
   "West Bengal",
+  "Andaman and Nicobar Islands",
+  "Chandigarh",
+  "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi",
+  "Jammu and Kashmir",
+  "Ladakh",
+  "Lakshadweep",
+  "Puducherry",
   "Other",
 ];
 
@@ -46,18 +82,22 @@ export default function AccountAddressesPage() {
   const { user } = useAuth();
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY);
+  const [customState, setCustomState] = useState("");
   const [editingId, setEditingId] = useState<string | undefined>();
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const load = async () => {
     if (!user) return;
     setLoading(true);
+    setError(null);
     try {
       setAddresses(await listAddresses(user.id));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not load addresses");
+      setError(customerSafeMessage(e, "Could not load addresses. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -68,13 +108,23 @@ export default function AccountAddressesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
+  const stateOptions = useMemo(() => {
+    if (form.state && !STATES.includes(form.state) && form.state !== "Other") {
+      return [form.state, ...STATES];
+    }
+    return STATES;
+  }, [form.state]);
+
+  const selectValue = STATES.includes(form.state) || stateOptions.includes(form.state) ? form.state : "Other";
+
   const validate = () => {
     const next: Record<string, string> = {};
     if (!form.full_name.trim()) next.full_name = "Name is required";
     if (!isValidPhone(form.phone)) next.phone = "Enter a valid 10-digit mobile number";
     if (!form.area.trim()) next.area = "Address is required";
     if (!form.city.trim()) next.city = "City is required";
-    if (!form.state.trim()) next.state = "State is required";
+    const resolvedState = selectValue === "Other" ? customState.trim() : form.state.trim();
+    if (!resolvedState) next.state = "State is required";
     if (!isValidIndianPincode(form.pincode)) next.pincode = "Enter a valid 6-digit pincode";
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -85,14 +135,16 @@ export default function AccountAddressesPage() {
     if (!user || !validate()) return;
     setSaving(true);
     try {
-      await saveAddress(user.id, { ...form, id: editingId });
+      const resolvedState = selectValue === "Other" ? customState.trim() : form.state.trim();
+      await saveAddress(user.id, { ...form, state: resolvedState, id: editingId });
       setForm(EMPTY);
+      setCustomState("");
       setEditingId(undefined);
       setErrors({});
       await load();
       toast.success(editingId ? "Address updated" : "Address saved");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not save address");
+      toast.error(customerSafeMessage(err, "Could not save address. Please try again."));
     } finally {
       setSaving(false);
     }
@@ -101,7 +153,22 @@ export default function AccountAddressesPage() {
   const cancelEdit = () => {
     setEditingId(undefined);
     setForm(EMPTY);
+    setCustomState("");
     setErrors({});
+  };
+
+  const onDelete = async () => {
+    if (!deleteId) return;
+    try {
+      await deleteAddress(deleteId);
+      setAddresses((prev) => prev.filter((x) => x.id !== deleteId));
+      if (editingId === deleteId) cancelEdit();
+      toast.success("Address deleted");
+    } catch (err) {
+      toast.error(customerSafeMessage(err, "Could not delete address. Please try again."));
+    } finally {
+      setDeleteId(null);
+    }
   };
 
   return (
@@ -112,7 +179,21 @@ export default function AccountAddressesPage() {
       </div>
 
       {loading ? (
-        <div className="h-28 rounded-2xl bg-white border animate-pulse" aria-busy="true" />
+        <div className="h-28 rounded-2xl bg-white border animate-pulse" aria-busy="true" role="status">
+          <span className="sr-only">Loading addresses</span>
+        </div>
+      ) : error && addresses.length === 0 ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm" role="alert">
+          <p className="font-semibold text-red-800">Unable to load addresses</p>
+          <p className="text-red-700 mt-1">{error}</p>
+          <button
+            type="button"
+            onClick={() => void load()}
+            className="mt-3 rounded-full bg-[#1A1A1A] text-white px-4 py-2.5 text-sm font-semibold min-h-11"
+          >
+            Retry
+          </button>
+        </div>
       ) : addresses.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-black/15 bg-white p-8 text-center text-sm text-[#6B6B6B]">
           No saved addresses yet. Add one below.
@@ -137,20 +218,23 @@ export default function AccountAddressesPage() {
               <div className="flex flex-wrap gap-3 mt-3">
                 <button
                   type="button"
-                  className="text-sm font-semibold min-h-11"
+                  className="text-sm font-semibold min-h-11 px-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E8621A]"
                   onClick={() => {
                     setEditingId(a.id);
+                    const known = STATES.includes(a.state);
                     setForm({
                       label: a.label,
                       full_name: a.full_name,
                       phone: a.phone,
                       pincode: a.pincode,
-                      state: a.state,
+                      state: known ? a.state : "Other",
                       city: a.city,
                       area: a.area,
                       landmark: a.landmark || "",
                       is_default: a.is_default,
                     });
+                    setCustomState(known && a.state !== "Other" ? "" : a.state === "Other" ? "" : a.state);
+                    setErrors({});
                   }}
                 >
                   Edit
@@ -158,12 +242,14 @@ export default function AccountAddressesPage() {
                 {!a.is_default && user && (
                   <button
                     type="button"
-                    className="text-sm font-semibold text-[#E8621A] min-h-11"
+                    className="text-sm font-semibold text-[#E8621A] min-h-11 px-1"
                     onClick={() =>
                       void setDefaultAddress(user.id, a.id)
                         .then(load)
                         .then(() => toast.success("Default address updated"))
-                        .catch((err) => toast.error(err instanceof Error ? err.message : "Update failed"))
+                        .catch((err) =>
+                          toast.error(customerSafeMessage(err, "Could not update default address.")),
+                        )
                     }
                   >
                     Set default
@@ -171,13 +257,8 @@ export default function AccountAddressesPage() {
                 )}
                 <button
                   type="button"
-                  className="text-sm font-semibold text-red-600 min-h-11"
-                  onClick={() =>
-                    void deleteAddress(a.id)
-                      .then(() => setAddresses((prev) => prev.filter((x) => x.id !== a.id)))
-                      .then(() => toast.success("Address deleted"))
-                      .catch((err) => toast.error(err instanceof Error ? err.message : "Delete failed"))
-                  }
+                  className="text-sm font-semibold text-red-600 min-h-11 px-1"
+                  onClick={() => setDeleteId(a.id)}
                 >
                   Delete
                 </button>
@@ -191,7 +272,7 @@ export default function AccountAddressesPage() {
         <div className="flex items-center justify-between gap-2">
           <h3 className="font-heading text-xl">{editingId ? "Edit address" : "Add address"}</h3>
           {editingId && (
-            <button type="button" onClick={cancelEdit} className="text-sm font-semibold text-[#6B6B6B]">
+            <button type="button" onClick={cancelEdit} className="text-sm font-semibold text-[#6B6B6B] min-h-11">
               Cancel
             </button>
           )}
@@ -239,17 +320,40 @@ export default function AccountAddressesPage() {
         <label className="block text-sm">
           <span className="font-medium">State</span>
           <select
-            className="mt-1 w-full rounded-xl border border-black/10 px-3 py-2.5 min-h-11"
-            value={form.state}
-            onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))}
+            className={cn(
+              "mt-1 w-full rounded-xl border px-3 py-2.5 min-h-11",
+              errors.state ? "border-red-400" : "border-black/10",
+            )}
+            value={selectValue}
+            onChange={(e) => {
+              const v = e.target.value;
+              setForm((f) => ({ ...f, state: v }));
+              if (v !== "Other") setCustomState("");
+            }}
           >
-            {STATES.map((s) => (
+            {stateOptions.map((s) => (
               <option key={s} value={s}>
                 {s}
               </option>
             ))}
           </select>
         </label>
+
+        {selectValue === "Other" ? (
+          <label className="block text-sm">
+            <span className="font-medium">State / UT name</span>
+            <input
+              className={cn(
+                "mt-1 w-full rounded-xl border px-3 py-2.5 min-h-11",
+                errors.state ? "border-red-400" : "border-black/10",
+              )}
+              value={customState}
+              onChange={(e) => setCustomState(e.target.value)}
+              autoComplete="address-level1"
+            />
+          </label>
+        ) : null}
+        {errors.state && <span className="text-xs text-red-600 block">{errors.state}</span>}
 
         <label className="flex items-center gap-2 text-sm min-h-11">
           <input
@@ -268,6 +372,21 @@ export default function AccountAddressesPage() {
           {saving ? "Saving…" : editingId ? "Update address" : "Save address"}
         </button>
       </form>
+
+      <AlertDialog open={Boolean(deleteId)} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this address?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the saved address from your account. It does not change orders already placed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep address</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void onDelete()}>Delete address</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
