@@ -227,6 +227,50 @@ on conflict (id) do update set
   stock_quantity = excluded.stock_quantity,
   updated_at = now();
 
+-- Upsert Turquoise Zari (hero / lead featured)
+insert into products (
+  id, name, slug, sku, product_code, brand_id, category_id, subcategory_id,
+  short_description, detailed_description, description,
+  mrp, selling_price, akm_care_price, price, discount_percent,
+  gst_percent, gst_number, hsn, dimensions, weight,
+  stock_quantity, status, shipping_time, warranty, packing_type, freight_cost,
+  category, category_label, tags,
+  is_featured, is_new_arrival, is_best_seller, is_trending, popularity, display_order,
+  image_url, seo_title, seo_description, specifications
+) values (
+  'd0000000-0000-4000-8000-000000000006',
+  'AKMC Turquoise Zari Silk Saree',
+  'akmc-turquoise-zari',
+  'AKMCTQZ',
+  'AKMCTQZ',
+  'a0000000-0000-4000-8000-000000000001',
+  'b0000000-0000-4000-8000-000000000001',
+  'c0000000-0000-4000-8000-000000000001',
+  'Turquoise silk saree with gold zari border & blouse',
+  'Vibrant turquoise silk saree with antique gold and copper zari butis, ornate mandala border, and matching short-sleeve blouse. Festive-ready drape with rich sheen — sourced for AKM Care — Trusted & Fair apparel.',
+  'Turquoise silk saree with gold zari border & blouse',
+  4290, 4290, 3699, 3699, 13.78,
+  5, '24AIFPB2688G1ZG', '540710', '6.3 Mtrs APX', null,
+  5, 'available', 'within 24 Hours', 'NA — within 7 days return policy', 'Box Packing', null,
+  'sarees', 'Sarees', '["Silk","Zari","Turquoise","Ethnic Wear","Saree","Apparel","AKM Care"]'::jsonb,
+  true, true, true, true, 100, 0,
+  '/catalog/akmc-turquoise-zari/01.png',
+  'AKMC Turquoise Zari Silk Saree | AKM Care',
+  'Buy AKMC Turquoise Zari silk saree with gold border and matching blouse. AKM Care price ₹3699.',
+  '{"variant":"Silk Zari","packing":"Box Packing","blouse":"Matching","colours":1,"size":"6.3 Mtrs APX","serial":6}'::jsonb
+)
+on conflict (id) do update set
+  name = excluded.name,
+  sku = excluded.sku,
+  akm_care_price = excluded.akm_care_price,
+  mrp = excluded.mrp,
+  image_url = excluded.image_url,
+  stock_quantity = excluded.stock_quantity,
+  popularity = excluded.popularity,
+  display_order = excluded.display_order,
+  is_featured = excluded.is_featured,
+  updated_at = now();
+
 -- Unique slug conflict path if ids differ
 create unique index if not exists idx_products_slug_unique on products (slug) where slug is not null;
 
@@ -290,25 +334,40 @@ select
   g = 1
 from generate_series(1, 2) as g;
 
+-- Images Turquoise Zari (8) — local catalog paths
+delete from product_images where product_id = 'd0000000-0000-4000-8000-000000000006';
+insert into product_images (product_id, url, alt, storage_path, sort_order, is_primary)
+select
+  'd0000000-0000-4000-8000-000000000006',
+  '/catalog/akmc-turquoise-zari/' || lpad(g::text, 2, '0') || '.png',
+  'AKMC Turquoise Zari Silk Saree — view ' || g,
+  'products/akmc-turquoise-zari/' || lpad(g::text, 2, '0') || '.png',
+  g - 1,
+  g = 1
+from generate_series(1, 8) as g;
+
 -- Variants
 delete from product_variants where product_id in (
   'd0000000-0000-4000-8000-000000000001',
   'd0000000-0000-4000-8000-000000000002',
   'd0000000-0000-4000-8000-000000000003',
   'd0000000-0000-4000-8000-000000000004',
-  'd0000000-0000-4000-8000-000000000005'
+  'd0000000-0000-4000-8000-000000000005',
+  'd0000000-0000-4000-8000-000000000006'
 );
 insert into product_variants (product_id, name, stock, sort_order) values
   ('d0000000-0000-4000-8000-000000000001', 'PRINT', 8, 0),
   ('d0000000-0000-4000-8000-000000000002', 'PRINT', 6, 0),
   ('d0000000-0000-4000-8000-000000000003', 'TOP DYED WEAVING', 6, 0),
   ('d0000000-0000-4000-8000-000000000004', 'Silk Weaving', 4, 0),
-  ('d0000000-0000-4000-8000-000000000005', 'Silk Top Dyed Weaving', 1, 0);
+  ('d0000000-0000-4000-8000-000000000005', 'Silk Top Dyed Weaving', 1, 0),
+  ('d0000000-0000-4000-8000-000000000006', 'Silk Zari', 5, 0);
 
 -- Colors
 delete from product_colors where product_id in (
   'd0000000-0000-4000-8000-000000000001',
-  'd0000000-0000-4000-8000-000000000002'
+  'd0000000-0000-4000-8000-000000000002',
+  'd0000000-0000-4000-8000-000000000006'
 );
 insert into product_colors (product_id, name, hex, slug, image_indexes, sort_order) values
   ('d0000000-0000-4000-8000-000000000001', 'Off White', '#E8E6E1', 'off-white', '{0,1,2}', 0),
@@ -316,23 +375,31 @@ insert into product_colors (product_id, name, hex, slug, image_indexes, sort_ord
   ('d0000000-0000-4000-8000-000000000002', 'Sage Green', '#8FA89A', 'sage-green', '{0,1}', 0),
   ('d0000000-0000-4000-8000-000000000002', 'Dusty Mauve', '#A88986', 'dusty-mauve', '{2,3}', 1),
   ('d0000000-0000-4000-8000-000000000002', 'Grey Embroidered', '#9A9A9A', 'grey-embroidered', '{4}', 2),
-  ('d0000000-0000-4000-8000-000000000002', 'Dusty Rose', '#C49A9A', 'dusty-rose', '{5,6,7}', 3);
+  ('d0000000-0000-4000-8000-000000000002', 'Dusty Rose', '#C49A9A', 'dusty-rose', '{5,6,7}', 3),
+  ('d0000000-0000-4000-8000-000000000006', 'Turquoise', '#0D9B9B', 'turquoise', '{0,1,2,3,4,5,6,7}', 0);
 
 -- Inventory
 delete from inventory where product_id in (
   'd0000000-0000-4000-8000-000000000001',
-  'd0000000-0000-4000-8000-000000000002'
+  'd0000000-0000-4000-8000-000000000002',
+  'd0000000-0000-4000-8000-000000000006'
 );
 insert into inventory (product_id, warehouse_code, quantity_on_hand, quantity_reserved) values
   ('d0000000-0000-4000-8000-000000000001', 'DEFAULT', 8, 0),
-  ('d0000000-0000-4000-8000-000000000002', 'DEFAULT', 6, 0);
+  ('d0000000-0000-4000-8000-000000000002', 'DEFAULT', 6, 0),
+  ('d0000000-0000-4000-8000-000000000006', 'DEFAULT', 5, 0);
 
 -- Featured / related
 delete from featured_products where product_id in (
   'd0000000-0000-4000-8000-000000000001',
-  'd0000000-0000-4000-8000-000000000002'
+  'd0000000-0000-4000-8000-000000000002',
+  'd0000000-0000-4000-8000-000000000003',
+  'd0000000-0000-4000-8000-000000000004',
+  'd0000000-0000-4000-8000-000000000005',
+  'd0000000-0000-4000-8000-000000000006'
 );
 insert into featured_products (product_id, slot, display_order) values
+  ('d0000000-0000-4000-8000-000000000006', 'shop', 0),
   ('d0000000-0000-4000-8000-000000000001', 'shop', 1),
   ('d0000000-0000-4000-8000-000000000002', 'shop', 2),
   ('d0000000-0000-4000-8000-000000000003', 'shop', 3),
@@ -344,17 +411,26 @@ delete from related_products where product_id in (
   'd0000000-0000-4000-8000-000000000002',
   'd0000000-0000-4000-8000-000000000003',
   'd0000000-0000-4000-8000-000000000004',
-  'd0000000-0000-4000-8000-000000000005'
+  'd0000000-0000-4000-8000-000000000005',
+  'd0000000-0000-4000-8000-000000000006'
 );
 insert into related_products (product_id, related_product_id, relation_type, display_order) values
+  ('d0000000-0000-4000-8000-000000000006', 'd0000000-0000-4000-8000-000000000001', 'related', 1),
+  ('d0000000-0000-4000-8000-000000000006', 'd0000000-0000-4000-8000-000000000002', 'related', 2),
+  ('d0000000-0000-4000-8000-000000000006', 'd0000000-0000-4000-8000-000000000004', 'related', 3),
   ('d0000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000002', 'related', 1),
+  ('d0000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000006', 'related', 2),
   ('d0000000-0000-4000-8000-000000000002', 'd0000000-0000-4000-8000-000000000001', 'related', 1),
+  ('d0000000-0000-4000-8000-000000000002', 'd0000000-0000-4000-8000-000000000006', 'related', 2),
   ('d0000000-0000-4000-8000-000000000003', 'd0000000-0000-4000-8000-000000000001', 'related', 1),
   ('d0000000-0000-4000-8000-000000000003', 'd0000000-0000-4000-8000-000000000002', 'related', 2),
-  ('d0000000-0000-4000-8000-000000000004', 'd0000000-0000-4000-8000-000000000001', 'related', 1),
-  ('d0000000-0000-4000-8000-000000000004', 'd0000000-0000-4000-8000-000000000002', 'related', 2),
-  ('d0000000-0000-4000-8000-000000000004', 'd0000000-0000-4000-8000-000000000003', 'related', 3),
-  ('d0000000-0000-4000-8000-000000000005', 'd0000000-0000-4000-8000-000000000001', 'related', 1),
-  ('d0000000-0000-4000-8000-000000000005', 'd0000000-0000-4000-8000-000000000002', 'related', 2),
-  ('d0000000-0000-4000-8000-000000000005', 'd0000000-0000-4000-8000-000000000003', 'related', 3),
-  ('d0000000-0000-4000-8000-000000000005', 'd0000000-0000-4000-8000-000000000004', 'related', 4);
+  ('d0000000-0000-4000-8000-000000000003', 'd0000000-0000-4000-8000-000000000006', 'related', 3),
+  ('d0000000-0000-4000-8000-000000000004', 'd0000000-0000-4000-8000-000000000006', 'related', 1),
+  ('d0000000-0000-4000-8000-000000000004', 'd0000000-0000-4000-8000-000000000001', 'related', 2),
+  ('d0000000-0000-4000-8000-000000000004', 'd0000000-0000-4000-8000-000000000002', 'related', 3),
+  ('d0000000-0000-4000-8000-000000000004', 'd0000000-0000-4000-8000-000000000003', 'related', 4),
+  ('d0000000-0000-4000-8000-000000000005', 'd0000000-0000-4000-8000-000000000006', 'related', 1),
+  ('d0000000-0000-4000-8000-000000000005', 'd0000000-0000-4000-8000-000000000001', 'related', 2),
+  ('d0000000-0000-4000-8000-000000000005', 'd0000000-0000-4000-8000-000000000002', 'related', 3),
+  ('d0000000-0000-4000-8000-000000000005', 'd0000000-0000-4000-8000-000000000003', 'related', 4),
+  ('d0000000-0000-4000-8000-000000000005', 'd0000000-0000-4000-8000-000000000004', 'related', 5);

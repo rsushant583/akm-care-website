@@ -32,6 +32,10 @@ const sareeColorsRooh = [
   { id: "mocha", name: "Mocha", hex: "#9C7E6E" },
 ];
 
+const sareeColorsTurquoise = [
+  { id: "turquoise", name: "Turquoise", hex: "#0D9B9B", imageIndexes: [0, 1, 2, 3, 4, 5, 6, 7] },
+];
+
 function buildSaree(input: {
   id: string;
   folder: string;
@@ -50,17 +54,29 @@ function buildSaree(input: {
   isBestSeller?: boolean;
   popularity: number;
   createdAt: string;
+  shortDescription?: string;
+  detailedDescription?: string;
+  dimensions?: string;
+  variantName?: string;
+  packingType?: string;
+  gstPercent?: number;
+  hsn?: string;
+  tags?: string[];
 }): CatalogProduct {
   const discountPercent =
     typeof input.mrp === "number"
       ? calcDiscountPercent(input.mrp, input.akmCarePrice)
       : 14;
   const images = catalogImages(input.folder, input.imageCount, input.name);
-  const shortDescription = "Chanderi Print Saree with unstitched Blouse";
+  const shortDescription = input.shortDescription ?? "Chanderi Print Saree with unstitched Blouse";
   const detailedDescription =
+    input.detailedDescription ??
     "Premium Chanderi print saree (approx. 6.2 metres) with unstitched blouse piece. Elegant floral vine work, finished border, and festive-ready drape. Sourced for AKM Care — Trusted & Fair apparel.";
 
   const status = input.quantity > 0 ? ("available" as const) : ("sold_out" as const);
+  const packingType = input.packingType ?? "Polythene Packing";
+  const variantName = input.variantName ?? "PRINT";
+  const tags = input.tags ?? ["Chanderi", "Ethnic Wear", "Apparel", "Print", "Women", "AKM Care"];
 
   return {
     id: input.id,
@@ -73,27 +89,27 @@ function buildSaree(input: {
     sku: input.sku,
     productCode: input.productCode,
     quantity: input.quantity,
-    dimensions: "6.2 Mtrs APX",
+    dimensions: input.dimensions ?? "6.2 Mtrs APX",
     weight: null,
-    variants: [{ id: "print", name: "PRINT", stock: input.quantity }],
+    variants: [{ id: variantName.toLowerCase().replace(/\s+/g, "-"), name: variantName, stock: input.quantity }],
     colors: input.colors,
     mrp: input.mrp,
     sellingPrice: input.sellingPrice,
     akmCarePrice: input.akmCarePrice,
     discountPercent,
-    gstPercent: 5,
+    gstPercent: input.gstPercent ?? 5,
     gstNumber: "24AIFPB2688G1ZG",
-    hsn: "540752",
+    hsn: input.hsn ?? "540752",
     shippingTime: "within 24 Hours",
     warranty: "NA — within 7 days return policy",
-    packingType: "Polythene Packing",
+    packingType,
     freightCost: null,
     status,
     category: "sarees",
     categoryLabel: "Sarees",
     brand: "AKM Care",
     returnPolicy: "7 days return policy — unused product with original packing",
-    tags: ["Chanderi", "Ethnic Wear", "Apparel", "Print", "Women", "AKM Care"],
+    tags,
     rating: 4.5,
     reviewCount: 0,
     isFeatured: input.isFeatured,
@@ -111,6 +127,34 @@ function buildSaree(input: {
 
 /** Imported from data/imports/products.xlsx (Pd Data.xlsx) + catalog photos */
 export const catalogProductsFromExcel: CatalogProduct[] = [
+  buildSaree({
+    id: "excel-6",
+    folder: "akmc-turquoise-zari",
+    imageCount: 8,
+    name: "AKMC Turquoise Zari Silk Saree",
+    sku: "AKMCTQZ",
+    productCode: "AKMCTQZ",
+    quantity: 5,
+    mrp: 4290,
+    sellingPrice: 4290,
+    akmCarePrice: 3699,
+    colors: sareeColorsTurquoise,
+    displayOrder: 0,
+    isFeatured: true,
+    isNewArrival: true,
+    isBestSeller: true,
+    popularity: 100,
+    createdAt: "2026-08-16T04:00:00.000Z",
+    shortDescription: "Turquoise silk saree with gold zari border & blouse",
+    detailedDescription:
+      "Vibrant turquoise silk saree with antique gold and copper zari butis, ornate mandala border, and matching short-sleeve blouse. Festive-ready drape with rich sheen — sourced for AKM Care — Trusted & Fair apparel.",
+    dimensions: "6.3 Mtrs APX",
+    variantName: "Silk Zari",
+    packingType: "Box Packing",
+    gstPercent: 5,
+    hsn: "540710",
+    tags: ["Silk", "Zari", "Turquoise", "Ethnic Wear", "Saree", "Apparel", "AKM Care"],
+  }),
   buildSaree({
     id: "excel-1",
     folder: "akmc-sani-1007",

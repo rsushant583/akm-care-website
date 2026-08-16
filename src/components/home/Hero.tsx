@@ -11,8 +11,13 @@ export type HeroTile = {
 
 /** Real catalog paths for first paint — replaced by live tiles when catalog loads. */
 const SEED_TILES: HeroTile[] = [
-  { src: "/catalog/akmc-sani-1007/01.png", alt: "AKMC SANI saree", href: productPath("akmc-sani-1007") },
+  {
+    src: "/catalog/akmc-turquoise-zari/01.png",
+    alt: "AKMC Turquoise Zari Silk Saree",
+    href: productPath("akmc-turquoise-zari"),
+  },
   { src: "/catalog/akmc-rooh-0002/01.png", alt: "AKMC ROOH saree", href: productPath("akmc-rooh-0002") },
+  { src: "/catalog/akmc-sani-1007/01.png", alt: "AKMC SANI saree", href: productPath("akmc-sani-1007") },
 ];
 
 const shortLabel: Record<string, string> = {
