@@ -254,7 +254,7 @@ insert into products (
   5, 'available', 'within 24 Hours', 'NA — within 7 days return policy', 'Box Packing', null,
   'sarees', 'Sarees', '["Silk","Zari","Turquoise","Ethnic Wear","Saree","Apparel","AKM Care"]'::jsonb,
   true, true, true, true, 100, 0,
-  '/catalog/akmc-turquoise-zari/01.png',
+  'https://tdqepnmysycxklqcvpai.supabase.co/storage/v1/object/public/products/akmc-turquoise-zari/image-01.webp',
   'AKMC Turquoise Zari Silk Saree | AKM Care',
   'Buy AKMC Turquoise Zari silk saree with gold border and matching blouse. AKM Care price ₹3699.',
   '{"variant":"Silk Zari","packing":"Box Packing","blouse":"Matching","colours":1,"size":"6.3 Mtrs APX","serial":6}'::jsonb
@@ -334,14 +334,14 @@ select
   g = 1
 from generate_series(1, 2) as g;
 
--- Images Turquoise Zari (8) — local catalog paths
+-- Images Turquoise Zari (8) — Supabase Storage WebP
 delete from product_images where product_id = 'd0000000-0000-4000-8000-000000000006';
 insert into product_images (product_id, url, alt, storage_path, sort_order, is_primary)
 select
   'd0000000-0000-4000-8000-000000000006',
-  '/catalog/akmc-turquoise-zari/' || lpad(g::text, 2, '0') || '.png',
+  'https://tdqepnmysycxklqcvpai.supabase.co/storage/v1/object/public/products/akmc-turquoise-zari/image-' || lpad(g::text, 2, '0') || '.webp',
   'AKMC Turquoise Zari Silk Saree — view ' || g,
-  'products/akmc-turquoise-zari/' || lpad(g::text, 2, '0') || '.png',
+  'akmc-turquoise-zari/image-' || lpad(g::text, 2, '0') || '.webp',
   g - 1,
   g = 1
 from generate_series(1, 8) as g;

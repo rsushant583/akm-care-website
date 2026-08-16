@@ -14,6 +14,18 @@ function catalogImages(folder: string, count: number, altBase: string, color?: s
   });
 }
 
+/** Supabase Storage URLs for products that ship CDN-first (reliable on deploy). */
+function storageCatalogImages(folder: string, count: number, altBase: string) {
+  const base = `https://tdqepnmysycxklqcvpai.supabase.co/storage/v1/object/public/products/${folder}`;
+  return Array.from({ length: count }, (_, i) => {
+    const n = String(i + 1).padStart(2, "0");
+    return {
+      src: `${base}/image-${n}.webp`,
+      alt: `${altBase} — view ${i + 1}`,
+    };
+  });
+}
+
 const sareeColorsSani = [
   { id: "off-white", name: "Off White", hex: "#E8E6E1", imageIndexes: [0, 1, 2] },
   { id: "light-grey", name: "Light Grey", hex: "#C8C9CA", imageIndexes: [3, 4, 5, 6] },
@@ -62,12 +74,16 @@ function buildSaree(input: {
   gstPercent?: number;
   hsn?: string;
   tags?: string[];
+  /** When true, use Supabase Storage WebP URLs instead of /catalog/... PNG paths. */
+  useStorageImages?: boolean;
 }): CatalogProduct {
   const discountPercent =
     typeof input.mrp === "number"
       ? calcDiscountPercent(input.mrp, input.akmCarePrice)
       : 14;
-  const images = catalogImages(input.folder, input.imageCount, input.name);
+  const images = input.useStorageImages
+    ? storageCatalogImages(input.folder, input.imageCount, input.name)
+    : catalogImages(input.folder, input.imageCount, input.name);
   const shortDescription = input.shortDescription ?? "Chanderi Print Saree with unstitched Blouse";
   const detailedDescription =
     input.detailedDescription ??
@@ -154,6 +170,7 @@ export const catalogProductsFromExcel: CatalogProduct[] = [
     gstPercent: 5,
     hsn: "540710",
     tags: ["Silk", "Zari", "Turquoise", "Ethnic Wear", "Saree", "Apparel", "AKM Care"],
+    useStorageImages: true,
   }),
   buildSaree({
     id: "excel-1",
