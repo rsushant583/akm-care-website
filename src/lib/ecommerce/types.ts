@@ -88,6 +88,8 @@ export interface CatalogProduct {
   image_url: string;
   stock_quantity: number;
   description: string;
+  seoTitle?: string;
+  seoDescription?: string;
 }
 
 export type SortOption = "newest" | "price-asc" | "price-desc" | "popularity" | "discount";

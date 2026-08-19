@@ -1,10 +1,14 @@
+import { absoluteSiteUrl, getCanonicalSiteOrigin } from "@/lib/config/siteUrl";
+
+const siteOrigin = getCanonicalSiteOrigin();
+
 export const organizationSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: "AKM Care",
   alternateName: "AKM Care",
-  url: "https://akmcare.in",
-  logo: "https://akmcare.in/logo.jpeg",
+  url: siteOrigin,
+  logo: absoluteSiteUrl("/logo.jpeg"),
   description:
     "Industrial training, HR solutions, compliance consulting and rural e-commerce platform serving pan-India.",
   address: {
@@ -75,6 +79,6 @@ export const breadcrumbSchema = (items: { name: string; url: string }[]) => ({
     "@type": "ListItem",
     position: i + 1,
     name: item.name,
-    item: `https://akmcare.in${item.url}`,
+    item: absoluteSiteUrl(item.url),
   })),
 });
