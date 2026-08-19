@@ -9,6 +9,7 @@ import {
   formatCustomerPaymentStatus,
 } from "@/lib/account/orderDisplay";
 import { CustomerFulfillmentBadge, CustomerPaymentBadge } from "@/components/account/OrderStatusBadges";
+import { trackPurchaseFromReceipt } from "@/lib/analytics/events";
 
 export default function OrderSuccessPage() {
   const [params] = useSearchParams();
@@ -37,6 +38,11 @@ export default function OrderSuccessPage() {
       })
       .finally(() => setLoading(false));
   }, [orderNumber, accessToken]);
+
+  useEffect(() => {
+    if (!payload) return;
+    trackPurchaseFromReceipt(payload);
+  }, [payload]);
 
   const invoiceText = useMemo(() => {
     if (!payload) return "";

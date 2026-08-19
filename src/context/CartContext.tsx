@@ -29,6 +29,7 @@ import {
   syncCartToDatabase,
 } from "@/services/cartService";
 import { getProductById } from "@/services/productService";
+import { trackAddToCart, trackRemoveFromCart } from "@/lib/analytics/events";
 
 const CART_KEY = "akm_shop_cart_v1";
 const SAVED_KEY = "akm_shop_saved_v1";
@@ -212,19 +213,36 @@ export function CartProvider({ children }: { children: ReactNode }) {
       toast.error("This product is currently out of stock.");
       return;
     }
+    const addQty = payload.quantity ?? 1;
+    let analyticsPayload: { product: CatalogProduct; quantity: number; line?: CartLineItem } | null = null;
+
     setItems((prev) => {
       const idx = prev.findIndex((l) =>
         matchesLine(l, payload.product.id, payload.colorId, payload.variantId),
       );
-      if (idx === -1) return [...prev, toLine(payload)];
+      if (idx === -1) {
+        const line = toLine({ ...payload, quantity: addQty });
+        analyticsPayload = { product: payload.product, quantity: line.quantity, line };
+        return [...prev, line];
+      }
       const next = [...prev];
       const max = next[idx].maxQuantity;
-      next[idx] = {
-        ...next[idx],
-        quantity: Math.min(max, next[idx].quantity + (payload.quantity ?? 1)),
+      const previousQty = next[idx].quantity;
+      const nextQty = Math.min(max, previousQty + addQty);
+      const addedQty = nextQty - previousQty;
+      if (addedQty <= 0) return prev;
+      next[idx] = { ...next[idx], quantity: nextQty };
+      analyticsPayload = {
+        product: payload.product,
+        quantity: addedQty,
+        line: { ...next[idx], quantity: addedQty },
       };
       return next;
     });
+
+    if (analyticsPayload) {
+      trackAddToCart(analyticsPayload);
+    }
     toast.success("Added to cart", {
       action: {
         label: "View Cart",
@@ -254,7 +272,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const removeFromCart = useCallback((productId: string, colorId?: string, variantId?: string) => {
-    setItems((prev) => prev.filter((l) => !matchesLine(l, productId, colorId, variantId)));
+    setItems((prev) => {
+      const removed = prev.find((l) => matchesLine(l, productId, colorId, variantId));
+      if (removed) {
+        queueMicrotask(() => trackRemoveFromCart(removed));
+      }
+      return prev.filter((l) => !matchesLine(l, productId, colorId, variantId));
+    });
   }, []);
 
   const clearCart = useCallback(() => setItems([]), []);

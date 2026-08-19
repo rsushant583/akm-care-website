@@ -41,6 +41,7 @@ import {
   StickyBuyBar,
 } from "@/components/shop";
 import { cn } from "@/lib/utils";
+import { trackViewItem } from "@/lib/analytics/events";
 
 function isMeaningful(value?: string | number | null): boolean {
   if (value == null) return false;
@@ -87,10 +88,18 @@ export default function ProductDetails() {
   const [openSection, setOpenSection] = useState<"shipping" | "returns" | "warranty" | null>("shipping");
   const actionsRef = useRef<HTMLDivElement>(null);
   const addLockRef = useRef(false);
+  const viewedProductIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (product) track(product);
   }, [product, track]);
+
+  useEffect(() => {
+    if (!product || loading || error) return;
+    if (viewedProductIdRef.current === product.id) return;
+    viewedProductIdRef.current = product.id;
+    trackViewItem(product);
+  }, [product, loading, error]);
 
   useEffect(() => {
     setQty(1);

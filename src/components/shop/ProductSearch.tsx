@@ -52,6 +52,7 @@ function productMatchesQuery(product: CatalogProduct, q: string) {
 export function ProductSearch({
   value,
   onChange,
+  onSearchCommit,
   products = EMPTY_PRODUCTS,
   placeholder = "Search name, code, category…",
   className,
@@ -59,6 +60,7 @@ export function ProductSearch({
 }: {
   value: string;
   onChange: (value: string) => void;
+  onSearchCommit?: (term: string) => void;
   products?: CatalogProduct[];
   placeholder?: string;
   className?: string;
@@ -175,9 +177,11 @@ export function ProductSearch({
       setLocalValue(t);
       if (t) navigate(`/shop?q=${encodeURIComponent(t)}`);
       else navigate("/shop");
+      if (t) onSearchCommit?.(t);
       return;
     }
     onChange(term);
+    if (t) onSearchCommit?.(t);
   };
 
   const activateOption = (option: Option) => {

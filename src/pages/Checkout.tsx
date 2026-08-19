@@ -14,6 +14,11 @@ import { cn } from "@/lib/utils";
 import { listAddresses, saveAddress, type Address } from "@/services/addressService";
 import { markOrderFailed } from "@/services/orderService";
 import { createRazorpayOrder, loadRazorpayScript, verifyRazorpayPayment } from "@/lib/paymentService";
+import {
+  trackBeginCheckout,
+  trackPurchaseAfterVerify,
+  trackPurchaseFromCreateResponse,
+} from "@/lib/analytics/events";
 import { sendOrderEmail } from "@/lib/emailService";
 import { productPath } from "@/lib/ecommerce/slug";
 
@@ -173,6 +178,14 @@ export default function Checkout() {
       shippingMethod,
     }));
   }, [profile, user, shippingMethod]);
+
+  const beginCheckoutTrackedRef = useRef(false);
+
+  useEffect(() => {
+    if (items.length === 0 || beginCheckoutTrackedRef.current) return;
+    beginCheckoutTrackedRef.current = true;
+    trackBeginCheckout(items, couponCode);
+  }, [items, couponCode]);
 
   useEffect(() => {
     const payload: PersistedCheckout = {
@@ -450,6 +463,10 @@ export default function Checkout() {
         accessToken: session?.access_token,
       });
 
+      if (created?.paymentStatus === "paid" && created.orderNumber && created.totals) {
+        trackPurchaseFromCreateResponse(created);
+      }
+
       if (!created?.success || !created.order || !created.orderHeaderId || !created.accessToken) {
         const raw = created?.error || "We couldn't start the payment. Please try again.";
         const msg = /server env missing for payments/i.test(raw)
@@ -534,6 +551,15 @@ export default function Checkout() {
               setSubmitting(false);
               submitLockRef.current = false;
               return;
+            }
+
+            if (verified.paymentStatus === "paid") {
+              trackPurchaseAfterVerify({
+                paymentStatus: verified.paymentStatus,
+                orderNumber: verified.orderNumber || created.orderNumber,
+                amount: verified.amount,
+                created,
+              });
             }
 
             try {

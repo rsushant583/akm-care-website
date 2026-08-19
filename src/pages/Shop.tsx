@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Bell, Filter, LayoutGrid, List, ShoppingCart, SlidersHorizontal, X } from "lucide-react";
 import { SEO } from "@/components/SEO";
@@ -38,6 +38,7 @@ import { cn } from "@/lib/utils";
 import { getCategoryLabel } from "@/data/catalog/categories";
 import { isProductInStock } from "@/lib/ecommerce/availability";
 import { formatINR } from "@/lib/ecommerce/pricing";
+import { trackSearch, trackViewItemList } from "@/lib/analytics/events";
 
 function uniqueMerch(list: CatalogProduct[], exclude: Set<string>, min = 2) {
   const out = list.filter((p) => !exclude.has(p.id));
@@ -224,6 +225,47 @@ export default function Shop() {
   const activeFilterCount = countActiveShopFilters(filters);
   const resultCount = total || filtered.length;
   const heading = collectionLabel || categoryLabel || "All Products";
+  const lastListKeyRef = useRef("");
+
+  useEffect(() => {
+    if (loading || filtered.length === 0) return;
+
+    let itemListId = "all-products";
+    let itemListName = "All Products";
+    if (filters.query.trim()) {
+      itemListId = "search-results";
+      itemListName = "Search Results";
+    } else if (collection) {
+      itemListId = `collection:${collection}`;
+      itemListName = collectionLabel || collection;
+    } else if (filters.category !== "all") {
+      itemListId = `category:${filters.category}`;
+      itemListName = categoryLabel || filters.category;
+    }
+
+    const listKey = `${itemListId}|${total}|${filtered.length}`;
+    if (lastListKeyRef.current === listKey) return;
+    lastListKeyRef.current = listKey;
+
+    trackViewItemList({
+      itemListId,
+      itemListName,
+      products: filtered,
+    });
+  }, [
+    loading,
+    filtered,
+    total,
+    filters.query,
+    filters.category,
+    collection,
+    categoryLabel,
+    collectionLabel,
+  ]);
+
+  const handleSearchCommit = useCallback((term: string) => {
+    trackSearch(term);
+  }, []);
 
   const chips: Chip[] = useMemo(() => {
     const list: Chip[] = [];
@@ -371,7 +413,12 @@ export default function Shop() {
           <div className="flex flex-col lg:flex-row gap-4 lg:items-center justify-between">
             <CategoryStrip active={filters.category} onSelect={setCategory} />
             <div className="flex items-center gap-2 w-full lg:w-auto">
-              <ProductSearch value={filters.query} onChange={setQuery} className="flex-1 lg:w-80" />
+              <ProductSearch
+                value={filters.query}
+                onChange={setQuery}
+                onSearchCommit={handleSearchCommit}
+                className="flex-1 lg:w-80"
+              />
               <Link
                 to="/cart"
                 className="inline-flex items-center gap-2 px-3 py-3 min-h-11 bg-[#E8621A] text-white text-sm font-semibold"

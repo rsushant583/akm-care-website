@@ -14,6 +14,7 @@ import { CompareProvider } from "@/context/CompareContext";
 import { RecentlyViewedProvider } from "@/context/RecentlyViewedContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
+import { Ga4RouteTracker } from "@/lib/analytics/ga4";
 
 import Index from "./pages/Index";
 const About = lazy(() => import("./pages/About"));
@@ -146,6 +147,7 @@ const App = () => (
                     <Sonner />
                     <BrowserRouter>
                       <ScrollToTop />
+                      <Ga4RouteTracker />
                       <Layout>
                         <AppRoutes />
                       </Layout>

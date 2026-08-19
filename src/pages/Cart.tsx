@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Bookmark, Minus, Plus, Trash2 } from "lucide-react";
 import { SEO } from "@/components/SEO";
@@ -9,6 +9,7 @@ import { EmptyState, RecentlyViewedStrip, ShopBreadcrumbs } from "@/components/s
 import { shopBreadcrumbs } from "@/lib/ecommerce/seo";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
+import { trackViewCart } from "@/lib/analytics/events";
 
 function SavedSection() {
   const { savedForLater, moveToCart, removeSaved } = useCart();
@@ -74,8 +75,15 @@ export default function CartPage() {
   } = useCart();
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [qtyBusyKey, setQtyBusyKey] = useState<string | null>(null);
+  const viewCartTrackedRef = useRef(false);
 
   const crumbs = shopBreadcrumbs([{ name: "Cart", url: "/cart" }]);
+
+  useEffect(() => {
+    if (items.length === 0 || viewCartTrackedRef.current) return;
+    viewCartTrackedRef.current = true;
+    trackViewCart(items);
+  }, [items]);
 
   useEffect(() => {
     if (items.length === 0) return;
