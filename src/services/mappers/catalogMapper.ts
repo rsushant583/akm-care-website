@@ -174,5 +174,7 @@ export function mapCatalogRow(row: CatalogListRow, index = 0): CatalogProduct {
     image_url: images[0]?.src ?? row.image_url ?? "",
     stock_quantity: stock,
     description: String(row.description ?? row.short_description ?? ""),
+    seoTitle: row.seo_title?.trim() || undefined,
+    seoDescription: row.seo_description?.trim() || undefined,
   };
 }

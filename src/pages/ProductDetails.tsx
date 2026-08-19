@@ -249,6 +249,7 @@ export default function ProductDetails() {
         description={seo.description}
         keywords={seo.keywords}
         canonical={seo.canonical}
+        exactTitle={seo.exactTitle}
         ogImage={seo.ogImage}
         ogType={seo.ogType}
         schema={[seo.schema, breadcrumbSchema(crumbs)]}

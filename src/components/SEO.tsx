@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet-async";
+import { absoluteSiteUrl, getCanonicalSiteOrigin } from "@/lib/config/siteUrl";
 
 interface SEOProps {
   title: string;
@@ -8,12 +9,13 @@ interface SEOProps {
   ogImage?: string;
   ogType?: string;
   schema?: object | object[];
+  /** When true, title is used as-is (e.g. admin-provided seo_title). */
+  exactTitle?: boolean;
   /** Override default robots meta (e.g. "noindex, nofollow" for admin/404). */
   robots?: string;
 }
 
-const SITE_URL = "https://akmcare.in";
-const DEFAULT_IMAGE = `${SITE_URL}/og-image.jpg`;
+const DEFAULT_IMAGE = `${getCanonicalSiteOrigin()}/og-image.jpg`;
 const ORG_NAME = "AKM Care";
 
 export function SEO({
@@ -24,10 +26,11 @@ export function SEO({
   ogImage = DEFAULT_IMAGE,
   ogType = "website",
   schema,
+  exactTitle = false,
   robots = "index, follow, max-image-preview:large",
 }: SEOProps) {
-  const fullTitle = `${title} | ${ORG_NAME}`;
-  const canonicalUrl = canonical ? `${SITE_URL}${canonical}` : SITE_URL;
+  const fullTitle = exactTitle ? title : `${title} | ${ORG_NAME}`;
+  const canonicalUrl = canonical ? absoluteSiteUrl(canonical) : getCanonicalSiteOrigin();
 
   return (
     <Helmet>

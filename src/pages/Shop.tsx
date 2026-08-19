@@ -192,6 +192,14 @@ export default function Shop() {
         : undefined,
   );
 
+  /** Self-referencing canonical for indexable category views; /shop for collections and filtered search. */
+  const shopCanonical = useMemo(() => {
+    if (filters.category !== "all" && !collection && !filters.query.trim()) {
+      return `/shop?category=${encodeURIComponent(filters.category)}`;
+    }
+    return "/shop";
+  }, [filters.category, collection, filters.query]);
+
   const catalogIds = useMemo(() => new Set(filtered.map((p) => p.id)), [filtered]);
   const showMerchRows =
     !collection && filters.category === "all" && !filters.query.trim() && total > 8;
@@ -350,7 +358,7 @@ export default function Shop() {
         }
         description="Shop authentic fashion online — sarees, lehengas, gowns, 3-piece suits and men's jeans. Live pricing and stock, delivered pan-India by AKM Care."
         keywords="buy sarees online, lehenga, ladies gown, 3 piece suit, mens jeans, AKM Care shop"
-        canonical="/shop"
+        canonical={shopCanonical}
         schema={breadcrumbSchema(crumbs)}
       />
 

@@ -1,4 +1,5 @@
 import { toast } from "@/components/ui/sonner";
+import { absoluteSiteUrl } from "@/lib/config/siteUrl";
 import { productPath } from "@/lib/ecommerce/slug";
 
 export async function shareProduct(input: {
@@ -6,10 +7,7 @@ export async function shareProduct(input: {
   slug: string;
   text?: string;
 }): Promise<void> {
-  const url =
-    typeof window !== "undefined"
-      ? `${window.location.origin}${productPath(input.slug)}`
-      : `https://akmcare.in${productPath(input.slug)}`;
+  const url = absoluteSiteUrl(productPath(input.slug));
 
   const payload = {
     title: input.name,
