@@ -1,7 +1,18 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { createHmac } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { corsHeadersFor, json } from "../_shared/http.ts";
 import { fulfillPaidOrder } from "../_shared/fulfillPaidOrder.ts";
+
+function signaturesMatch(expectedHex: string, provided: string) {
+  try {
+    const a = Buffer.from(expectedHex, "utf8");
+    const b = Buffer.from(provided, "utf8");
+    if (a.length !== b.length) return false;
+    return timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
+}
 
 async function fetchRazorpayPayment(paymentId: string, keyId: string, keySecret: string) {
   const auth = btoa(`${keyId}:${keySecret}`);
@@ -42,8 +53,8 @@ Deno.serve(async (req) => {
     const expected = createHmac("sha256", secret)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest("hex");
-    if (expected !== razorpay_signature) {
-      return json(req, 400, { success: false, error: "Invalid payment signature" });
+    if (!signaturesMatch(expected, razorpay_signature)) {
+      return json(req, 400, { success: false, error: "Invalid payment signature", code: "invalid_signature" });
     }
 
     const supabase = createClient(supabaseUrl, serviceRole);
@@ -63,9 +74,9 @@ Deno.serve(async (req) => {
       return json(req, 200, {
         success: true,
         duplicate: true,
+        paymentStatus: "paid",
         orderHeaderId: header.id,
         orderNumber: header.order_number,
-        accessToken: header.access_token,
         amount: Number(header.grand_total),
       });
     }
@@ -74,8 +85,38 @@ Deno.serve(async (req) => {
     if (String(rpPayment.order_id) !== razorpay_order_id) {
       return json(req, 400, { success: false, error: "Payment does not belong to this order" });
     }
-    if (!["captured", "authorized"].includes(String(rpPayment.status))) {
-      return json(req, 400, { success: false, error: "Payment is not captured" });
+
+    const rpStatus = String(rpPayment.status || "");
+    if (rpStatus === "authorized") {
+      // Auto-capture path usually yields captured; authorized alone is not final paid.
+      await supabase
+        .from("payments")
+        .update({
+          razorpay_payment_id,
+          status: "authorized",
+          method: rpPayment.method || "razorpay",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("order_id", header.id)
+        .eq("razorpay_order_id", razorpay_order_id)
+        .neq("status", "captured");
+
+      return json(req, 200, {
+        success: true,
+        pendingCapture: true,
+        paymentStatus: "created",
+        orderHeaderId: header.id,
+        orderNumber: header.order_number,
+        amount: Number(header.grand_total),
+      });
+    }
+
+    if (rpStatus !== "captured") {
+      return json(req, 400, {
+        success: false,
+        error: "Payment is not captured",
+        code: "not_captured",
+      });
     }
 
     const expectedPaise = Math.round(Number(header.grand_total) * 100);
@@ -97,16 +138,16 @@ Deno.serve(async (req) => {
     return json(req, 200, {
       success: true,
       duplicate: result.duplicate,
+      paymentStatus: "paid",
       orderHeaderId: header.id,
       orderNumber: header.order_number,
-      accessToken: header.access_token,
       amount: Number(header.grand_total),
-      legacyOrderIds: result.legacyOrderIds,
     });
   } catch {
     return json(req, 500, {
       success: false,
       error: "Payment verification failed. Please try again or contact support.",
+      code: "verify_error",
     });
   }
 });

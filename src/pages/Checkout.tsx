@@ -13,7 +13,7 @@ import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { listAddresses, saveAddress, type Address } from "@/services/addressService";
 import { markOrderFailed } from "@/services/orderService";
-import { createRazorpayOrder, loadRazorpayScript, verifyRazorpayPayment } from "@/lib/paymentService";
+import { createRazorpayOrder, isCheckoutAttemptKey, loadRazorpayScript, verifyRazorpayPayment } from "@/lib/paymentService";
 import {
   trackBeginCheckout,
   trackPurchaseAfterVerify,
@@ -26,6 +26,53 @@ const STEPS = ["Cart", "Customer", "Address", "Shipping", "Payment", "Review"] a
 type StepIndex = 1 | 2 | 3 | 4 | 5 | 6;
 
 const CHECKOUT_STORAGE_KEY = "akm_checkout_draft_v2";
+const CHECKOUT_ATTEMPT_KEY = "akm_checkout_attempt_v1";
+
+type StoredCheckoutAttempt = { key: string; cartFp: string };
+
+function readCheckoutAttempt(): StoredCheckoutAttempt | null {
+  try {
+    const raw = localStorage.getItem(CHECKOUT_ATTEMPT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as StoredCheckoutAttempt;
+    if (!parsed?.key || !isCheckoutAttemptKey(parsed.key)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function persistCheckoutAttempt(key: string, cartFp: string) {
+  try {
+    localStorage.setItem(CHECKOUT_ATTEMPT_KEY, JSON.stringify({ key, cartFp }));
+  } catch {
+    /* ignore quota */
+  }
+}
+
+/** Reuse the same attempt UUID across retry/refresh/tabs while the cart is unchanged. */
+function getOrCreateCheckoutAttemptKey(cartFp: string) {
+  const stored = readCheckoutAttempt();
+  if (stored && stored.cartFp === cartFp) return stored.key;
+  const key = crypto.randomUUID();
+  persistCheckoutAttempt(key, cartFp);
+  return key;
+}
+
+/** Call only when this payment attempt is consumed (dismiss, fail, paid, or server new_attempt_required). */
+function rotateCheckoutAttemptKey(cartFp: string) {
+  const key = crypto.randomUUID();
+  persistCheckoutAttempt(key, cartFp);
+  return key;
+}
+
+function clearCheckoutAttemptKey() {
+  try {
+    localStorage.removeItem(CHECKOUT_ATTEMPT_KEY);
+  } catch {
+    /* ignore */
+  }
+}
 
 const INDIAN_STATES = [
   "Andhra Pradesh",
@@ -450,6 +497,7 @@ export default function Checkout() {
       }
 
       setPaymentPhase("opening");
+      const attemptKey = getOrCreateCheckoutAttemptKey(cartFingerprint);
       const created = await createRazorpayOrder({
         items: items.map((i) => ({
           productId: i.productId,
@@ -462,11 +510,28 @@ export default function Checkout() {
         shippingMethod,
         couponCode: couponCode || undefined,
         notes: draft.notes,
+        idempotencyKey: attemptKey,
         accessToken: session?.access_token,
       });
 
-      if (created?.paymentStatus === "paid" && created.orderNumber && created.totals) {
+      if (created?.code === "new_attempt_required") {
+        rotateCheckoutAttemptKey(cartFingerprint);
+        toast.error(created.error || "This payment attempt has ended. Please try again.");
+        unlock();
+        return;
+      }
+
+      if (created?.paymentStatus === "paid" && created.orderHeaderId && created.orderNumber && created.accessToken) {
         trackPurchaseFromCreateResponse(created);
+        toast.success("Payment received");
+        clearCart();
+        clearCheckoutAttemptKey();
+        localStorage.removeItem(CHECKOUT_STORAGE_KEY);
+        navigate(
+          `/order-success?order=${encodeURIComponent(created.orderNumber)}&token=${encodeURIComponent(created.accessToken)}`,
+          { replace: true },
+        );
+        return;
       }
 
       if (!created?.success || !created.order || !created.orderHeaderId || !created.accessToken) {
@@ -485,6 +550,7 @@ export default function Checkout() {
         );
         if (created.orderHeaderId && created.accessToken) {
           await markOrderFailed(created.orderHeaderId, created.accessToken, "missing razorpay keyId");
+          rotateCheckoutAttemptKey(cartFingerprint);
         }
         unlock();
         return;
@@ -499,6 +565,17 @@ export default function Checkout() {
       ) {
         toast.message(
           `Final amount ${formatINR(Number(created.totals.grandTotal))} (server-verified). Opening secure payment…`,
+        );
+      }
+      if (couponCode.trim() && created.totals && !created.totals.couponCode) {
+        toast.message("Coupon code wasn't applied to this order.");
+      } else if (
+        couponCode.trim() &&
+        created.totals?.couponCode &&
+        Number(created.totals.discountTotal || 0) > 0
+      ) {
+        toast.success(
+          `Coupon ${created.totals.couponCode} applied: −${formatINR(Number(created.totals.discountTotal || 0))}`,
         );
       }
 
@@ -522,6 +599,7 @@ export default function Checkout() {
             if (orderHeaderId && accessToken) {
               await markOrderFailed(orderHeaderId, accessToken, "payment cancelled / dismissed");
             }
+            rotateCheckoutAttemptKey(cartFingerprint);
             setPaymentPhase("idle");
             setSubmitting(false);
             submitLockRef.current = false;
@@ -533,6 +611,10 @@ export default function Checkout() {
           razorpay_signature: string;
         }) => {
           setPaymentPhase("verifying");
+          const successPath = (created.orderNumber || "") && created.accessToken
+            ? `/order-success?order=${encodeURIComponent(created.orderNumber || "")}&token=${encodeURIComponent(created.accessToken)}`
+            : "/order-success";
+
           try {
             const verified = await verifyRazorpayPayment({
               razorpay_order_id: response.razorpay_order_id,
@@ -542,16 +624,26 @@ export default function Checkout() {
               accessToken: created.accessToken!,
             });
 
+            const code = String(verified?.code || "");
+            const invalidSignature = code === "invalid_signature" || /invalid payment signature/i.test(String(verified?.error || ""));
+
             if (!verified?.success) {
-              toast.error(verified?.error || "Payment verification failed. Please contact support if money was deducted.");
-              await markOrderFailed(
-                created.orderHeaderId!,
-                created.accessToken!,
-                verified?.error || "verify failed",
-              );
-              setPaymentPhase("idle");
-              setSubmitting(false);
-              submitLockRef.current = false;
+              // Only hard-fail on definitive signature rejection. Network/capture races go to receipt reconciliation.
+              if (invalidSignature && orderHeaderId && accessToken) {
+                toast.error("Payment could not be verified. Your cart is safe — please try again.");
+                await markOrderFailed(orderHeaderId, accessToken, "invalid signature");
+                rotateCheckoutAttemptKey(cartFingerprint);
+                setPaymentPhase("idle");
+                setSubmitting(false);
+                submitLockRef.current = false;
+                return;
+              }
+
+              toast.message("Confirming your payment…");
+              clearCart();
+              clearCheckoutAttemptKey();
+              localStorage.removeItem(CHECKOUT_STORAGE_KEY);
+              navigate(successPath, { replace: true });
               return;
             }
 
@@ -562,45 +654,42 @@ export default function Checkout() {
                 amount: verified.amount,
                 created,
               });
-            }
-
-            try {
-              await sendOrderEmail("payment_success", {
-                orderNumber: created.orderNumber,
-                customer: draft.customer,
-                paymentId: response.razorpay_payment_id,
-                amount: verified.amount ?? created.amount,
-              });
-            } catch {
-              /* notification failure must not reverse payment */
+              try {
+                await sendOrderEmail("payment_success", {
+                  orderNumber: created.orderNumber,
+                  customer: draft.customer,
+                  paymentId: response.razorpay_payment_id,
+                  amount: verified.amount ?? created.amount,
+                });
+              } catch {
+                /* notification failure must not reverse payment */
+              }
+              toast.success("Payment received");
+            } else {
+              toast.message("Confirming your payment…");
             }
 
             clearCart();
+            clearCheckoutAttemptKey();
             localStorage.removeItem(CHECKOUT_STORAGE_KEY);
-            toast.success("Payment successful");
-            navigate(
-              `/order-success?order=${encodeURIComponent(created.orderNumber || "")}&token=${encodeURIComponent(created.accessToken!)}`,
-              { replace: true },
-            );
-          } catch (err) {
-            toast.error(
-              err instanceof Error
-                ? err.message
-                : "Payment verification is taking longer than expected. Check My Account or contact support.",
-            );
-            await markOrderFailed(created.orderHeaderId!, created.accessToken!, "callback error");
-            setPaymentPhase("idle");
-            setSubmitting(false);
-            submitLockRef.current = false;
+            navigate(successPath, { replace: true });
+          } catch {
+            // Payment may already be captured — do not mark failed; reconcile on receipt page / webhook.
+            toast.message("Confirming your payment…");
+            clearCart();
+            clearCheckoutAttemptKey();
+            localStorage.removeItem(CHECKOUT_STORAGE_KEY);
+            navigate(successPath, { replace: true });
           }
         },
       });
 
       rzp.on("payment.failed", async (resp: { error?: { description?: string } }) => {
-        toast.error(resp?.error?.description || "Payment failed. Please try again.");
+        toast.error(resp?.error?.description || "Payment wasn't completed. You can try again.");
         if (orderHeaderId && accessToken) {
           await markOrderFailed(orderHeaderId, accessToken, resp?.error?.description || "payment.failed");
         }
+        rotateCheckoutAttemptKey(cartFingerprint);
         setPaymentPhase("idle");
         setSubmitting(false);
         submitLockRef.current = false;
@@ -610,9 +699,7 @@ export default function Checkout() {
       // Keep submitting=true while Razorpay modal is open (released on dismiss/fail/success)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "We couldn't start the payment. Please try again.");
-      if (orderHeaderId && accessToken) {
-        await markOrderFailed(orderHeaderId, accessToken, "checkout exception");
-      }
+      // Do not mark failed on pre-Razorpay exceptions unless an order was created without a key.
       setPaymentPhase("idle");
       setSubmitting(false);
       submitLockRef.current = false;

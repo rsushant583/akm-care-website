@@ -29,7 +29,10 @@ export type CartCheckoutItem = {
 export type CreateCheckoutResponse = {
   success: boolean;
   error?: string;
+  code?: string;
   keyId?: string;
+  duplicate?: boolean;
+  paymentStatus?: string;
   order?: { id: string; amount: number; currency: string };
   amount?: number;
   amountPaise?: number;
@@ -47,6 +50,11 @@ export type CreateCheckoutResponse = {
   items?: Array<{ productId: string; productName: string; quantity: number; unitPrice: number }>;
 };
 
+/** Checkout attempt UUID — not a payment credential. Server remains authoritative. */
+export function isCheckoutAttemptKey(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value.trim());
+}
+
 async function readJsonSafe(response: Response) {
   try {
     return await response.json();
@@ -56,6 +64,7 @@ async function readJsonSafe(response: Response) {
 }
 
 function friendlyHttpError(status: number, fallback?: string) {
+  if (status === 403) return fallback || "This checkout attempt does not belong to this account.";
   if (status === 409) return fallback || "Some items are no longer available.";
   if (status === 400) return fallback || "Please check your details and try again.";
   if (status >= 500) {
@@ -74,6 +83,8 @@ export async function createRazorpayOrder(input: {
   shippingMethod: "standard" | "express";
   couponCode?: string;
   notes?: string;
+  /** One checkout/payment attempt. Server de-duplicates this key. Not a secret. */
+  idempotencyKey: string;
   /** Optional user JWT — server binds user_id from auth, never from client body */
   accessToken?: string | null;
 }): Promise<CreateCheckoutResponse> {
@@ -98,14 +109,19 @@ export async function createRazorpayOrder(input: {
         shippingMethod: input.shippingMethod,
         couponCode: input.couponCode,
         notes: input.notes,
+        idempotencyKey: input.idempotencyKey,
       }),
     });
     const data = (await readJsonSafe(response)) as CreateCheckoutResponse;
     if (!response.ok && !data.error) {
-      return { success: false, error: friendlyHttpError(response.status) };
+      return { success: false, error: friendlyHttpError(response.status), code: data.code };
     }
     if (!response.ok && data.error) {
-      return { success: false, error: friendlyHttpError(response.status, data.error) };
+      return {
+        success: false,
+        error: friendlyHttpError(response.status, data.error),
+        code: data.code,
+      };
     }
     return data;
   } catch {
@@ -119,7 +135,17 @@ export async function verifyRazorpayPayment(payload: {
   razorpay_signature: string;
   orderHeaderId: string;
   accessToken: string;
-}) {
+}): Promise<{
+  success: boolean;
+  error?: string;
+  code?: string;
+  duplicate?: boolean;
+  pendingCapture?: boolean;
+  paymentStatus?: string;
+  orderHeaderId?: string;
+  orderNumber?: string;
+  amount?: number;
+}> {
   if (!payload.orderHeaderId || !payload.accessToken) {
     return { success: false, error: "Missing order verification credentials." };
   }
@@ -143,11 +169,22 @@ export async function verifyRazorpayPayment(payload: {
     if (!response.ok && !data.error) {
       return { success: false, error: friendlyHttpError(response.status, "Payment verification failed.") };
     }
-    return data;
+    return data as {
+      success: boolean;
+      error?: string;
+      code?: string;
+      duplicate?: boolean;
+      pendingCapture?: boolean;
+      paymentStatus?: string;
+      orderHeaderId?: string;
+      orderNumber?: string;
+      amount?: number;
+    };
   } catch {
     return {
       success: false,
       error: "Payment verification is taking longer than expected. Check My Account or contact support.",
+      code: "network_error",
     };
   }
 }

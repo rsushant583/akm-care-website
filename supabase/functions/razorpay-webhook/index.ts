@@ -5,9 +5,8 @@ import { fulfillPaidOrder, releaseCheckoutHolds } from "../_shared/fulfillPaidOr
 
 function signaturesMatch(expectedHex: string, provided: string) {
   try {
-    const enc = new TextEncoder();
-    const a = enc.encode(expectedHex);
-    const b = enc.encode(provided);
+    const a = Buffer.from(expectedHex, "utf8");
+    const b = Buffer.from(provided, "utf8");
     if (a.length !== b.length) return false;
     return timingSafeEqual(a, b);
   } catch {
@@ -61,13 +60,17 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, serviceRole);
 
-    const { data: existing } = await supabase
-      .from("processed_razorpay_events")
-      .select("event_id")
-      .eq("event_id", eventId)
-      .maybeSingle();
-    if (existing) {
-      return json(req, 200, { success: true, duplicate: true });
+    // Claim event first (PK on event_id) — duplicate deliveries return 200 immediately.
+    const { error: claimErr } = await supabase.from("processed_razorpay_events").insert({
+      event_id: eventId,
+      event_type: eventType,
+    });
+    if (claimErr) {
+      const msg = String(claimErr.message || claimErr.code || "");
+      if (/duplicate|unique|23505/i.test(msg)) {
+        return json(req, 200, { success: true, duplicate: true });
+      }
+      throw claimErr;
     }
 
     const payload = (event.payload || {}) as Record<string, unknown>;
@@ -80,6 +83,10 @@ Deno.serve(async (req) => {
     const razorpayPaymentId = String(paymentEntity.id || "");
 
     if (!razorpayOrderId) {
+      await supabase
+        .from("processed_razorpay_events")
+        .update({ event_type: eventType })
+        .eq("event_id", eventId);
       return json(req, 200, { success: true, ignored: true, reason: "no order id" });
     }
 
@@ -88,6 +95,17 @@ Deno.serve(async (req) => {
       .select("*")
       .eq("razorpay_order_id", razorpayOrderId)
       .maybeSingle();
+
+    await supabase
+      .from("processed_razorpay_events")
+      .update({
+        event_type: eventType,
+        razorpay_order_id: razorpayOrderId,
+        razorpay_payment_id: razorpayPaymentId || null,
+        order_header_id: header?.id ?? null,
+      })
+      .eq("event_id", eventId);
+
     if (!header) {
       return json(req, 200, { success: true, ignored: true, reason: "order not found" });
     }
@@ -109,52 +127,65 @@ Deno.serve(async (req) => {
           .update({ status: "failed", updated_at: new Date().toISOString() })
           .eq("order_id", header.id)
           .neq("status", "captured");
+        await supabase.from("order_status").insert({
+          order_id: header.id,
+          status: "failed",
+          note: "Payment failed (webhook)",
+        });
       }
     } else if (eventType === "payment.captured" || eventType === "order.paid") {
-      const paymentId = razorpayPaymentId || String(orderEntity.id || "");
-      if (!razorpayPaymentId && eventType === "order.paid") {
-        // order.paid may not include payment id — skip if we cannot confirm a payment
-        if (!paymentEntity.id) {
-          await supabase.from("processed_razorpay_events").insert({
-            event_id: eventId,
-            event_type: eventType,
-            razorpay_order_id: razorpayOrderId,
-            order_header_id: header.id,
-          });
-          return json(req, 200, { success: true, ignored: true, reason: "order.paid without payment id" });
+      if (!razorpayPaymentId) {
+        return json(req, 200, { success: true, ignored: true, reason: "missing payment id" });
+      }
+
+      try {
+        const rpPayment = await fetchRazorpayPayment(razorpayPaymentId, keyId, keySecret);
+        if (String(rpPayment.order_id) !== razorpayOrderId) {
+          await supabase.from("processed_razorpay_events").delete().eq("event_id", eventId);
+          return json(req, 400, { success: false, error: "Payment does not belong to this order" });
         }
-      }
 
-      const rpPayment = await fetchRazorpayPayment(String(paymentEntity.id), keyId, keySecret);
-      if (String(rpPayment.order_id) !== razorpayOrderId) {
-        return json(req, 400, { success: false, error: "Payment does not belong to this order" });
-      }
-      if (!["captured", "authorized"].includes(String(rpPayment.status))) {
-        return json(req, 200, { success: true, ignored: true, reason: "payment not captured" });
-      }
-      const expectedPaise = Math.round(Number(header.grand_total) * 100);
-      if (Number(rpPayment.amount) !== expectedPaise) {
-        return json(req, 400, { success: false, error: "Amount mismatch" });
-      }
+        const rpStatus = String(rpPayment.status || "");
+        if (rpStatus === "authorized" && eventType !== "payment.captured") {
+          await supabase
+            .from("payments")
+            .update({
+              razorpay_payment_id: razorpayPaymentId,
+              status: "authorized",
+              method: rpPayment.method || "razorpay",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("order_id", header.id)
+            .eq("razorpay_order_id", razorpayOrderId)
+            .neq("status", "captured");
+          return json(req, 200, { success: true, pendingCapture: true });
+        }
 
-      await fulfillPaidOrder({
-        supabase,
-        header,
-        razorpayOrderId,
-        razorpayPaymentId: String(rpPayment.id),
-        razorpaySignature: signature,
-        rpPayment,
-        source: "webhook",
-      });
+        if (rpStatus !== "captured") {
+          return json(req, 200, { success: true, ignored: true, reason: "payment not captured" });
+        }
+
+        const expectedPaise = Math.round(Number(header.grand_total) * 100);
+        if (Number(rpPayment.amount) !== expectedPaise) {
+          await supabase.from("processed_razorpay_events").delete().eq("event_id", eventId);
+          return json(req, 400, { success: false, error: "Amount mismatch" });
+        }
+
+        await fulfillPaidOrder({
+          supabase,
+          header,
+          razorpayOrderId,
+          razorpayPaymentId: String(rpPayment.id),
+          razorpaySignature: null,
+          rpPayment,
+          source: "webhook",
+        });
+      } catch {
+        // Allow Razorpay to retry — release claim so the event is not stuck.
+        await supabase.from("processed_razorpay_events").delete().eq("event_id", eventId);
+        return json(req, 500, { success: false, error: "Webhook processing failed" });
+      }
     }
-
-    await supabase.from("processed_razorpay_events").upsert({
-      event_id: eventId,
-      event_type: eventType,
-      razorpay_order_id: razorpayOrderId,
-      razorpay_payment_id: razorpayPaymentId || null,
-      order_header_id: header.id,
-    });
 
     return json(req, 200, { success: true });
   } catch {

@@ -201,7 +201,15 @@ export async function fulfillPaidOrder(params: {
       status: "captured",
       method: rpPayment.method || "razorpay",
       amount: Number(header.grand_total),
-      raw_response: { payment: rpPayment, source },
+      raw_response: {
+        source,
+        payment_id: razorpayPaymentId,
+        order_id: razorpayOrderId,
+        status: rpPayment.status,
+        method: rpPayment.method,
+        amount: rpPayment.amount,
+        currency: rpPayment.currency,
+      },
       updated_at: new Date().toISOString(),
     })
     .eq("order_id", header.id)
@@ -264,11 +272,11 @@ export async function fulfillPaidOrder(params: {
             )
             .join("");
           const html =
-            `<div style="font-family:Arial,sans-serif;max-width:680px;margin:auto;"><h2 style="color:#b45309;">Payment Successful</h2><table style="width:100%;border-collapse:collapse;">${rowsHtml}</table></div>`;
+            `<div style="font-family:Arial,sans-serif;max-width:680px;margin:auto;"><h2 style="color:#b45309;">Payment received</h2><table style="width:100%;border-collapse:collapse;">${rowsHtml}</table></div>`;
           await resend.emails.send({
             from: "AKM Care <onboarding@resend.dev>",
             to: [String(header.customer_email), NOTIFICATION_EMAIL],
-            subject: `Order Confirmed - ${header.order_number}`,
+            subject: `Payment received - ${header.order_number}`,
             html,
           });
         } catch {
