@@ -66,6 +66,8 @@ export default function CartPage() {
     totals,
     couponCode,
     setCouponCode,
+    couponPreview,
+    couponLoading,
     updateQuantity,
     removeFromCart,
     saveForLater,
@@ -298,16 +300,50 @@ export default function CartPage() {
                       className="flex-1 min-w-0 px-3 py-2.5 rounded-xl border border-black/10 text-sm bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/35"
                     />
                   </div>
-                  <p className="text-[11px] text-[#6B6B6B] mt-1.5">
-                    Coupons are validated securely at payment. Final discount may differ from estimates.
-                  </p>
+                  {couponCode.trim() ? (
+                    <p
+                      className={cn(
+                        "text-[11px] mt-1.5",
+                        couponLoading
+                          ? "text-[#6B6B6B]"
+                          : couponPreview?.valid
+                            ? "text-emerald-700"
+                            : "text-red-600",
+                      )}
+                    >
+                      {couponLoading
+                        ? "Checking coupon…"
+                        : couponPreview?.message || "Coupons are validated securely at payment."}
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-[#6B6B6B] mt-1.5">
+                      Coupons are validated securely at payment. Final discount may differ slightly from estimates.
+                    </p>
+                  )}
                 </div>
+
+                {(totals.couponDiscount > 0 || couponPreview?.freeShipping) && (
+                  <div className="space-y-2 text-sm pt-2 border-t border-black/[0.06]">
+                    {totals.couponDiscount > 0 && (
+                      <div className="flex justify-between gap-3 text-emerald-700">
+                        <span>Estimated coupon discount</span>
+                        <span className="font-medium">−{formatINR(totals.couponDiscount)}</span>
+                      </div>
+                    )}
+                    {couponPreview?.freeShipping && (
+                      <div className="flex justify-between gap-3 text-emerald-700">
+                        <span>Shipping with coupon</span>
+                        <span className="font-medium">Free</span>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="flex justify-between items-baseline pt-2 border-t border-black/[0.06]">
                   <span className="font-heading text-lg">Order Total</span>
                   <span className="type-price text-2xl text-[#E8621A]">{formatINR(totals.orderTotal)}</span>
                 </div>
-                <p className="text-[11px] text-[#6B6B6B] -mt-2">Before shipping & verified discounts</p>
+                <p className="text-[11px] text-[#6B6B6B] -mt-2">Before shipping, with estimated coupon preview</p>
 
                 <button
                   type="button"

@@ -82,6 +82,8 @@ export default function Checkout() {
     clearCart,
     couponCode,
     setCouponCode,
+    couponPreview,
+    couponLoading,
     shippingMethod,
     setShippingMethod,
     shippingTotal,
@@ -1037,9 +1039,25 @@ export default function Checkout() {
                       className="mt-1 w-full rounded-xl border border-black/10 px-3 py-2.5"
                       placeholder="Try AKMCARE10"
                       value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value)}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                     />
                   </label>
+                  {couponCode.trim() ? (
+                    <p
+                      className={cn(
+                        "text-xs",
+                        couponLoading
+                          ? "text-[#6B6B6B]"
+                          : couponPreview?.valid
+                            ? "text-emerald-700"
+                            : "text-red-600",
+                      )}
+                    >
+                      {couponLoading
+                        ? "Checking coupon…"
+                        : couponPreview?.message || "Coupon will be verified on the server."}
+                    </p>
+                  ) : null}
                   <NavButtons onBack={goBack} onNext={() => void goNext()} nextLabel="Review order" />
                 </div>
               )}
@@ -1102,7 +1120,7 @@ export default function Checkout() {
                       <p>GST (included display): {formatINR(checkoutTotals.gstTotal)}</p>
                       <p>Shipping: {formatINR(shippingTotal)}</p>
                       {checkoutTotals.couponDiscount > 0 && (
-                        <p className="text-emerald-700">Discount: −{formatINR(checkoutTotals.couponDiscount)}</p>
+                        <p className="text-emerald-700">Estimated discount: −{formatINR(checkoutTotals.couponDiscount)}</p>
                       )}
                       {couponCode && <p>Coupon: {couponCode}</p>}
                       <p className="font-semibold text-[#E8621A] pt-1">

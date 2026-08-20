@@ -21,6 +21,7 @@ import {
   loadStorefrontShippingConfig,
   type StorefrontShippingConfig,
 } from "@/lib/ecommerce/shippingSettings";
+import { previewCouponDiscount, type CouponPreview } from "@/services/couponService";
 import { toast } from "@/components/ui/sonner";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -58,6 +59,8 @@ type CartContextValue = {
   checkoutTotals: ReturnType<typeof calcCartTotals>;
   couponCode: string;
   setCouponCode: (code: string) => void;
+  couponPreview: CouponPreview | null;
+  couponLoading: boolean;
   shippingMethod: "standard" | "express";
   setShippingMethod: (m: "standard" | "express") => void;
   shippingTotal: number;
@@ -123,6 +126,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartLineItem[]>([]);
   const [savedForLater, setSavedForLater] = useState<SavedForLaterItem[]>([]);
   const [couponCode, setCouponCode] = useState("");
+  const [couponPreview, setCouponPreview] = useState<CouponPreview | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
   const [shippingMethod, setShippingMethod] = useState<"standard" | "express">("standard");
   const [shippingConfig, setShippingConfig] = useState<StorefrontShippingConfig>(DEFAULT_SHIPPING_CONFIG);
   const [sessionId] = useState(readSessionId);
@@ -375,28 +380,64 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [items],
   );
 
+  useEffect(() => {
+    let cancelled = false;
+    const normalized = couponCode.trim();
+    if (!normalized) {
+      setCouponPreview(null);
+      setCouponLoading(false);
+      return;
+    }
+
+    setCouponLoading(true);
+    void previewCouponDiscount(normalized, subtotal)
+      .then((preview) => {
+        if (!cancelled) setCouponPreview(preview);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCouponPreview({
+            enteredCode: normalized,
+            normalizedCode: normalized.toUpperCase(),
+            appliedCode: null,
+            discountAmount: 0,
+            freeShipping: false,
+            valid: false,
+            message: "Couldn't validate this coupon right now.",
+          });
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setCouponLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [couponCode, subtotal]);
+
   // Coupon codes are validated server-side at payment — do not apply client discounts to charged totals.
   const shippingTotal =
     items.length === 0
       ? 0
-      : estimateShippingTotal(shippingMethod, subtotal, shippingConfig, false);
+      : estimateShippingTotal(shippingMethod, subtotal, shippingConfig, couponPreview?.freeShipping ?? false);
 
   const totals = useMemo(
     () =>
       calcCartTotals(items, {
         shippingEstimate: null,
-        couponDiscount: 0,
+        couponDiscount: couponPreview?.discountAmount ?? 0,
       }),
-    [items],
+    [items, couponPreview?.discountAmount],
   );
 
   const checkoutTotals = useMemo(
     () =>
       calcCartTotals(items, {
         shippingEstimate: shippingTotal,
-        couponDiscount: 0,
+        couponDiscount: couponPreview?.discountAmount ?? 0,
       }),
-    [items, shippingTotal],
+    [items, shippingTotal, couponPreview?.discountAmount],
   );
 
   const value: CartContextValue = {
@@ -407,6 +448,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     checkoutTotals,
     couponCode,
     setCouponCode,
+    couponPreview,
+    couponLoading,
     shippingMethod,
     setShippingMethod,
     shippingTotal,
