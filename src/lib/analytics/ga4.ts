@@ -98,35 +98,46 @@ export function isSensitiveSearchTerm(term: string): boolean {
   return false;
 }
 
-function ensureDataLayer() {
+/**
+ * Official gtag bootstrap.
+ * MUST push the Arguments object (`arguments`), not a rest Array.
+ * `dataLayer.push(args)` queues arrays that Tag Assistant can display, but gtag.js
+ * only dispatches measurement hits for Arguments-style command records.
+ */
+function installOfficialGtag() {
   window.dataLayer = window.dataLayer || [];
-  if (!window.gtag) {
-    window.gtag = function gtag(...args: unknown[]) {
-      window.dataLayer?.push(args);
-    };
-  }
+  window.gtag = function gtag() {
+    // eslint-disable-next-line prefer-rest-params
+    window.dataLayer!.push(arguments as unknown as never);
+  };
 }
 
 export function ensureGa4Initialized(): boolean {
-  if (!isGa4Enabled()) return false;
   if (typeof window === "undefined") return false;
-
-  ensureDataLayer();
+  if (!isGa4Enabled()) return false;
 
   const measurementId = getGa4MeasurementId();
+  if (!measurementId || !/^G-[A-Z0-9]+$/i.test(measurementId)) return false;
+
+  installOfficialGtag();
 
   if (!window.__akmGa4ScriptLoaded) {
     window.__akmGa4ScriptLoaded = true;
-    const script = document.createElement("script");
-    script.async = true;
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(measurementId)}`;
-    document.head.appendChild(script);
+    const existing = document.querySelector<HTMLScriptElement>(
+      `script[src^="https://www.googletagmanager.com/gtag/js?id="]`,
+    );
+    if (!existing) {
+      const script = document.createElement("script");
+      script.async = true;
+      script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(measurementId)}`;
+      document.head.appendChild(script);
+    }
   }
 
   if (!window.__akmGa4Configured) {
     window.__akmGa4Configured = true;
-    window.gtag?.("js", new Date());
-    window.gtag?.("config", measurementId, {
+    window.gtag!("js", new Date());
+    window.gtag!("config", measurementId, {
       send_page_view: false,
       ...(isGa4DebugMode() ? { debug_mode: true } : {}),
     });
