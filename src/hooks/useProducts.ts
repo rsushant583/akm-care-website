@@ -42,6 +42,7 @@ export function useProducts() {
       const { data: rows, error: dbError } = await client
         .from("products")
         .select("*")
+        .not("status", "in", "(draft,archived)")
         .order("display_order", { ascending: true });
       if (dbError) throw dbError;
       const normalized = (rows || []).map((item, index) =>

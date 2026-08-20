@@ -24,6 +24,7 @@ export async function searchProducts(query: string, limit = 8): Promise<CatalogP
   const { data: ftsHits, error: ftsError } = await client
     .from("products")
     .select("id")
+    .not("status", "in", "(draft,archived)")
     .textSearch("search_vector", q, { type: "websearch", config: "simple" })
     .limit(limit);
 
@@ -35,6 +36,7 @@ export async function searchProducts(query: string, limit = 8): Promise<CatalogP
     const { data: likeHits, error } = await client
       .from("products")
       .select("id")
+      .not("status", "in", "(draft,archived)")
       .or(
         [
           `name.ilike.%${q}%`,

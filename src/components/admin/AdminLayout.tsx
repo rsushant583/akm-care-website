@@ -20,6 +20,7 @@ import {
   LogOut,
   Menu,
   X,
+  FileUp,
 } from "lucide-react";
 import { useState } from "react";
 import { SEO } from "@/components/SEO";
@@ -30,6 +31,7 @@ import { cn } from "@/lib/utils";
 const nav = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/admin/products", label: "Products", icon: Package },
+  { to: "/admin/catalog-import", label: "Bulk import", icon: FileUp },
   { to: "/admin/categories", label: "Categories", icon: FolderTree },
   { to: "/admin/brands", label: "Brands", icon: Award },
   { to: "/admin/inventory", label: "Inventory", icon: Warehouse },
