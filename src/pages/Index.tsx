@@ -6,7 +6,6 @@ import { organizationSchema } from "@/lib/schemas";
 const ServicesOverview = lazy(() => import("@/components/home/ServicesOverview"));
 const StatsBar = lazy(() => import("@/components/home/StatsBar"));
 const ImageCarousel = lazy(() => import("@/components/home/ImageCarousel"));
-const DailyMotivation = lazy(() => import("@/components/home/DailyMotivation"));
 const YouTubeCarousel = lazy(() => import("@/components/home/YouTubeCarousel"));
 const FAQPreview = lazy(() => import("@/components/home/FAQPreview"));
 const CTABanner = lazy(() => import("@/components/home/CTABanner"));
@@ -29,7 +28,6 @@ export default function Index() {
       <Suspense fallback={<BelowFoldFallback />}>
         <ServicesOverview />
         <StatsBar />
-        <DailyMotivation />
         <ImageCarousel />
         <YouTubeCarousel />
         <FAQPreview />
