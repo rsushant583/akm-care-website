@@ -72,9 +72,12 @@ export function productFactFaqs(product: CatalogProduct): ProductFactFaq[] {
   });
 
   if (isMeaningful(product.dimensions)) {
+    const isSaree = /saree/i.test(product.category) || /saree/i.test(product.categoryLabel);
     faqs.push({
       question: `What size or length is ${product.name}?`,
-      answer: `Catalog dimensions / length: ${product.dimensions}.`,
+      answer: isSaree
+        ? `Catalog dimensions / length: ${product.dimensions}. On AKM Care, saree length is usually written as metres approximate (Mtrs APX). See /guides/saree-length for how to read it.`
+        : `Catalog dimensions / length: ${product.dimensions}.`,
     });
   }
 

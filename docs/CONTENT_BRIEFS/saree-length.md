@@ -1,6 +1,6 @@
 # Content brief — How to read AKM Care saree length
 
-Status: **brief only**. Do not publish a blog until a merchandiser confirms the metres on live SKUs and the “APX” wording.
+Status: **guide published** at `/guides/saree-length` with conservative catalog facts only (what Mtrs APX means, check PDP, link to sarees category). Do **not** freeze a SKU length table in the article until a merchandiser re-confirms live metres.
 
 This is the first authority topic because the catalog already stores length (`dimensions` / `specifications.size`) on most sarees. Other roadmap ideas (price vs MRP, zari, wedding) need more confirmed fields.
 

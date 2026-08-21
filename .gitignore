@@ -45,3 +45,8 @@ test-results/
 
 # Misc
 *.local
+.vercel
+.env
+.env.local
+.env.*.local
+!.env.example

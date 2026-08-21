@@ -97,6 +97,7 @@ describe("productFactFaqs", () => {
     const faqs = productFactFaqs(sample());
     expect(faqs.some((f) => f.question.includes("cost"))).toBe(true);
     expect(faqs.some((f) => f.answer.includes("6.2 Mtrs"))).toBe(true);
+    expect(faqs.some((f) => f.answer.includes("/guides/saree-length"))).toBe(true);
     expect(faqs.some((f) => /7 days/i.test(f.answer))).toBe(true);
   });
 });

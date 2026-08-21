@@ -2,8 +2,10 @@
 
 Practical roadmap for **real** mentions that search engines and AI systems can cite. Not a backlink scheme.
 
+**Primary authority playbook:** [AUTHORITY_BUILDING.md](./AUTHORITY_BUILDING.md)
+
 Production: [https://www.akmcare.in](https://www.akmcare.in)  
-Entity source of truth: `src/lib/config/brand.ts`
+Entity source of truth: `src/lib/config/brand.ts` · [BRAND_ENTITY.md](./BRAND_ENTITY.md)
 
 No AI rankings were measured. Do not claim ChatGPT/Gemini/Perplexity visibility.
 

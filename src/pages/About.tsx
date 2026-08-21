@@ -3,9 +3,11 @@ import { Link } from "react-router-dom";
 import { SEO } from "@/components/SEO";
 import { PAGE_SEO } from "@/data/seoPages";
 import { breadcrumbSchema } from "@/lib/schemas";
+import { BRAND } from "@/lib/config/brand";
 import { motion, useReducedMotion } from "framer-motion";
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { CardHover } from "@/components/ui/CardHover";
+import { shopCategoryPath } from "@/data/catalog/categories";
 
 const values = [
   { icon: Heart, title: "Ethics", desc: "Conducting every engagement with honesty and moral principles." },
@@ -15,11 +17,14 @@ const values = [
 ];
 
 const timeline = [
-  { year: "Foundation", desc: "A Well-known trustworthy name ensure need based multipln qualitative services for PAN India clients and provides all solutions on a single platform with ethics and integrity within a benchmarking value frame." },
-  { year: "Training", desc: "Launched corporate soft skill & behavioral training programs" },
-  { year: "Expansion", desc: "Extended services to placement, manpower, and compliance consulting" },
-  { year: "Pan India", desc: "Operations scaled across multiple states and industrial hubs" },
-  { year: "E-Commerce", desc: "Began curating authentic rural Indian products for online sale" },
+  {
+    year: "Foundation",
+    desc: "Built as a single-platform provider of need-based industrial and HR services for pan-India clients, with ethics and integrity as the operating frame.",
+  },
+  { year: "Training", desc: "Launched corporate soft skill and behavioural training programmes." },
+  { year: "Expansion", desc: "Extended services to placement, manpower, and compliance consulting." },
+  { year: "Pan India", desc: "Operations scaled across multiple states and industrial hubs." },
+  { year: "E-Commerce", desc: "Opened an online catalog for authentic fashion sold across India." },
 ];
 
 const teamPhoto =
@@ -46,7 +51,7 @@ export default function About() {
             <SectionLabel className="mb-2">Who we are</SectionLabel>
             <h1 className="font-heading text-4xl sm:text-5xl lg:text-[2.75rem] leading-tight mb-4">
               {reduce ? (
-                <span className="text-[#1A1A1A]">AKM Care - Trusted & Fair</span>
+                <span className="text-[#1A1A1A]">{BRAND.name}</span>
               ) : (
                 <motion.span
                   className="inline-block text-transparent bg-clip-text"
@@ -61,35 +66,28 @@ export default function About() {
                   animate={{ backgroundPosition: "100% 50%" }}
                   transition={{ duration: 6, ease: "linear", repeat: Infinity }}
                 >
-                  AKM Care - Trusted & Fair
+                  {BRAND.name}
                 </motion.span>
               )}
             </h1>
-            <p className="text-base sm:text-lg text-[#6B6B6B] leading-relaxed mb-4">
-              AKM Care provides integrated solutions on a single platform with ethics and integrity within a benchmarking value frame.
+            <p className="text-base sm:text-lg text-[#1A1A1A] leading-relaxed mb-4 font-medium">
+              {BRAND.description}
             </p>
             <p className="text-sm sm:text-base text-[#6B6B6B] leading-relaxed mb-6">
-              We sell authentic fashion online from Ahmedabad, Gujarat —{" "}
-              <Link to="/shop" className="text-[#E8621A] font-semibold hover:underline">
-                shop sarees, lehengas, gowns, suits and jeans
-              </Link>
-              {" "}with pan-India delivery — and offer{" "}
-              <Link to="/services" className="text-[#E8621A] font-semibold hover:underline">
-                industrial training, HR and compliance services
-              </Link>
-              . Delivery windows and unused-product returns are on{" "}
-              <Link to="/shipping-returns" className="text-[#E8621A] font-semibold hover:underline">
-                shipping and returns
-              </Link>
-              .
+              Official site:{" "}
+              <a href="https://www.akmcare.in" className="text-[#E8621A] font-semibold hover:underline">
+                www.akmcare.in
+              </a>
+              . Based in {BRAND.addressDisplay}. Shoppers buy online with pan-India delivery; businesses
+              engage {BRAND.name} for training, HR and compliance.
             </p>
             <div className="flex flex-wrap gap-3">
-              <span className="inline-flex items-center rounded-full bg-white border border-[#E8621A]/20 px-4 py-2 text-sm font-semibold text-[#1A1A1A] shadow-sm">
-                500+ Industries Served
-              </span>
-              <span className="inline-flex items-center rounded-full bg-white border border-[#E8621A]/20 px-4 py-2 text-sm font-semibold text-[#1A1A1A] shadow-sm">
-                10,000+ Professionals Trained
-              </span>
+              <Link to="/shop" className="btn-primary h-11 px-5 inline-flex items-center justify-center">
+                Shop catalog
+              </Link>
+              <Link to="/contact" className="btn-secondary h-11 px-5 inline-flex items-center justify-center">
+                Contact
+              </Link>
             </div>
           </div>
           <motion.div
@@ -101,7 +99,7 @@ export default function About() {
           >
             <img
               src={teamPhoto}
-              alt="AKM Care professional team collaboration"
+              alt="Professionals collaborating in a bright office (illustrative stock photo)"
               width={900}
               height={620}
               loading="eager"
@@ -113,12 +111,93 @@ export default function About() {
       </section>
 
       <section className="section-padding bg-white">
+        <div className="container-premium max-w-3xl space-y-8">
+          <div>
+            <h2 className="font-heading text-2xl sm:text-3xl text-[#1A1A1A] mb-3">What {BRAND.name} sells</h2>
+            <p className="text-[#6B6B6B] leading-relaxed mb-4">
+              The online shop lists authentic fashion with live price and stock on each product page:
+            </p>
+            <ul className="grid sm:grid-cols-2 gap-2 text-sm sm:text-base">
+              {[
+                ["Sarees", "sarees"],
+                ["Ladies gowns", "ladies-gown"],
+                ["Stitched lehengas", "stitched-lehenga"],
+                ["Unstitched lehengas", "unstitched-lehenga"],
+                ["3-piece suits", "3-piece-suits"],
+                ["Men's jeans", "mens-jeans"],
+              ].map(([label, slug]) => (
+                <li key={slug}>
+                  <Link
+                    to={shopCategoryPath(slug)}
+                    className="text-[#E8621A] font-semibold hover:underline"
+                  >
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <p className="text-sm text-[#6B6B6B] mt-4">
+              Length and other specs (for example saree <span className="font-medium text-[#1A1A1A]">Mtrs APX</span>)
+              appear only when filled in the catalog — see{" "}
+              <Link to="/guides/saree-length" className="text-[#E8621A] font-semibold hover:underline">
+                how to read saree length
+              </Link>
+              .
+            </p>
+          </div>
+
+          <div>
+            <h2 className="font-heading text-2xl sm:text-3xl text-[#1A1A1A] mb-3">Who the products are for</h2>
+            <p className="text-[#6B6B6B] leading-relaxed">
+              Shoppers across India who want to buy listed fashion online from {BRAND.name}, with checkout
+              on this website. Industrial clients use{" "}
+              <Link to="/services" className="text-[#E8621A] font-semibold hover:underline">
+                services
+              </Link>{" "}
+              and{" "}
+              <Link to="/training" className="text-[#E8621A] font-semibold hover:underline">
+                training
+              </Link>{" "}
+              separately from the retail catalog.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="font-heading text-2xl sm:text-3xl text-[#1A1A1A] mb-3">How we operate</h2>
+            <p className="text-[#6B6B6B] leading-relaxed mb-3">
+              {BRAND.tagline} Delivery windows and unused-product returns are documented on{" "}
+              <Link to="/shipping-returns" className="text-[#E8621A] font-semibold hover:underline">
+                shipping and returns
+              </Link>
+              . Customer support: {BRAND.email}, {BRAND.phoneDisplay}, or{" "}
+              <a href={BRAND.whatsappUrl} className="text-[#E8621A] font-semibold hover:underline">
+                WhatsApp
+              </a>
+              .
+            </p>
+            <p className="text-sm text-[#6B6B6B]">
+              Social:{" "}
+              <a href={BRAND.social.youtube} className="text-[#E8621A] font-semibold hover:underline" rel="noopener noreferrer" target="_blank">
+                YouTube
+              </a>
+              {" · "}
+              <a href={BRAND.social.facebook} className="text-[#E8621A] font-semibold hover:underline" rel="noopener noreferrer" target="_blank">
+                Facebook
+              </a>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="section-padding bg-white border-t border-black/[0.04]">
         <div className="container-premium grid sm:grid-cols-2 gap-5 lg:gap-6">
           <CardHover className="rounded-2xl h-full">
             <div className="h-full rounded-2xl border border-black/[0.06] bg-[#FAF8F5] p-6 sm:p-8 pt-7 shadow-sm border-t-4 border-t-[#E8621A]">
               <h2 className="font-heading text-2xl mb-3 text-[#E8621A]">Our Vision</h2>
               <p className="text-[#6B6B6B] leading-relaxed">
-                To become India&apos;s most trusted single-platform provider of industrial training, HR solutions, and e-commerce services — empowering businesses and communities with excellence.
+                To remain a dependable single platform for industrial training, HR solutions, and an honest
+                online fashion catalog — serving businesses and shoppers with clear information and fair
+                dealings.
               </p>
             </div>
           </CardHover>
@@ -126,7 +205,9 @@ export default function About() {
             <div className="h-full rounded-2xl border border-black/[0.06] bg-[#FAF8F5] p-6 sm:p-8 pt-7 shadow-sm border-t-4 border-t-[#E8621A]">
               <h2 className="font-heading text-2xl mb-3 text-[#E8621A]">Our Mission</h2>
               <p className="text-[#6B6B6B] leading-relaxed">
-                Providing all solutions on a single platform with ethics and integrity within a benchmarking value frame. We serve industries, institutions, NGOs, and government sectors Pan India.
+                Provide solutions on one platform with ethics and integrity. We serve industries,
+                institutions, NGOs, and government sectors pan-India, alongside retail customers of the
+                online shop.
               </p>
             </div>
           </CardHover>
@@ -155,26 +236,26 @@ export default function About() {
       <section className="section-padding bg-white">
         <div className="container-premium grid lg:grid-cols-2 gap-8 items-center">
           <div>
-            <h2 className="font-heading text-3xl sm:text-4xl mb-4 text-[#1A1A1A]">Team AKM Care</h2>
+            <h2 className="font-heading text-3xl sm:text-4xl mb-4 text-[#1A1A1A]">Team {BRAND.name}</h2>
             <p className="text-[#6B6B6B] leading-relaxed text-base sm:text-lg">
-              Our team comprises experienced professionals from diverse industries — training, HR, compliance, and sales. Together, we bring decades of collective expertise to deliver holistic solutions that transform businesses and uplift communities.
+              Our team works across training, HR, compliance, and the online store. For roles and
+              applications, see{" "}
+              <Link to="/careers" className="text-[#E8621A] font-semibold hover:underline">
+                careers
+              </Link>
+              .
             </p>
           </div>
           <div className="relative rounded-2xl overflow-hidden border border-black/[0.06] shadow-[0_20px_50px_rgba(26,26,26,0.1)]">
             <img
               src={teamPhoto}
-              alt="AKM Care professional team collaboration"
+              alt="Professionals collaborating in a bright office (illustrative stock photo)"
               width={900}
               height={560}
               loading="lazy"
               decoding="async"
               className="w-full h-56 sm:h-72 lg:h-80 object-cover"
             />
-            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent p-4 sm:p-5">
-              <p className="text-white text-sm font-medium leading-snug line-clamp-2">
-                Our team comprises experienced professionals from diverse industries — training, HR, compliance, and sales.
-              </p>
-            </div>
           </div>
         </div>
       </section>

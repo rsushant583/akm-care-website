@@ -5,24 +5,37 @@ Living document for [www.akmcare.in](https://www.akmcare.in). Facts below come f
 Related:
 
 - [AI search query map](docs/AI_SEARCH_QUERY_MAP.md)
+- [GEO keyword map](docs/SEO_GEO_KEYWORD_MAP.md)
+- [Brand entity](docs/BRAND_ENTITY.md)
+- [Authority building](docs/AUTHORITY_BUILDING.md)
+- [AI crawler policy](docs/AI_CRAWLER_POLICY.md)
+- [AI visibility tracker](docs/AI_VISIBILITY_TRACKER.md)
 - [GEO authority strategy](docs/GEO_AUTHORITY_STRATEGY.md)
 - [Search Console setup](docs/SEARCH_CONSOLE_SETUP.md)
 
 ---
 
+## Phase 2 audit (21 Aug 2026) — before growth work
+
+| Area | Status |
+| --- | --- |
+| SEO utils | `SEO.tsx`, `seoPages.ts`, `brand.ts`, `schemas.ts`, `ecommerce/seo.ts`, `shippingPolicy.ts`, `shopIndex.ts` |
+| Sitemap / robots / llms | Build scripts + `public/` — do not rebuild; extend STATIC_PAGES only |
+| Prerender / middleware | Intact; add new public paths to `seo-config` + `middleware.js` PUBLIC_PATHS |
+| Product schema | Product+Offer from catalog; AggregateRating only if `reviewCount > 0` |
+| FAQ / About / Contact | Exist; FAQ was CMS-heavy — storefront facts added |
+| Blog | No blog CMS — use `/guides` for educational content |
+| Analytics | GA4 present; GSC/Bing tokens optional env |
+| Apex redirect | Code wants **308**; live Dashboard may still **307** — manual Vercel Domains fix |
+| Razorpay verify Edge | Separate Supabase deploy — not part of frontend |
+
+**Growth additions in this phase:** brand entity docs, `/guides` + saree-length guide, About answer-first facts, FAQ storefront block, PDP always-visible facts + guide links, keyword/authority/crawler/visibility docs.
+
+---
+
 ## Production verification (21 Aug 2026)
 
-Live host still runs an **older build** than this repo:
-
-- Raw HTML for `/`, `/shop`, PDPs, `/cart`, and unknown URLs is the same ~2 KB homepage shell (title only; **no canonical, robots, description, or JSON-LD** in the first response).
-- HTTP **200** for `/shop/product/nonexistent-product` and `/random-invalid-url`. Client 404 UI exists (`Oops! Page not found`) but **HTTP status is 200** and Helmet `noindex` is missing on that UI.
-- `/llms.txt` and `/og-image.jpg` return **HTML** (rewrite), not the files in `public/`.
-- Hydrated JS: homepage gets canonical + Organization schema; **cart** gets `noindex`; PDPs/categories get unique **H1s and product facts** but keep the homepage `<title>` and **no Product JSON-LD**.
-- Sitemap has **31** URLs (missing `/privacy`, `/terms`, `/shipping-returns` that this repo adds). All 31 return 200 (soft-404 risk on none of them because they are real routes except they share homepage static meta).
-- Apex `akmcare.in` → www is **307**, not 301/308.
-- GA4 `G-3MWZT8N432` loads on the storefront. Main JS ~634 KB.
-
-**Fix in this repo (deploy with `npm run build`, never `vite build`):** `vercel.json` now sets `buildCommand`, unique HTML shells including official category files served by middleware, `public/404.html`, import-free `middleware.js` 404s, Product JSON-LD, category intros, robots/llms/og-image, sitemap legal URLs. `scripts/verify-seo-dist.mjs` fails the build if those artifacts are missing.
+Earlier live host ran an **older build**. After the crawlable-build deploy, raw HTML shells, Product JSON-LD, robots/llms/og-image, and HTTP 404s are expected when Vercel uses `npm run build`. Re-check apex 307 vs 308 in the Vercel Domains dashboard (not from frontend code alone).
 
 ---
 
@@ -57,10 +70,12 @@ Live host still runs an **older build** than this repo:
 
 - A photographer-designed OG (current 1200×630 file is the real brand logo on beige; no slogans).
 - Street address, GSTIN, Instagram, Pinterest, Google Business Profile — not published; not added to schema.
-- Buying guides — brief only (`docs/CONTENT_BRIEFS/saree-length.md`); do not auto-write articles.
+- Buying guides — **published:** `/guides` and `/guides/saree-length` (catalog-accurate Mtrs APX explanation only). Further articles still need merchandiser confirmation (`docs/CONTENT_BRIEFS/`).
 - HTTP 404 on **local** `vite preview` (middleware is Vercel-only).
 - Search Console / Bing tokens until `VITE_GOOGLE_SITE_VERIFICATION` / `VITE_BING_SITE_VERIFICATION` are set on Vercel.
 - Official category slugs on several live SKUs still stored as `apparel` (see `docs/PRODUCT_DATA_COMPLETENESS.md`).
+- Apex host redirect may still be Dashboard **307** until Domains settings are cleaned (see `docs/AUTHORITY_BUILDING.md`).
+- Google Business Profile — not managed from this repo.
 
 ---
 

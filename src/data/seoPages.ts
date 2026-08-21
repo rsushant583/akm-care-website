@@ -164,6 +164,18 @@ export const PAGE_SEO: Record<string, SeoPageMeta> = {
     description:
       "AKM Care pan-India delivery, standard and express timelines, checkout shipping charges, and the 7-day unused-product return policy.",
   },
+  "/guides": {
+    path: "/guides",
+    title: "Guides — Shopping Help",
+    description:
+      "Factual AKM Care guides based on catalog fields and store policy — including how to read saree length (Mtrs APX) on product pages.",
+  },
+  "/guides/saree-length": {
+    path: "/guides/saree-length",
+    title: "How to Read Saree Length (Mtrs APX)",
+    description:
+      "What Mtrs APX means on AKM Care saree pages, where to find length for each SKU, and how to browse the sarees category.",
+  },
 };
 
 export function getPageSeo(path: string): SeoPageMeta | undefined {

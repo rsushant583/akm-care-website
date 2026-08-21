@@ -101,6 +101,22 @@ export const STATIC_PAGES = [
       "Answers about AKM Care shopping, shipping, returns, training programmes, services, careers and how to get in touch.",
   },
   {
+    path: "/guides",
+    changefreq: "monthly",
+    priority: "0.75",
+    title: "Guides — Shopping Help",
+    description:
+      "Factual AKM Care guides based on catalog fields and store policy — including how to read saree length (Mtrs APX) on product pages.",
+  },
+  {
+    path: "/guides/saree-length",
+    changefreq: "monthly",
+    priority: "0.7",
+    title: "How to Read Saree Length (Mtrs APX)",
+    description:
+      "What Mtrs APX means on AKM Care saree pages, where to find length for each SKU, and how to browse the sarees category.",
+  },
+  {
     path: "/contact",
     changefreq: "monthly",
     priority: "0.8",

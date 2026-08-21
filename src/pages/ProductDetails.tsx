@@ -593,10 +593,10 @@ export default function ProductDetails() {
 
               <ul className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] sm:text-xs text-[#6B6B6B]">
                 {[
-                  shippingLabel ? "Fast shipping" : null,
-                  returnLabel ? "Easy returns" : null,
-                  "Secure payment",
-                  "Genuine products",
+                  shippingLabel ? "Pan-India shipping" : null,
+                  returnLabel ? "7-day unused returns" : null,
+                  "Secure checkout",
+                  product.brand || "AKM Care",
                 ]
                   .filter(Boolean)
                   .map((label) => (
@@ -608,6 +608,39 @@ export default function ProductDetails() {
                     </li>
                   ))}
               </ul>
+
+              {/* Always-visible facts for crawlers (not only behind accordion clicks) */}
+              <dl className="rounded-2xl border border-black/[0.06] bg-[#FAF8F5] divide-y divide-black/[0.06] text-sm">
+                {(
+                  [
+                    ["Brand", product.brand || "AKM Care"],
+                    ["Category", product.categoryLabel],
+                    isMeaningful(product.sku) ? ["SKU", product.sku] : null,
+                    isMeaningful(product.dimensions) ? ["Dimensions / Length", product.dimensions] : null,
+                    shippingLabel ? ["Shipping", shippingLabel] : null,
+                    returnLabel ? ["Returns", returnLabel] : null,
+                    ["Availability", inStock ? "In Stock" : "Out of Stock"],
+                  ] as Array<[string, string] | null>
+                )
+                  .filter(Boolean)
+                  .map((row) => {
+                    const [k, v] = row as [string, string];
+                    return (
+                      <div key={k} className="flex justify-between gap-4 px-4 py-2.5">
+                        <dt className="text-[#6B6B6B] shrink-0">{k}</dt>
+                        <dd className="font-medium text-[#1A1A1A] text-right">{v}</dd>
+                      </div>
+                    );
+                  })}
+              </dl>
+              {(/saree/i.test(product.category) || /saree/i.test(product.categoryLabel)) && (
+                <p className="text-xs text-[#6B6B6B]">
+                  How to read length labels:{" "}
+                  <Link to="/guides/saree-length" className="text-[#E8621A] font-semibold hover:underline">
+                    saree length guide
+                  </Link>
+                </p>
+              )}
             </div>
           </div>
 
@@ -719,6 +752,14 @@ export default function ProductDetails() {
                 <Link to="/shipping-returns" className="text-[#E8621A] font-semibold hover:underline">
                   shipping and returns
                 </Link>
+                . More help:{" "}
+                <Link to="/faq" className="text-[#E8621A] font-semibold hover:underline">
+                  FAQ
+                </Link>
+                {" · "}
+                <Link to="/guides" className="text-[#E8621A] font-semibold hover:underline">
+                  Guides
+                </Link>
                 .
               </p>
             </section>
@@ -744,6 +785,12 @@ export default function ProductDetails() {
             </span>
             <Link to="/shop" className="text-[#E8621A] font-semibold hover:underline">
               All products
+            </Link>
+            <span className="mx-2 text-[#C4C4C4]" aria-hidden>
+              ·
+            </span>
+            <Link to="/guides" className="text-[#E8621A] font-semibold hover:underline">
+              Guides
             </Link>
           </p>
         </div>

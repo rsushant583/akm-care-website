@@ -31,6 +31,8 @@ AKM Care is an Ahmedabad, Gujarat company. It operates:
 - Home: https://www.akmcare.in/
 - About: https://www.akmcare.in/about
 - Shop: https://www.akmcare.in/shop
+- Guides: https://www.akmcare.in/guides
+- Saree length guide: https://www.akmcare.in/guides/saree-length
 - Shipping & returns: https://www.akmcare.in/shipping-returns
 - FAQ: https://www.akmcare.in/faq
 - Contact: https://www.akmcare.in/contact

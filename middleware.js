@@ -30,6 +30,8 @@ const PUBLIC_PATHS = new Set([
   "/csr",
   "/careers",
   "/faq",
+  "/guides",
+  "/guides/saree-length",
   "/contact",
   "/shipping-returns",
   "/privacy",

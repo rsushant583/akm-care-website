@@ -25,6 +25,7 @@ const companyLinks = [
   { label: "Media", path: "/media" },
   { label: "Motivation", path: "/motivation" },
   { label: "Careers", path: "/careers" },
+  { label: "Guides", path: "/guides" },
   { label: "FAQ", path: "/faq" },
   { label: "Contact", path: "/contact" },
   { label: "Shipping & Returns", path: "/shipping-returns" },
@@ -39,7 +40,7 @@ export default function Footer() {
           <div>
             <img src={logo} alt="AKM Care" width={160} height={64} loading="lazy" decoding="async" className="h-14 object-contain mb-4" />
             <p className="text-sm text-white/65 leading-relaxed mb-6">
-              Authentic fashion — sarees, lehengas, gowns, suits and jeans — with AKM Care training, HR and industrial solutions.
+              {BRAND.description}
             </p>
             <div className="flex gap-3">
               <a
