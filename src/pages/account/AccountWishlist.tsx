@@ -8,6 +8,7 @@ import type { CatalogProduct } from "@/lib/ecommerce/types";
 import { formatINR, getEffectivePrice } from "@/lib/ecommerce/pricing";
 import { productPath } from "@/lib/ecommerce/slug";
 import { isProductInStock } from "@/lib/ecommerce/availability";
+import { getProductImgProps } from "@/lib/images/productImage";
 
 export default function AccountWishlistPage() {
   const { ids, count, remove } = useWishlist();
@@ -77,14 +78,25 @@ export default function AccountWishlistPage() {
           ) : null}
           {products.map((p) => {
             const inStock = isProductInStock(p);
+            const img = getProductImgProps({
+              src: p.image_url || p.images[0]?.src,
+              alt: p.images[0]?.alt,
+              productName: p.name,
+              role: "card",
+            });
             return (
               <article key={p.id} className="rounded-2xl border border-black/[0.06] overflow-hidden bg-white">
                 <Link to={productPath(p.slug)} className="block aspect-[3/4] bg-[#FAF8F5]">
                   <img
-                    src={p.image_url || p.images[0]?.src || "/placeholder.svg"}
-                    alt={p.name}
+                    src={img.src}
+                    srcSet={img.srcSet}
+                    sizes={img.sizes}
+                    alt={img.alt}
+                    width={img.width}
+                    height={img.height}
                     className="h-full w-full object-cover"
-                    loading="lazy"
+                    loading={img.loading}
+                    decoding={img.decoding}
                   />
                 </Link>
                 <div className="p-4">

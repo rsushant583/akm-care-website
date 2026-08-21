@@ -21,6 +21,7 @@ import {
   loadStorefrontShippingConfig,
   type StorefrontShippingConfig,
 } from "@/lib/ecommerce/shippingSettings";
+import { previewCouponDiscount, type CouponPreview } from "@/services/couponService";
 import { toast } from "@/components/ui/sonner";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -29,6 +30,7 @@ import {
   syncCartToDatabase,
 } from "@/services/cartService";
 import { getProductById } from "@/services/productService";
+import { trackAddToCart, trackRemoveFromCart } from "@/lib/analytics/events";
 
 const CART_KEY = "akm_shop_cart_v1";
 const SAVED_KEY = "akm_shop_saved_v1";
@@ -57,6 +59,8 @@ type CartContextValue = {
   checkoutTotals: ReturnType<typeof calcCartTotals>;
   couponCode: string;
   setCouponCode: (code: string) => void;
+  couponPreview: CouponPreview | null;
+  couponLoading: boolean;
   shippingMethod: "standard" | "express";
   setShippingMethod: (m: "standard" | "express") => void;
   shippingTotal: number;
@@ -122,6 +126,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartLineItem[]>([]);
   const [savedForLater, setSavedForLater] = useState<SavedForLaterItem[]>([]);
   const [couponCode, setCouponCode] = useState("");
+  const [couponPreview, setCouponPreview] = useState<CouponPreview | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
   const [shippingMethod, setShippingMethod] = useState<"standard" | "express">("standard");
   const [shippingConfig, setShippingConfig] = useState<StorefrontShippingConfig>(DEFAULT_SHIPPING_CONFIG);
   const [sessionId] = useState(readSessionId);
@@ -212,19 +218,36 @@ export function CartProvider({ children }: { children: ReactNode }) {
       toast.error("This product is currently out of stock.");
       return;
     }
+    const addQty = payload.quantity ?? 1;
+    let analyticsPayload: { product: CatalogProduct; quantity: number; line?: CartLineItem } | null = null;
+
     setItems((prev) => {
       const idx = prev.findIndex((l) =>
         matchesLine(l, payload.product.id, payload.colorId, payload.variantId),
       );
-      if (idx === -1) return [...prev, toLine(payload)];
+      if (idx === -1) {
+        const line = toLine({ ...payload, quantity: addQty });
+        analyticsPayload = { product: payload.product, quantity: line.quantity, line };
+        return [...prev, line];
+      }
       const next = [...prev];
       const max = next[idx].maxQuantity;
-      next[idx] = {
-        ...next[idx],
-        quantity: Math.min(max, next[idx].quantity + (payload.quantity ?? 1)),
+      const previousQty = next[idx].quantity;
+      const nextQty = Math.min(max, previousQty + addQty);
+      const addedQty = nextQty - previousQty;
+      if (addedQty <= 0) return prev;
+      next[idx] = { ...next[idx], quantity: nextQty };
+      analyticsPayload = {
+        product: payload.product,
+        quantity: addedQty,
+        line: { ...next[idx], quantity: addedQty },
       };
       return next;
     });
+
+    if (analyticsPayload) {
+      trackAddToCart(analyticsPayload);
+    }
     toast.success("Added to cart", {
       action: {
         label: "View Cart",
@@ -254,7 +277,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const removeFromCart = useCallback((productId: string, colorId?: string, variantId?: string) => {
-    setItems((prev) => prev.filter((l) => !matchesLine(l, productId, colorId, variantId)));
+    setItems((prev) => {
+      const removed = prev.find((l) => matchesLine(l, productId, colorId, variantId));
+      if (removed) {
+        queueMicrotask(() => trackRemoveFromCart(removed));
+      }
+      return prev.filter((l) => !matchesLine(l, productId, colorId, variantId));
+    });
   }, []);
 
   const clearCart = useCallback(() => setItems([]), []);
@@ -351,28 +380,64 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [items],
   );
 
+  useEffect(() => {
+    let cancelled = false;
+    const normalized = couponCode.trim();
+    if (!normalized) {
+      setCouponPreview(null);
+      setCouponLoading(false);
+      return;
+    }
+
+    setCouponLoading(true);
+    void previewCouponDiscount(normalized, subtotal)
+      .then((preview) => {
+        if (!cancelled) setCouponPreview(preview);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCouponPreview({
+            enteredCode: normalized,
+            normalizedCode: normalized.toUpperCase(),
+            appliedCode: null,
+            discountAmount: 0,
+            freeShipping: false,
+            valid: false,
+            message: "Couldn't validate this coupon right now.",
+          });
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setCouponLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [couponCode, subtotal]);
+
   // Coupon codes are validated server-side at payment — do not apply client discounts to charged totals.
   const shippingTotal =
     items.length === 0
       ? 0
-      : estimateShippingTotal(shippingMethod, subtotal, shippingConfig, false);
+      : estimateShippingTotal(shippingMethod, subtotal, shippingConfig, couponPreview?.freeShipping ?? false);
 
   const totals = useMemo(
     () =>
       calcCartTotals(items, {
         shippingEstimate: null,
-        couponDiscount: 0,
+        couponDiscount: couponPreview?.discountAmount ?? 0,
       }),
-    [items],
+    [items, couponPreview?.discountAmount],
   );
 
   const checkoutTotals = useMemo(
     () =>
       calcCartTotals(items, {
         shippingEstimate: shippingTotal,
-        couponDiscount: 0,
+        couponDiscount: couponPreview?.discountAmount ?? 0,
       }),
-    [items, shippingTotal],
+    [items, shippingTotal, couponPreview?.discountAmount],
   );
 
   const value: CartContextValue = {
@@ -383,6 +448,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     checkoutTotals,
     couponCode,
     setCouponCode,
+    couponPreview,
+    couponLoading,
     shippingMethod,
     setShippingMethod,
     shippingTotal,

@@ -1,5 +1,6 @@
 import { Bus, ExternalLink, Plane, ShoppingBag, TrainFront, type LucideIcon } from "lucide-react";
 import { SEO } from "@/components/SEO";
+import { PAGE_SEO } from "@/data/seoPages";
 
 const services: {
   name: string;
@@ -70,9 +71,8 @@ export default function PersonalBooking() {
   return (
     <>
       <SEO
-        title="Personal Booking — IRCTC, Travel & Shopping Links"
-        description="Quick links to IRCTC, MakeMyTrip, RedBus, Amazon, Flipkart, Meesho, Myntra, and Ajio for personal convenience. Read our disclaimer before using third-party services."
-        keywords="IRCTC, MakeMyTrip, RedBus, Amazon India, Flipkart, Meesho, Myntra, Ajio, personal booking, AKM Care"
+        title={PAGE_SEO["/personal-booking"].title}
+        description={PAGE_SEO["/personal-booking"].description}
         canonical="/personal-booking"
       />
       <section className="section-padding pt-6 sm:pt-8 lg:pt-10 pb-4 sm:pb-5 lg:pb-6 relative">

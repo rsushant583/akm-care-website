@@ -1,5 +1,8 @@
 import { Heart, Lightbulb, Award, Zap } from "lucide-react";
+import { Link } from "react-router-dom";
 import { SEO } from "@/components/SEO";
+import { PAGE_SEO } from "@/data/seoPages";
+import { breadcrumbSchema } from "@/lib/schemas";
 import { motion, useReducedMotion } from "framer-motion";
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { CardHover } from "@/components/ui/CardHover";
@@ -28,10 +31,13 @@ export default function About() {
   return (
     <>
       <SEO
-        title="About Us — Our Mission, Vision & Team"
-        description="Learn about AKM Care — our mission to provide ethical, integrity-driven industrial and HR solutions across India. Meet Team AKM Care."
-        keywords="AKM Care about, industrial company Ahmedabad, HR company Gujarat, training company India"
+        title={PAGE_SEO["/about"].title}
+        description={PAGE_SEO["/about"].description}
         canonical="/about"
+        schema={breadcrumbSchema([
+          { name: "Home", url: "/" },
+          { name: "About", url: "/about" },
+        ])}
       />
       <section className="section-padding relative overflow-hidden bg-[#FAF8F5]">
         <div className="absolute inset-0 bg-gradient-to-br from-[#E8621A]/[0.07] via-transparent to-[#F5F0EB] pointer-events-none" />
@@ -59,8 +65,23 @@ export default function About() {
                 </motion.span>
               )}
             </h1>
-            <p className="text-base sm:text-lg text-[#6B6B6B] leading-relaxed mb-6">
+            <p className="text-base sm:text-lg text-[#6B6B6B] leading-relaxed mb-4">
               AKM Care provides integrated solutions on a single platform with ethics and integrity within a benchmarking value frame.
+            </p>
+            <p className="text-sm sm:text-base text-[#6B6B6B] leading-relaxed mb-6">
+              We sell authentic fashion online from Ahmedabad, Gujarat —{" "}
+              <Link to="/shop" className="text-[#E8621A] font-semibold hover:underline">
+                shop sarees, lehengas, gowns, suits and jeans
+              </Link>
+              {" "}with pan-India delivery — and offer{" "}
+              <Link to="/services" className="text-[#E8621A] font-semibold hover:underline">
+                industrial training, HR and compliance services
+              </Link>
+              . Delivery windows and unused-product returns are on{" "}
+              <Link to="/shipping-returns" className="text-[#E8621A] font-semibold hover:underline">
+                shipping and returns
+              </Link>
+              .
             </p>
             <div className="flex flex-wrap gap-3">
               <span className="inline-flex items-center rounded-full bg-white border border-[#E8621A]/20 px-4 py-2 text-sm font-semibold text-[#1A1A1A] shadow-sm">

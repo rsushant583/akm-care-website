@@ -2,6 +2,7 @@ import { trainingCategories } from "@/data/fallback";
 import { MessageSquare, Cpu, Brain, TrendingUp, Crown, Target, Headphones, Shield, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { SEO } from "@/components/SEO";
+import { PAGE_SEO } from "@/data/seoPages";
 import { motion, useReducedMotion } from "framer-motion";
 import { CardHover } from "@/components/ui/CardHover";
 
@@ -26,9 +27,8 @@ export default function Training() {
   return (
     <>
       <SEO
-        title="All Kind of Training — Soft Skills, Technical & Behavioral"
-        description="Professional training programs for industries — soft skills, technical training, behavioral development, commercial training, leadership, and safety compliance training."
-        keywords="industrial training programs, soft skills training India, technical training Gujarat, behavioral training, leadership development, safety compliance training"
+        title={PAGE_SEO["/training"].title}
+        description={PAGE_SEO["/training"].description}
         canonical="/training"
       />
       <section className="section-padding bg-[#F5F0EB]">

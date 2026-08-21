@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { getProductImgProps } from "@/lib/images/productImage";
 
 export default function CollectionBanner({
   eyebrow,
@@ -18,6 +19,15 @@ export default function CollectionBanner({
   imageSrc?: string;
   imageAlt?: string;
 }) {
+  const img = imageSrc
+    ? getProductImgProps({
+        src: imageSrc,
+        alt: imageAlt,
+        productName: imageAlt || title,
+        role: "banner",
+      })
+    : null;
+
   return (
     <section className="bg-[#FAF8F5]" aria-labelledby="collection-banner-heading">
       <div className="container-premium py-6 sm:py-8">
@@ -35,13 +45,17 @@ export default function CollectionBanner({
             </Link>
           </div>
           <div className="relative min-h-[12rem] md:min-h-0 bg-[#EDE8E2]">
-            {imageSrc ? (
+            {img ? (
               <img
-                src={imageSrc}
-                alt={imageAlt || ""}
+                src={img.src}
+                srcSet={img.srcSet}
+                sizes={img.sizes}
+                alt={img.alt}
+                width={img.width}
+                height={img.height}
                 className="absolute inset-0 h-full w-full product-photo"
-                loading="lazy"
-                decoding="async"
+                loading={img.loading}
+                decoding={img.decoding}
               />
             ) : (
               <div className="absolute inset-0 bg-gradient-to-br from-[#EDE8E2] to-[#F5F0EB]" aria-hidden />

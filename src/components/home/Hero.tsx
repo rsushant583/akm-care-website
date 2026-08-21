@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { OFFICIAL_BROWSABLE_CATEGORIES, shopCategoryPath, shopCollectionPath } from "@/data/catalog/categories";
 import { productPath } from "@/lib/ecommerce/slug";
 import { cn } from "@/lib/utils";
+import { getProductImgProps } from "@/lib/images/productImage";
 
 export type HeroTile = {
   src: string;
@@ -11,6 +12,10 @@ export type HeroTile = {
 
 const TURQUOISE_COVER =
   "https://tdqepnmysycxklqcvpai.supabase.co/storage/v1/object/public/products/akmc-turquoise-zari/image-01.webp";
+const ROOH_COVER =
+  "https://tdqepnmysycxklqcvpai.supabase.co/storage/v1/object/public/products/akmc-rooh-0002/image-01.webp";
+const SANI_COVER =
+  "https://tdqepnmysycxklqcvpai.supabase.co/storage/v1/object/public/products/akmc-sani-1007/image-01.webp";
 
 /** Real catalog paths for first paint — replaced by live tiles when catalog loads. */
 const SEED_TILES: HeroTile[] = [
@@ -19,8 +24,8 @@ const SEED_TILES: HeroTile[] = [
     alt: "AKMC Turquoise Zari Silk Saree",
     href: productPath("akmc-turquoise-zari"),
   },
-  { src: "/catalog/akmc-rooh-0002/01.png", alt: "AKMC ROOH saree", href: productPath("akmc-rooh-0002") },
-  { src: "/catalog/akmc-sani-1007/01.png", alt: "AKMC SANI saree", href: productPath("akmc-sani-1007") },
+  { src: ROOH_COVER, alt: "AKMC ROOH saree", href: productPath("akmc-rooh-0002") },
+  { src: SANI_COVER, alt: "AKMC SANI saree", href: productPath("akmc-sani-1007") },
 ];
 
 const shortLabel: Record<string, string> = {
@@ -38,16 +43,25 @@ function HeroMosaic({ tiles, priority }: { tiles: HeroTile[]; priority?: boolean
   }
 
   const Tile = ({ tile, className, eager }: { tile: HeroTile; className?: string; eager?: boolean }) => {
+    const imgProps = getProductImgProps({
+      src: tile.src,
+      alt: tile.alt,
+      productName: tile.alt,
+      role: "hero",
+      priority: eager,
+    });
     const img = (
       <img
-        src={tile.src}
-        alt={tile.alt}
+        src={imgProps.src}
+        srcSet={imgProps.srcSet}
+        sizes={imgProps.sizes}
+        alt={imgProps.alt}
         className="absolute inset-0 h-full w-full product-photo"
-        loading={eager ? "eager" : "lazy"}
-        fetchPriority={eager ? "high" : undefined}
-        decoding="async"
-        width={640}
-        height={800}
+        loading={imgProps.loading}
+        fetchPriority={imgProps.fetchPriority}
+        decoding={imgProps.decoding}
+        width={imgProps.width}
+        height={imgProps.height}
       />
     );
     const body = (
@@ -69,6 +83,7 @@ function HeroMosaic({ tiles, priority }: { tiles: HeroTile[]; priority?: boolean
 
   return (
     <div className="grid grid-cols-2 grid-rows-2 gap-1.5 sm:gap-2 h-full min-h-[13.5rem] sm:min-h-[16rem] lg:min-h-[22rem]">
+      {/* Only the primary mosaic tile is LCP-critical. */}
       <Tile tile={shown[0]} className="row-span-2" eager={priority} />
       <Tile tile={shown[1]} eager={false} />
       {shown[2] ? (

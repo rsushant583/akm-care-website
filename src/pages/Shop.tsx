@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Bell, Filter, LayoutGrid, List, ShoppingCart, SlidersHorizontal, X } from "lucide-react";
 import { SEO } from "@/components/SEO";
-import { breadcrumbSchema } from "@/lib/schemas";
+import { breadcrumbSchema, collectionPageSchema } from "@/lib/schemas";
 import {
   useCatalogFacets,
   useCatalogMerchandising,
@@ -10,6 +10,8 @@ import {
 } from "@/hooks/useCatalogProducts";
 import type { CatalogProduct, ListingViewMode, ShopFilters, SortOption } from "@/lib/ecommerce/types";
 import { shopBreadcrumbs } from "@/lib/ecommerce/seo";
+import { productPath } from "@/lib/ecommerce/slug";
+import { CATEGORY_SEO, SHOP_SEO } from "@/data/seoPages";
 import {
   buildShopSearchParams,
   countActiveShopFilters,
@@ -38,6 +40,8 @@ import { cn } from "@/lib/utils";
 import { getCategoryLabel } from "@/data/catalog/categories";
 import { isProductInStock } from "@/lib/ecommerce/availability";
 import { formatINR } from "@/lib/ecommerce/pricing";
+import { trackSearch, trackViewItemList } from "@/lib/analytics/events";
+import { resolveShopIndexPolicy } from "@/lib/seo/shopIndex";
 
 function uniqueMerch(list: CatalogProduct[], exclude: Set<string>, min = 2) {
   const out = list.filter((p) => !exclude.has(p.id));
@@ -172,7 +176,8 @@ export default function Shop() {
     [dbFacets],
   );
 
-  const categoryLabel = filters.category !== "all" ? getCategoryLabel(filters.category) || filters.category : null;
+  const categoryLabel = filters.category !== "all" ? getCategoryLabel(filters.category) || null : null;
+  const isKnownCategory = filters.category === "all" || Boolean(getCategoryLabel(filters.category));
   const collectionLabel =
     collection === "deals"
       ? "Deals"
@@ -184,6 +189,15 @@ export default function Shop() {
             ? "New Arrivals"
             : null;
 
+  const hasExtraFilters =
+    Boolean(collection) ||
+    sort !== "newest" ||
+    filters.priceMin != null ||
+    filters.priceMax != null ||
+    filters.colors.length > 0 ||
+    filters.variants.length > 0 ||
+    filters.availability !== "all";
+
   const crumbs = shopBreadcrumbs(
     categoryLabel
       ? [{ name: categoryLabel, url: `/shop?category=${encodeURIComponent(filters.category)}` }]
@@ -192,13 +206,19 @@ export default function Shop() {
         : undefined,
   );
 
-  /** Self-referencing canonical for indexable category views; /shop for collections and filtered search. */
-  const shopCanonical = useMemo(() => {
-    if (filters.category !== "all" && !collection && !filters.query.trim()) {
-      return `/shop?category=${encodeURIComponent(filters.category)}`;
-    }
-    return "/shop";
-  }, [filters.category, collection, filters.query]);
+  /** Self-referencing canonical for indexable category views; /shop for collections, search, and unknown categories. */
+  const shopIndex = useMemo(
+    () =>
+      resolveShopIndexPolicy({
+        category: filters.category,
+        query: filters.query,
+        collection,
+        isKnownCategory,
+        hasExtraFilters,
+      }),
+    [filters.category, filters.query, collection, isKnownCategory, hasExtraFilters],
+  );
+  const shopCanonical = shopIndex.canonical;
 
   const catalogIds = useMemo(() => new Set(filtered.map((p) => p.id)), [filtered]);
   const showMerchRows =
@@ -224,6 +244,77 @@ export default function Shop() {
   const activeFilterCount = countActiveShopFilters(filters);
   const resultCount = total || filtered.length;
   const heading = collectionLabel || categoryLabel || "All Products";
+  const isSearch = Boolean(filters.query.trim());
+  const categorySeo = isKnownCategory && filters.category !== "all" ? CATEGORY_SEO[filters.category] : undefined;
+  const shopTitle = isSearch
+    ? `Search results for “${filters.query.trim()}”`
+    : collectionLabel
+      ? `${collectionLabel} — Shop`
+      : categorySeo?.title || (categoryLabel ? `${categoryLabel} — Shop` : SHOP_SEO.title);
+  const shopDescription = isSearch
+    ? `Search results in the AKM Care catalog. Refine by category from the Shop page to browse sarees, lehengas, gowns, suits and jeans.`
+    : categorySeo?.description ||
+      (collectionLabel
+        ? `${collectionLabel} from the AKM Care catalog. Live prices and stock, with pan-India delivery.`
+        : SHOP_SEO.description);
+  const shopRobots = shopIndex.robots;
+  const shopIntro =
+    !isSearch && !collection
+      ? categorySeo?.intro || (filters.category === "all" ? SHOP_SEO.intro : undefined)
+      : undefined;
+  const shopSchemas = [
+    breadcrumbSchema(crumbs),
+    shopIndex.indexable
+      ? collectionPageSchema({
+          name: heading,
+          description: shopDescription,
+          url: shopCanonical,
+          numberOfItems: total || filtered.length,
+          items: filtered.slice(0, 24).map((p) => ({ name: p.name, url: productPath(p.slug) })),
+        })
+      : null,
+  ].filter(Boolean);
+  const lastListKeyRef = useRef("");
+
+  useEffect(() => {
+    if (loading || filtered.length === 0) return;
+
+    let itemListId = "all-products";
+    let itemListName = "All Products";
+    if (filters.query.trim()) {
+      itemListId = "search-results";
+      itemListName = "Search Results";
+    } else if (collection) {
+      itemListId = `collection:${collection}`;
+      itemListName = collectionLabel || collection;
+    } else if (filters.category !== "all") {
+      itemListId = `category:${filters.category}`;
+      itemListName = categoryLabel || filters.category;
+    }
+
+    const listKey = `${itemListId}|${total}|${filtered.length}`;
+    if (lastListKeyRef.current === listKey) return;
+    lastListKeyRef.current = listKey;
+
+    trackViewItemList({
+      itemListId,
+      itemListName,
+      products: filtered,
+    });
+  }, [
+    loading,
+    filtered,
+    total,
+    filters.query,
+    filters.category,
+    collection,
+    categoryLabel,
+    collectionLabel,
+  ]);
+
+  const handleSearchCommit = useCallback((term: string) => {
+    trackSearch(term);
+  }, []);
 
   const chips: Chip[] = useMemo(() => {
     const list: Chip[] = [];
@@ -349,17 +440,11 @@ export default function Shop() {
   return (
     <>
       <SEO
-        title={
-          collectionLabel
-            ? `${collectionLabel} — Shop`
-            : categoryLabel
-              ? `${categoryLabel} — Shop`
-              : "Shop — Sarees, Lehengas, Gowns, Suits & Jeans"
-        }
-        description="Shop authentic fashion online — sarees, lehengas, gowns, 3-piece suits and men's jeans. Live pricing and stock, delivered pan-India by AKM Care."
-        keywords="buy sarees online, lehenga, ladies gown, 3 piece suit, mens jeans, AKM Care shop"
+        title={shopTitle}
+        description={shopDescription}
         canonical={shopCanonical}
-        schema={breadcrumbSchema(crumbs)}
+        robots={shopRobots}
+        schema={shopSchemas}
       />
 
       <ShopHero />
@@ -371,7 +456,12 @@ export default function Shop() {
           <div className="flex flex-col lg:flex-row gap-4 lg:items-center justify-between">
             <CategoryStrip active={filters.category} onSelect={setCategory} />
             <div className="flex items-center gap-2 w-full lg:w-auto">
-              <ProductSearch value={filters.query} onChange={setQuery} className="flex-1 lg:w-80" />
+              <ProductSearch
+                value={filters.query}
+                onChange={setQuery}
+                onSearchCommit={handleSearchCommit}
+                className="flex-1 lg:w-80"
+              />
               <Link
                 to="/cart"
                 className="inline-flex items-center gap-2 px-3 py-3 min-h-11 bg-[#E8621A] text-white text-sm font-semibold"
@@ -485,6 +575,15 @@ export default function Shop() {
                         {offline ? " · offline catalog" : ""}
                         {refreshing ? " · updating" : ""}
                       </p>
+                      {shopIntro && (
+                        <p className="text-sm text-[#6B6B6B] mt-3 max-w-2xl leading-relaxed">
+                          {shopIntro}{" "}
+                          <Link to="/shipping-returns" className="text-[#E8621A] font-semibold hover:underline">
+                            Shipping and returns
+                          </Link>
+                          .
+                        </p>
+                      )}
                     </div>
 
                     <div className="hidden lg:flex items-center gap-2 flex-wrap">

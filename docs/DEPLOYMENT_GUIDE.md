@@ -6,7 +6,7 @@
 
 | Component | Platform | Notes |
 |-----------|----------|-------|
-| Frontend SPA | Vercel | `vite build` → static + SPA rewrite |
+| Frontend SPA | Vercel | **Must** run `npm run build` (sitemap + Vite + HTML shells + verify). Not `vite build`. |
 | Database / Auth / Storage | Supabase project `tdqepnmysycxklqcvpai` | Migrations via CLI |
 | Edge Functions | Supabase Functions | Deno |
 | Payments | Razorpay | Keys in Edge secrets |
@@ -20,8 +20,8 @@
 
 | Name | Required | Purpose |
 |------|----------|---------|
-| `VITE_SUPABASE_URL` | Yes | Supabase URL |
-| `VITE_SUPABASE_ANON_KEY` | Yes | Public anon key |
+| `VITE_SUPABASE_URL` | Yes | Browser catalog **and** Edge middleware product existence checks |
+| `VITE_SUPABASE_ANON_KEY` | Yes | Same (runtime + build) |
 | `VITE_YOUTUBE_API_KEY` | Optional | YouTube carousel |
 | `VITE_RESEND_API_KEY` | Avoid in browser | Prefer server-only name |
 | `VITE_ADMIN_PIN` | Legacy | Unused by `/admin` |
@@ -105,14 +105,31 @@ Phase 5.5 also requires applying `supabase/migrations/20260813120000_phase55_pay
 
 ## 6. Vercel Configuration
 
-File: `vercel.json`
+File: `vercel.json` plus Dashboard env.
 
-- SPA rewrite to `/index.html` (except `/api/`)
-- Headers: `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`
-- **Missing:** Content-Security-Policy, Strict-Transport-Security (documented gap)
-- Cache: long-lived `/static/*`; sitemap 1 day
+| Setting | Value |
+| --- | --- |
+| Build Command | `npm run build` |
+| Output Directory | `dist` |
+| Install Command | `npm install` |
+| Node.js | 20 (`engines` + `.nvmrc`) |
+| Framework | Vite |
 
-Set Vercel env to match browser `VITE_*` vars. Redeploy after env changes.
+`vercel.json` also sets:
+
+- Apex `akmcare.in` → `https://www.akmcare.in` **308** (disable any Dashboard 307 “redirect to www” to avoid a chain)
+- SPA rewrite excluding dotted files and `/seo-category/` (category HTML is fetched by middleware)
+- Headers for `robots.txt`, `sitemap.xml`, `llms.txt`, `og-image.jpg`
+
+### Runtime env for Edge middleware 404s
+
+`VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` must be available at **runtime**, not only at build.
+
+- Product exists → 200
+- Product missing → 404
+- Env missing / Supabase down → **fail-open 200** (shop stays online; client still noindexes empty PDPs)
+
+See `docs/SEARCH_CONSOLE_SETUP.md` for the post-deploy crawl checklist.
 
 ---
 

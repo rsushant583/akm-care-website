@@ -9,6 +9,7 @@ import { shopCategoryPath, type OfficialShopCategory } from "@/data/catalog/cate
 import { searchProducts } from "@/services/searchService";
 import { allCatalogProducts } from "@/data/catalog/products";
 import { cn } from "@/lib/utils";
+import { getProductImgProps } from "@/lib/images/productImage";
 
 const RECENT_SEARCH_KEY = "akm_shop_recent_searches_v1";
 const MAX_RECENT = 6;
@@ -52,6 +53,7 @@ function productMatchesQuery(product: CatalogProduct, q: string) {
 export function ProductSearch({
   value,
   onChange,
+  onSearchCommit,
   products = EMPTY_PRODUCTS,
   placeholder = "Search name, code, category…",
   className,
@@ -59,6 +61,7 @@ export function ProductSearch({
 }: {
   value: string;
   onChange: (value: string) => void;
+  onSearchCommit?: (term: string) => void;
   products?: CatalogProduct[];
   placeholder?: string;
   className?: string;
@@ -175,9 +178,11 @@ export function ProductSearch({
       setLocalValue(t);
       if (t) navigate(`/shop?q=${encodeURIComponent(t)}`);
       else navigate("/shop");
+      if (t) onSearchCommit?.(t);
       return;
     }
     onChange(term);
+    if (t) onSearchCommit?.(t);
   };
 
   const activateOption = (option: Option) => {
@@ -415,6 +420,11 @@ export function ProductSearch({
               {visibleSuggestions.map((p) => {
                 const key = `prod:${p.id}`;
                 const selected = activeOption?.key === key;
+                const thumb = getProductImgProps({
+                  src: p.images[0]?.src || p.image_url,
+                  role: "search",
+                  decorative: true,
+                });
                 return (
                   <li key={p.id}>
                     <Link
@@ -434,10 +444,15 @@ export function ProductSearch({
                       )}
                     >
                       <img
-                        src={p.images[0]?.src || p.image_url || "/placeholder.svg"}
+                        src={thumb.src}
+                        srcSet={thumb.srcSet}
+                        sizes={thumb.sizes}
                         alt=""
+                        width={thumb.width}
+                        height={thumb.height}
                         className="h-12 w-9 product-photo bg-[#F5F0EB]"
-                        loading="lazy"
+                        loading={thumb.loading}
+                        decoding={thumb.decoding}
                       />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-[#1A1A1A] line-clamp-1">{p.name}</p>

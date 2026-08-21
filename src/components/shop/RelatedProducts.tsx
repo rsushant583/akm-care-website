@@ -1,6 +1,6 @@
 import type { CatalogProduct } from "@/lib/ecommerce/types";
 import { ProductRail } from "./ProductRail";
-import { categoryMatchesProduct } from "@/data/catalog/categories";
+import { categoryMatchesProduct, getCategoryLabel } from "@/data/catalog/categories";
 
 export function RelatedProducts({
   products,
@@ -29,7 +29,7 @@ export function RelatedProducts({
       subtitle="Similar pieces from the AKM Care catalog"
       products={related}
       minItems={1}
-      ctaLabel="Shop all"
+      ctaLabel={category ? `Browse ${getCategoryLabel(category) || "this category"}` : "Browse the shop"}
       ctaHref={category ? `/shop?category=${encodeURIComponent(category)}` : "/shop"}
       className="mt-12 sm:mt-16"
     />

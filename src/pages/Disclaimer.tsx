@@ -1,11 +1,12 @@
 import { SEO } from "@/components/SEO";
+import { PAGE_SEO } from "@/data/seoPages";
 
 export default function Disclaimer() {
   return (
     <>
       <SEO
-        title="Disclaimer — AKM Care"
-        description="Read AKM Care disclaimer, service limitations, product information, legal notices, and jurisdiction details."
+        title={PAGE_SEO["/disclaimer"].title}
+        description={PAGE_SEO["/disclaimer"].description}
         canonical="/disclaimer"
       />
       <section className="section-padding bg-warm-beige">
@@ -41,7 +42,8 @@ export default function Disclaimer() {
             <div>
               <h2 className="font-heading text-2xl mb-4">4. Product Disclaimer</h2>
               <p className="text-muted-foreground leading-relaxed">
-                Products listed on our e-commerce section are sourced from rural Indian villages. While we strive to maintain quality, product availability, pricing, and specifications may change without prior notice. Product images are representative and actual products may vary slightly.
+                Fashion products listed in the shop are described from the live catalog. Prices, stock, images and
+                specifications can change. Product images are representative and the physical item may vary slightly.
               </p>
             </div>
 

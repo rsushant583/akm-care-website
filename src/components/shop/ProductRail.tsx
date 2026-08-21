@@ -72,7 +72,7 @@ export function ProductRail({
           role="list"
           aria-label={title}
         >
-          {products.map((product, index) => (
+          {products.map((product) => (
             <div
               key={product.id}
               role="listitem"
@@ -82,7 +82,8 @@ export function ProductRail({
                 product={product}
                 onQuickView={onQuickView}
                 compact
-                priority={index < 4}
+                /* Rails sit below the fold on home — never compete with hero LCP. */
+                priority={false}
               />
             </div>
           ))}

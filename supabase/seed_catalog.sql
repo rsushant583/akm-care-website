@@ -51,7 +51,7 @@ insert into products (
   8, 'available', 'within 24 Hours', 'NA — within 7 days return policy', 'Polythene Packing', null,
   'sarees', 'Sarees', '["Chanderi","Ethnic Wear","Apparel","Print","Women","AKM Care"]'::jsonb,
   true, true, true, true, 98, 1,
-  '/catalog/akmc-sani-1007/01.png',
+  'https://tdqepnmysycxklqcvpai.supabase.co/storage/v1/object/public/products/akmc-sani-1007/image-01.webp',
   'AKMC SANI - 1007 | Chanderi Print Saree | AKM Care',
   'Buy AKMC SANI - 1007 Chanderi print saree with unstitched blouse. AKM Care price ₹468.',
   '{"variant":"PRINT","packing":"Polythene Packing","blouse":"Unstitched"}'::jsonb
@@ -61,6 +61,7 @@ on conflict (id) do update set
   sku = excluded.sku,
   akm_care_price = excluded.akm_care_price,
   mrp = excluded.mrp,
+  image_url = excluded.image_url,
   stock_quantity = excluded.stock_quantity,
   updated_at = now();
 
@@ -91,7 +92,7 @@ insert into products (
   6, 'available', 'within 24 Hours', 'NA — within 7 days return policy', 'Polythene Packing', null,
   'sarees', 'Sarees', '["Chanderi","Ethnic Wear","Apparel","Print","Women","AKM Care"]'::jsonb,
   true, true, false, true, 92, 2,
-  '/catalog/akmc-rooh-0002/01.png',
+  'https://tdqepnmysycxklqcvpai.supabase.co/storage/v1/object/public/products/akmc-rooh-0002/image-01.webp',
   'AKMC ROOH - 0002 | Chanderi Print Saree | AKM Care',
   'Buy AKMC ROOH - 0002 Chanderi print saree with unstitched blouse. AKM Care price ₹714.',
   '{"variant":"PRINT","packing":"Polythene Packing","blouse":"Unstitched"}'::jsonb
@@ -101,6 +102,7 @@ on conflict (id) do update set
   sku = excluded.sku,
   akm_care_price = excluded.akm_care_price,
   mrp = excluded.mrp,
+  image_url = excluded.image_url,
   stock_quantity = excluded.stock_quantity,
   updated_at = now();
 
@@ -274,26 +276,26 @@ on conflict (id) do update set
 -- Unique slug conflict path if ids differ
 create unique index if not exists idx_products_slug_unique on products (slug) where slug is not null;
 
--- Images SANI (7)
+-- Images SANI (7) — Supabase Storage WebP (local public/catalog kept as backup)
 delete from product_images where product_id = 'd0000000-0000-4000-8000-000000000001';
 insert into product_images (product_id, url, alt, storage_path, sort_order, is_primary)
 select
   'd0000000-0000-4000-8000-000000000001',
-  '/catalog/akmc-sani-1007/' || lpad(g::text, 2, '0') || '.png',
+  'https://tdqepnmysycxklqcvpai.supabase.co/storage/v1/object/public/products/akmc-sani-1007/image-' || lpad(g::text, 2, '0') || '.webp',
   'AKMC SANI - 1007 — view ' || g,
-  'products/akmc-sani-1007/' || lpad(g::text, 2, '0') || '.png',
+  'akmc-sani-1007/image-' || lpad(g::text, 2, '0') || '.webp',
   g - 1,
   g = 1
 from generate_series(1, 7) as g;
 
--- Images ROOH (8)
+-- Images ROOH (8) — Supabase Storage WebP (local public/catalog kept as backup)
 delete from product_images where product_id = 'd0000000-0000-4000-8000-000000000002';
 insert into product_images (product_id, url, alt, storage_path, sort_order, is_primary)
 select
   'd0000000-0000-4000-8000-000000000002',
-  '/catalog/akmc-rooh-0002/' || lpad(g::text, 2, '0') || '.png',
+  'https://tdqepnmysycxklqcvpai.supabase.co/storage/v1/object/public/products/akmc-rooh-0002/image-' || lpad(g::text, 2, '0') || '.webp',
   'AKMC ROOH - 0002 — view ' || g,
-  'products/akmc-rooh-0002/' || lpad(g::text, 2, '0') || '.png',
+  'akmc-rooh-0002/image-' || lpad(g::text, 2, '0') || '.webp',
   g - 1,
   g = 1
 from generate_series(1, 8) as g;

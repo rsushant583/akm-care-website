@@ -4,6 +4,9 @@ import { toast } from "@/components/ui/sonner";
 import { submitContact } from "@/lib/submissions";
 import { useServices } from "@/hooks/useServices";
 import { SEO } from "@/components/SEO";
+import { PAGE_SEO } from "@/data/seoPages";
+import { breadcrumbSchema } from "@/lib/schemas";
+import { BRAND } from "@/lib/config/brand";
 import { motion, useReducedMotion } from "framer-motion";
 
 export default function Contact() {
@@ -32,10 +35,13 @@ export default function Contact() {
   return (
     <>
       <SEO
-        title="Contact Us — Get In Touch with AKM Care"
-        description="Contact AKM Care. Reach us via phone, email, or WhatsApp. Headquartered in Ahmedabad, Gujarat. Available for partnerships, training enquiries, and business collaborations."
-        keywords="contact AKM Care, Ahmedabad industrial company contact, Gujarat HR company"
+        title={PAGE_SEO["/contact"].title}
+        description={PAGE_SEO["/contact"].description}
         canonical="/contact"
+        schema={breadcrumbSchema([
+          { name: "Home", url: "/" },
+          { name: "Contact", url: "/contact" },
+        ])}
       />
       <section className="section-padding bg-[#F5F0EB]">
         <div className="container-premium max-w-3xl lg:max-w-none mx-auto text-center lg:text-left">
@@ -139,22 +145,22 @@ export default function Contact() {
               className="space-y-5"
             >
               {[
-                { icon: Phone, label: "Phone", value: "+91-84019 95486", action: "tel:+918401995486", cta: "Call Now" },
+                { icon: Phone, label: "Phone", value: BRAND.phoneDisplay, action: `tel:${BRAND.phoneE164}`, cta: "Call Now" },
                 {
                   icon: Mail,
                   label: "Email",
-                  value: "contact@akmcare.in",
-                  action: "mailto:contact@akmcare.in",
+                  value: BRAND.email,
+                  action: `mailto:${BRAND.email}`,
                   cta: "Send Email",
                 },
                 {
                   icon: MessageCircle,
                   label: "WhatsApp",
-                  value: "+91-84019 95486",
-                  action: "https://wa.me/918401995486",
+                  value: BRAND.phoneDisplay,
+                  action: BRAND.whatsappUrl,
                   cta: "Chat on WhatsApp",
                 },
-                { icon: MapPin, label: "Location", value: "Ahmedabad, Gujarat, India", action: "", cta: "" },
+                { icon: MapPin, label: "Location", value: BRAND.addressDisplay, action: "", cta: "" },
               ].map((item) => (
                 <div
                   key={item.label}

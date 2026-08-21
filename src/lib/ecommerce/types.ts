@@ -90,6 +90,8 @@ export interface CatalogProduct {
   description: string;
   seoTitle?: string;
   seoDescription?: string;
+  /** Real catalog specification key/values only — never invented. */
+  specifications?: Record<string, string>;
 }
 
 export type SortOption = "newest" | "price-asc" | "price-desc" | "popularity" | "discount";

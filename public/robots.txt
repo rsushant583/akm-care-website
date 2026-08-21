@@ -1,17 +1,37 @@
+# AKM Care — www.akmcare.in
 User-agent: *
 Allow: /
 
+# Private / transactional (not public catalog)
 Disallow: /admin
-Disallow: /admin/*
-Disallow: /.env
-Disallow: /api/
+Disallow: /admin/
 Disallow: /auth
-Disallow: /auth/*
+Disallow: /auth/
 Disallow: /account
-Disallow: /account/*
+Disallow: /account/
 Disallow: /checkout
 Disallow: /cart
 Disallow: /wishlist
 Disallow: /order-success
+
+# Do not advertise internal APIs or env files if ever exposed as paths
+Disallow: /api/
+Disallow: /.env
+
+# Internal prerender files — public category URLs remain /shop?category=
+Disallow: /seo-category
+Disallow: /seo-category/
+
+# Search-result / alias query URLs (official ?category= pages remain allowed)
+Disallow: /shop?q=
+Disallow: /shop?*q=
+Disallow: /shop?search=
+Disallow: /shop?*search=
+Disallow: /shop?query=
+Disallow: /shop?*query=
+
+# Googlebot, Bingbot, OAI-SearchBot, PerplexityBot and other legitimate
+# search/AI crawlers inherit User-agent: * above. Public catalog is allowed.
+# Do not add per-bot Allow blocks that look like ranking tricks.
 
 Sitemap: https://www.akmcare.in/sitemap.xml

@@ -1,6 +1,7 @@
 import type { CatalogProduct, ProductColorOption, ProductImage, ProductVariantOption } from "@/lib/ecommerce/types";
 import { calcDiscountPercent } from "@/lib/ecommerce/pricing";
 import { slugify } from "@/lib/ecommerce/slug";
+import { SHIPPING_POLICY } from "@/lib/ecommerce/shippingPolicy";
 
 /** Row shape from `catalog_product_list` view or products + joined payloads */
 export type CatalogListRow = {
@@ -114,6 +115,38 @@ function asTags(raw: unknown): string[] {
   return [];
 }
 
+function isMeaningfulSpec(value: unknown): boolean {
+  if (value == null) return false;
+  const t = String(value).trim();
+  if (!t) return false;
+  const lower = t.toLowerCase();
+  return !(lower === "na" || lower === "n/a" || lower === "—" || lower === "-" || lower === "null" || lower === "undefined");
+}
+
+function asSpecifications(raw: unknown): Record<string, string> | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const source = Array.isArray(raw)
+    ? Object.fromEntries(
+        raw
+          .map((item) => {
+            if (!item || typeof item !== "object") return null;
+            const row = item as Record<string, unknown>;
+            const key = String(row.name ?? row.key ?? "").trim();
+            const value = row.value ?? row.val;
+            return key ? [key, value] : null;
+          })
+          .filter(Boolean) as Array<[string, unknown]>,
+      )
+    : (raw as Record<string, unknown>);
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(source)) {
+    const name = key.trim();
+    if (!name || !isMeaningfulSpec(value)) continue;
+    if (typeof value === "string" || typeof value === "number") out[name] = String(value).trim();
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
 export function mapCatalogRow(row: CatalogListRow, index = 0): CatalogProduct {
   const name = row.name || "Product";
   const mrp = Number(row.mrp ?? row.price ?? 0);
@@ -130,6 +163,17 @@ export function mapCatalogRow(row: CatalogListRow, index = 0): CatalogProduct {
         ? rawStatus
         : "sold_out";
 
+  const specifications = asSpecifications(row.specifications);
+  let variants = asVariants(row.variants);
+  if (!variants.length && specifications?.variant) {
+    const variantName = specifications.variant;
+    variants = [{ id: slugify(variantName), name: variantName }];
+  }
+  const dimensions =
+    String(row.dimensions ?? "").trim() ||
+    (specifications?.size ? String(specifications.size).trim() : "");
+  const packingType = row.packing_type || specifications?.packing || undefined;
+
   return {
     id: String(row.id),
     slug,
@@ -141,9 +185,9 @@ export function mapCatalogRow(row: CatalogListRow, index = 0): CatalogProduct {
     sku: String(row.sku ?? row.product_code ?? ""),
     productCode: String(row.product_code ?? row.sku ?? ""),
     quantity: stock,
-    dimensions: String(row.dimensions ?? ""),
+    dimensions,
     weight: row.weight,
-    variants: asVariants(row.variants),
+    variants,
     colors: asColors(row.colors),
     mrp,
     sellingPrice,
@@ -152,17 +196,17 @@ export function mapCatalogRow(row: CatalogListRow, index = 0): CatalogProduct {
     gstPercent: Number(row.gst_percent ?? 5),
     gstNumber: row.gst_number ?? undefined,
     hsn: String(row.hsn ?? ""),
-    shippingTime: String(row.shipping_time ?? "3–5 business days"),
+    shippingTime: String(row.shipping_time ?? SHIPPING_POLICY.standardWindow),
     warranty: String(row.warranty ?? "NA"),
-    packingType: row.packing_type ?? undefined,
+    packingType,
     freightCost: row.freight_cost,
     status,
     category: (row.category_slug as CatalogProduct["category"]) ?? "apparel",
     categoryLabel: String(row.category_label ?? row.category_name ?? "Apparel"),
     brand: row.brand_name ?? "AKM Care",
-    returnPolicy: "7 days return policy — unused product with original packing",
+    returnPolicy: SHIPPING_POLICY.returnSummary,
     tags: asTags(row.tags),
-    rating: row.rating != null ? Number(row.rating) : 4.5,
+    rating: row.rating != null ? Number(row.rating) : undefined,
     reviewCount: row.review_count != null ? Number(row.review_count) : 0,
     isFeatured: Boolean(row.is_featured),
     isNewArrival: Boolean(row.is_new_arrival),
@@ -176,5 +220,6 @@ export function mapCatalogRow(row: CatalogListRow, index = 0): CatalogProduct {
     description: String(row.description ?? row.short_description ?? ""),
     seoTitle: row.seo_title?.trim() || undefined,
     seoDescription: row.seo_description?.trim() || undefined,
+    specifications,
   };
 }

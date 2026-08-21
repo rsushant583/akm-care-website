@@ -66,7 +66,12 @@ export default function AuthPage() {
 
   return (
     <>
-      <SEO title="Sign in" description="Sign in to AKM Care to manage orders, wishlist, and addresses." canonical="/auth" robots="noindex, follow" />
+      <SEO
+        title="Sign in"
+        description="Sign in to AKM Care to manage orders, wishlist, and addresses."
+        canonical="/auth"
+        robots="noindex, follow"
+      />
       <section className="section-padding bg-[#FAF8F5] min-h-[70vh]">
         <div className="container-premium max-w-md mx-auto">
           <h1 className="font-heading text-3xl mb-2 text-center">

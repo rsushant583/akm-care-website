@@ -16,10 +16,11 @@ import {
   Zap,
 } from "lucide-react";
 import { SEO } from "@/components/SEO";
-import { breadcrumbSchema } from "@/lib/schemas";
+import { breadcrumbSchema, faqSchema } from "@/lib/schemas";
 import { useCatalogProduct } from "@/hooks/useCatalogProduct";
 import { useRelatedCatalogProducts } from "@/hooks/useCatalogProducts";
 import { productSeo, shopBreadcrumbs } from "@/lib/ecommerce/seo";
+import { formatProductShippingCopy } from "@/lib/ecommerce/shippingPolicy";
 import { formatINR, getEffectivePrice, displayDiscountPercent } from "@/lib/ecommerce/pricing";
 import { getAvailableQuantity, isProductInStock } from "@/lib/ecommerce/availability";
 import { getStockLabel } from "@/lib/ecommerce/badges";
@@ -41,6 +42,7 @@ import {
   StickyBuyBar,
 } from "@/components/shop";
 import { cn } from "@/lib/utils";
+import { trackViewItem } from "@/lib/analytics/events";
 
 function isMeaningful(value?: string | number | null): boolean {
   if (value == null) return false;
@@ -87,10 +89,18 @@ export default function ProductDetails() {
   const [openSection, setOpenSection] = useState<"shipping" | "returns" | "warranty" | null>("shipping");
   const actionsRef = useRef<HTMLDivElement>(null);
   const addLockRef = useRef(false);
+  const viewedProductIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (product) track(product);
   }, [product, track]);
+
+  useEffect(() => {
+    if (!product || loading || error) return;
+    if (viewedProductIdRef.current === product.id) return;
+    viewedProductIdRef.current = product.id;
+    trackViewItem(product);
+  }, [product, loading, error]);
 
   useEffect(() => {
     setQty(1);
@@ -140,21 +150,36 @@ export default function ProductDetails() {
 
   if (error && !product) {
     return (
+      <>
+        <SEO
+          title="Unable to load product"
+          description="This AKM Care product could not be loaded right now. Please try again or return to the shop."
+          robots="noindex, follow"
+          omitCanonical
+        />
       <section className="section-padding bg-white">
         <div className="container-premium">
           <ErrorState description={customerSafeMessage(error, "Unable to load this product right now.")} onRetry={refetch} />
           <p className="text-center mt-6">
             <Link to="/shop" className="text-[#E8621A] font-semibold hover:underline">
-              Back to Shop
+              Back to the AKM Care shop
             </Link>
           </p>
         </div>
       </section>
+      </>
     );
   }
 
   if (!product) {
     return (
+      <>
+        <SEO
+          title="Product not found"
+          description="This product may have been moved or is no longer listed on AKM Care."
+          robots="noindex, follow"
+          omitCanonical
+        />
       <section className="section-padding bg-white">
         <div className="container-premium">
           <EmptyState
@@ -165,6 +190,7 @@ export default function ProductDetails() {
           />
         </div>
       </section>
+      </>
     );
   }
 
@@ -177,7 +203,7 @@ export default function ProductDetails() {
   const maxQty = Math.max(1, availableQty);
   const seo = productSeo(product);
   const crumbs = shopBreadcrumbs([
-    { name: product.categoryLabel, url: `/shop?category=${product.category}` },
+    { name: product.categoryLabel, url: `/shop?category=${encodeURIComponent(product.category)}` },
     { name: product.name, url: seo.canonical },
   ]);
   const wishlisted = isWishlisted(product.id);
@@ -185,7 +211,9 @@ export default function ProductDetails() {
   const hasRealReviews = (product.reviewCount ?? 0) > 0 && product.rating != null;
   const warrantyLabel = displayWarranty(product.warranty);
   const returnLabel = isMeaningful(product.returnPolicy) ? product.returnPolicy!.trim() : null;
-  const shippingLabel = isMeaningful(product.shippingTime) ? product.shippingTime.trim() : null;
+  const shippingLabel = isMeaningful(product.shippingTime)
+    ? formatProductShippingCopy(product.shippingTime)
+    : formatProductShippingCopy(null);
 
   const selection = {
     product,
@@ -242,6 +270,16 @@ export default function ProductDetails() {
     shippingLabel ? ["Shipping duration", shippingLabel] : null,
   ].filter(Boolean) as Array<[string, string]>;
 
+  if (product.specifications) {
+    const seen = new Set(specs.map(([key]) => key.toLowerCase()));
+    for (const [key, value] of Object.entries(product.specifications)) {
+      const name = key.trim();
+      if (!name || seen.has(name.toLowerCase())) continue;
+      seen.add(name.toLowerCase());
+      specs.push([name, value]);
+    }
+  }
+
   return (
     <>
       <SEO
@@ -251,8 +289,9 @@ export default function ProductDetails() {
         canonical={seo.canonical}
         exactTitle={seo.exactTitle}
         ogImage={seo.ogImage}
+        ogImageAlt={seo.ogImageAlt}
         ogType={seo.ogType}
-        schema={[seo.schema, breadcrumbSchema(crumbs)]}
+        schema={[seo.schema, breadcrumbSchema(crumbs), faqSchema(seo.faqs)].filter(Boolean)}
       />
 
       <section className="section-padding bg-white pt-4 sm:pt-6 pb-[calc(7rem+env(safe-area-inset-bottom,0px))] lg:pb-16">
@@ -621,6 +660,16 @@ export default function ProductDetails() {
                           <div className="overflow-hidden">
                             <p className="px-4 pb-3.5 pl-[2.75rem] text-sm text-[#6B6B6B] leading-relaxed">
                               {value}
+                              {key === "returns" || key === "shipping" ? (
+                                <>
+                                  {" "}
+                                  Full policy:{" "}
+                                  <Link to="/shipping-returns" className="text-[#E8621A] font-semibold hover:underline">
+                                    shipping and returns
+                                  </Link>
+                                  .
+                                </>
+                              ) : null}
                             </p>
                           </div>
                         </div>
@@ -647,6 +696,34 @@ export default function ProductDetails() {
             </div>
           </div>
 
+          {seo.faqs.length > 0 && (
+            <section className="mt-10 sm:mt-12" aria-labelledby="product-facts-heading">
+              <h2 id="product-facts-heading" className="type-section mb-4">
+                Product questions
+              </h2>
+              <div className="space-y-3">
+                {seo.faqs.map((item) => (
+                  <details
+                    key={item.question}
+                    className="rounded-2xl border border-black/[0.06] bg-[#FAF8F5] px-4 py-3"
+                  >
+                    <summary className="cursor-pointer font-semibold text-sm text-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/30 rounded-sm">
+                      {item.question}
+                    </summary>
+                    <p className="mt-2 text-sm text-[#6B6B6B] leading-relaxed">{item.answer}</p>
+                  </details>
+                ))}
+              </div>
+              <p className="text-sm text-[#6B6B6B] mt-4">
+                Need delivery timelines or the unused-product return window? See{" "}
+                <Link to="/shipping-returns" className="text-[#E8621A] font-semibold hover:underline">
+                  shipping and returns
+                </Link>
+                .
+              </p>
+            </section>
+          )}
+
           <RelatedProducts
             products={related}
             currentId={product.id}
@@ -656,8 +733,17 @@ export default function ProductDetails() {
           <RecentlyViewedStrip excludeId={product.id} className="mt-10" />
 
           <p className="text-center text-sm text-[#6B6B6B] mt-8">
+            <Link
+              to={`/shop?category=${encodeURIComponent(product.category)}`}
+              className="text-[#E8621A] font-semibold hover:underline"
+            >
+              Browse {product.categoryLabel}
+            </Link>
+            <span className="mx-2 text-[#C4C4C4]" aria-hidden>
+              ·
+            </span>
             <Link to="/shop" className="text-[#E8621A] font-semibold hover:underline">
-              ← Back to Shop
+              All products
             </Link>
           </p>
         </div>

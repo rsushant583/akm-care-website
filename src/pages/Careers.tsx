@@ -3,6 +3,7 @@ import { useState } from "react";
 import { toast } from "@/components/ui/sonner";
 import { submitCareerApplication } from "@/lib/submissions";
 import { SEO } from "@/components/SEO";
+import { PAGE_SEO } from "@/data/seoPages";
 
 const whyUs = [
   { icon: Sparkles, title: "Growth Opportunities", desc: "Continuous learning and career advancement paths." },
@@ -38,9 +39,8 @@ export default function Careers() {
   return (
     <>
       <SEO
-        title="Careers — Join Team AKM Care"
-        description="Build your career with AKM Care. We're looking for passionate professionals in HR, training, and operations. Send us your resume."
-        keywords="jobs AKM Care, careers Ahmedabad, HR jobs Gujarat, industrial company jobs"
+        title={PAGE_SEO["/careers"].title}
+        description={PAGE_SEO["/careers"].description}
         canonical="/careers"
       />
       <section className="section-padding pt-6 sm:pt-8 lg:pt-10 pb-4 sm:pb-6 bg-warm-beige">

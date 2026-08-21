@@ -9,13 +9,16 @@ import {
   formatCustomerPaymentStatus,
 } from "@/lib/account/orderDisplay";
 import { CustomerFulfillmentBadge, CustomerPaymentBadge } from "@/components/account/OrderStatusBadges";
+import { trackPurchaseFromReceipt } from "@/lib/analytics/events";
+
+type Receipt = Awaited<ReturnType<typeof getOrderReceipt>>;
 
 export default function OrderSuccessPage() {
   const [params] = useSearchParams();
   const orderNumber = params.get("order") || "";
   const accessToken = params.get("token") || "";
   const [loading, setLoading] = useState(true);
-  const [payload, setPayload] = useState<Awaited<ReturnType<typeof getOrderReceipt>>>(null);
+  const [payload, setPayload] = useState<Receipt>(null);
   const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
@@ -25,18 +28,45 @@ export default function OrderSuccessPage() {
       setLoadError(false);
       return;
     }
-    setLoadError(false);
-    void getOrderReceipt(orderNumber, accessToken)
-      .then((row) => {
+
+    let cancelled = false;
+    let attempts = 0;
+    let timer: number | undefined;
+
+    const load = async (isPoll: boolean) => {
+      try {
+        const row = await getOrderReceipt(orderNumber, accessToken);
+        if (cancelled) return;
         setPayload(row);
         setLoadError(!row);
-      })
-      .catch(() => {
+        setLoading(false);
+
+        const pay = String(row?.order?.payment_status || "").toLowerCase();
+        const confirming = Boolean(row) && (pay === "pending" || pay === "created");
+        // Light reconciliation poll while webhook/verify may still settle.
+        if (confirming && attempts < 12) {
+          attempts += 1;
+          timer = window.setTimeout(() => void load(true), isPoll ? 2500 : 2000);
+        }
+      } catch {
+        if (cancelled) return;
         setPayload(null);
         setLoadError(true);
-      })
-      .finally(() => setLoading(false));
+        setLoading(false);
+      }
+    };
+
+    void load(false);
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+    };
   }, [orderNumber, accessToken]);
+
+  useEffect(() => {
+    if (!payload) return;
+    trackPurchaseFromReceipt(payload);
+  }, [payload]);
 
   const invoiceText = useMemo(() => {
     if (!payload) return "";
@@ -89,15 +119,16 @@ export default function OrderSuccessPage() {
   const paymentPaid = paymentStatus === "paid";
   const paymentFailed = paymentStatus === "failed";
   const paymentRefunded = paymentStatus === "refunded";
+  const paymentConfirming = paymentStatus === "pending" || paymentStatus === "created";
 
   let title = "Order receipt";
   let heading = "Order receipt";
   let subtitle = "";
   if (payload) {
     if (paymentFailed) {
-      title = "Payment not completed";
-      heading = "Payment was not completed";
-      subtitle = `Order ${payload.order.order_number} is saved. Payment status: ${formatCustomerPaymentStatus(payload.order.payment_status)}.`;
+      title = "Payment wasn't completed";
+      heading = "Payment wasn't completed";
+      subtitle = `Order ${payload.order.order_number} is saved. You can retry checkout from your cart.`;
     } else if (paymentRefunded) {
       title = "Refund recorded";
       heading = "Refund recorded";
@@ -106,6 +137,10 @@ export default function OrderSuccessPage() {
       title = "Payment received";
       heading = "Payment received";
       subtitle = `Order ${payload.order.order_number}. Payment: Paid. Order: ${formatCustomerOrderStatus(payload.order.status)}.`;
+    } else if (paymentConfirming) {
+      title = "Confirming your payment";
+      heading = "Confirming your payment";
+      subtitle = `Order ${payload.order.order_number}. We're confirming the payment with our provider. This page updates automatically.`;
     } else {
       title = "Order receipt";
       heading = "Order receipt";
@@ -132,7 +167,9 @@ export default function OrderSuccessPage() {
                 aria-hidden
               />
               <h1 className="font-heading text-3xl sm:text-4xl mb-2">{heading}</h1>
-              <p className="text-[#6B6B6B] mb-6">{subtitle}</p>
+              <p className="text-[#6B6B6B] mb-6" role="status">
+                {subtitle}
+              </p>
               <div className="flex flex-wrap justify-center gap-2 mb-8">
                 <CustomerPaymentBadge value={payload.order.payment_status} />
                 <CustomerFulfillmentBadge value={payload.order.status} />
@@ -231,14 +268,20 @@ export default function OrderSuccessPage() {
           )}
 
           <div className="flex flex-wrap gap-3 justify-center">
-            <Link to="/shop" className="rounded-full bg-[#E8621A] text-white font-semibold px-5 py-3 min-h-11 inline-flex items-center">
-              Continue shopping
-            </Link>
+            {paymentFailed ? (
+              <Link to="/checkout" className="rounded-full bg-[#E8621A] text-white font-semibold px-5 py-3 min-h-11 inline-flex items-center">
+                Retry payment
+              </Link>
+            ) : (
+              <Link to="/shop" className="rounded-full bg-[#E8621A] text-white font-semibold px-5 py-3 min-h-11 inline-flex items-center">
+                Continue shopping
+              </Link>
+            )}
             <Link
-              to="/account"
+              to="/account/orders"
               className="rounded-full border border-[#E8E4DE] font-semibold px-5 py-3 min-h-11 inline-flex items-center"
             >
-              My account
+              My orders
             </Link>
           </div>
         </div>

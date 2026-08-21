@@ -12,13 +12,55 @@ type IncomingItem = {
   variantName?: string;
 };
 
-function unitPriceFromProduct(p: Record<string, unknown>): number {
+type HeaderRow = Record<string, unknown> & {
+  id: string;
+  order_number: string;
+  access_token: string;
+  user_id: string | null;
+  grand_total: number;
+  subtotal?: number;
+  gst_total?: number;
+  shipping_total?: number;
+  discount_total?: number;
+  coupon_code?: string | null;
+  currency?: string;
+  payment_status: string;
+  razorpay_order_id?: string | null;
+  stock_reserved?: boolean;
+  coupon_reserved?: boolean;
+  pricing_snapshot?: Record<string, unknown>;
+};
+
+/** Rupee catalog price → integer paise. Never trust client money. */
+function unitPricePaiseFromProduct(p: Record<string, unknown>): number {
   const candidates = [p.akm_care_price, p.selling_price, p.price];
   for (const c of candidates) {
     const n = Number(c);
-    if (Number.isFinite(n) && n > 0) return n;
+    if (Number.isFinite(n) && n > 0) return Math.round(n * 100);
   }
   return 0;
+}
+
+function paiseToRupees(paise: number): number {
+  return Math.round(paise) / 100;
+}
+
+function isCheckoutAttemptKey(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+function isUniqueViolation(err: unknown) {
+  const e = err as { code?: string; message?: string };
+  const code = String(e?.code || "");
+  const msg = String(e?.message || "");
+  return code === "23505" || /duplicate|unique/i.test(msg);
+}
+
+function ownershipDenied(header: HeaderRow, userId: string | null) {
+  const owner = header.user_id ? String(header.user_id) : null;
+  if (owner) return !userId || userId !== owner;
+  // Guest order: do not hand it to an authenticated account via the attempt key.
+  return Boolean(userId);
 }
 
 async function loadShippingConfig(supabase: SupabaseClient) {
@@ -87,6 +129,273 @@ function orderNumber() {
   return `AKM${y}${m}${d}${rand}`;
 }
 
+async function loadByIdempotencyKey(supabase: SupabaseClient, key: string) {
+  const { data, error } = await supabase
+    .from("order_headers")
+    .select("*")
+    .eq("checkout_idempotency_key", key)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  const rows = (data || []) as HeaderRow[];
+  const active = rows.find((r) => ["pending", "created", "paid"].includes(String(r.payment_status)));
+  if (active) return { header: active, consumed: false as const };
+  const consumed = rows.find((r) => ["failed", "refunded"].includes(String(r.payment_status)));
+  if (consumed) return { header: consumed, consumed: true as const };
+  return { header: null, consumed: false as const };
+}
+
+async function loadOrderItems(supabase: SupabaseClient, orderId: string) {
+  const { data, error } = await supabase
+    .from("order_items")
+    .select("product_id,product_name,quantity,unit_price")
+    .eq("order_id", orderId);
+  if (error) throw error;
+  return (data || []).map((l) => ({
+    productId: String(l.product_id || ""),
+    productName: String(l.product_name || ""),
+    quantity: Number(l.quantity || 0),
+    unitPrice: Number(l.unit_price || 0),
+  }));
+}
+
+function createSuccessBody(params: {
+  keyId: string;
+  header: HeaderRow;
+  razorpayOrderId: string;
+  amountPaise: number;
+  items: Array<{ productId: string; productName: string; quantity: number; unitPrice: number }>;
+  paymentStatus: "created" | "paid";
+  duplicate: boolean;
+}) {
+  const grandTotal = Number(params.header.grand_total);
+  return {
+    success: true,
+    duplicate: params.duplicate,
+    paymentStatus: params.paymentStatus,
+    keyId: params.keyId,
+    order: {
+      id: params.razorpayOrderId,
+      amount: params.amountPaise,
+      currency: String(params.header.currency || "INR"),
+    },
+    amount: grandTotal,
+    amountPaise: params.amountPaise,
+    orderHeaderId: params.header.id,
+    orderNumber: params.header.order_number,
+    accessToken: params.header.access_token,
+    totals: {
+      subtotal: Number(params.header.subtotal || 0),
+      gstTotal: Number(params.header.gst_total || 0),
+      shippingTotal: Number(params.header.shipping_total || 0),
+      discountTotal: Number(params.header.discount_total || 0),
+      grandTotal,
+      couponCode: params.header.coupon_code ?? null,
+    },
+    items: params.items,
+  };
+}
+
+async function markCreateFailed(supabase: SupabaseClient, orderId: string) {
+  await supabase
+    .from("order_headers")
+    .update({
+      status: "failed",
+      payment_status: "failed",
+      stock_reserved: false,
+      coupon_reserved: false,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", orderId)
+    .neq("payment_status", "paid");
+}
+
+async function ensureRazorpayOrder(params: {
+  req: Request;
+  supabase: SupabaseClient;
+  keyId: string;
+  keySecret: string;
+  header: HeaderRow;
+  duplicate: boolean;
+  itemCount?: number;
+}) {
+  const { supabase, keyId, keySecret, duplicate } = params;
+  let header = params.header;
+  const items = await loadOrderItems(supabase, header.id);
+  const amountPaise = Math.round(Number(header.grand_total) * 100);
+
+  if (header.payment_status === "paid") {
+    return json(
+      params.req,
+      200,
+      createSuccessBody({
+        keyId,
+        header,
+        razorpayOrderId: String(header.razorpay_order_id || ""),
+        amountPaise,
+        items,
+        paymentStatus: "paid",
+        duplicate: true,
+      }),
+    );
+  }
+
+  if (header.razorpay_order_id) {
+    return json(
+      params.req,
+      200,
+      createSuccessBody({
+        keyId,
+        header,
+        razorpayOrderId: String(header.razorpay_order_id),
+        amountPaise,
+        items,
+        paymentStatus: "created",
+        duplicate,
+      }),
+    );
+  }
+
+  try {
+    const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
+    const rpOrder = await razorpay.orders.create({
+      amount: amountPaise,
+      currency: String(header.currency || "INR"),
+      receipt: String(header.order_number).slice(0, 40),
+      notes: {
+        order_header_id: header.id,
+        order_number: header.order_number,
+        itemCount: String(params.itemCount ?? items.length),
+      },
+    });
+
+    const snapshot = {
+      ...((header.pricing_snapshot as Record<string, unknown> | undefined) || {}),
+      razorpay_order_id: rpOrder.id,
+    };
+    const { data: linked } = await supabase
+      .from("order_headers")
+      .update({
+        razorpay_order_id: rpOrder.id,
+        payment_status: "created",
+        updated_at: new Date().toISOString(),
+        pricing_snapshot: snapshot,
+      })
+      .eq("id", header.id)
+      .is("razorpay_order_id", null)
+      .neq("payment_status", "paid")
+      .neq("payment_status", "failed")
+      .select("*")
+      .maybeSingle();
+
+    if (!linked) {
+      const { data: fresh } = await supabase.from("order_headers").select("*").eq("id", header.id).maybeSingle();
+      const latest = fresh as HeaderRow | null;
+      if (!latest || ["failed", "refunded"].includes(String(latest.payment_status))) {
+        return json(params.req, 409, {
+          success: false,
+          error: "This payment attempt has ended. Please try again.",
+          code: "new_attempt_required",
+        });
+      }
+      if (latest.razorpay_order_id) {
+        return json(
+          params.req,
+          200,
+          createSuccessBody({
+            keyId,
+            header: latest,
+            razorpayOrderId: String(latest.razorpay_order_id),
+            amountPaise: Math.round(Number(latest.grand_total) * 100),
+            items,
+            paymentStatus: latest.payment_status === "paid" ? "paid" : "created",
+            duplicate: true,
+          }),
+        );
+      }
+      return json(params.req, 409, {
+        success: false,
+        error: "This payment attempt has ended. Please try again.",
+        code: "new_attempt_required",
+      });
+    }
+
+    header = linked as HeaderRow;
+    const { data: existingPay } = await supabase.from("payments").select("id").eq("order_id", header.id).limit(1);
+    if (!existingPay || existingPay.length === 0) {
+      await supabase.from("payments").insert({
+        order_id: header.id,
+        provider: "razorpay",
+        razorpay_order_id: rpOrder.id,
+        amount: Number(header.grand_total),
+        currency: String(header.currency || "INR"),
+        status: "created",
+        raw_response: { create: { id: rpOrder.id, amount: rpOrder.amount, currency: rpOrder.currency } },
+      });
+    }
+
+    return json(
+      params.req,
+      200,
+      createSuccessBody({
+        keyId,
+        header,
+        razorpayOrderId: String(rpOrder.id),
+        amountPaise,
+        items,
+        paymentStatus: "created",
+        duplicate,
+      }),
+    );
+  } catch {
+    if (header.stock_reserved) {
+      const { data: lines } = await supabase.from("order_items").select("product_id,quantity").eq("order_id", header.id);
+      for (const line of lines || []) {
+        await supabase.rpc("release_product_stock", {
+          p_product_id: line.product_id,
+          p_qty: line.quantity,
+        });
+      }
+    }
+    if (header.coupon_reserved && header.coupon_code) {
+      await supabase.rpc("release_coupon_usage", { p_code: header.coupon_code });
+    }
+    await markCreateFailed(supabase, header.id);
+    return json(params.req, 500, {
+      success: false,
+      error: "Unable to create payment order. Please try again.",
+      code: "new_attempt_required",
+    });
+  }
+}
+
+async function replayOwnedAttempt(
+  req: Request,
+  supabase: SupabaseClient,
+  keyId: string,
+  keySecret: string,
+  userId: string | null,
+  found: { header: HeaderRow; consumed: boolean },
+) {
+  if (ownershipDenied(found.header, userId)) {
+    return json(req, 403, { success: false, error: "This checkout attempt does not belong to this account." });
+  }
+  if (found.consumed) {
+    return json(req, 409, {
+      success: false,
+      error: "This payment attempt has ended. Please try again.",
+      code: "new_attempt_required",
+    });
+  }
+  return ensureRazorpayOrder({
+    req,
+    supabase,
+    keyId,
+    keySecret,
+    header: found.header,
+    duplicate: true,
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeadersFor(req) });
   if (req.method !== "POST") return json(req, 405, { success: false, error: "Method Not Allowed" });
@@ -110,6 +419,11 @@ Deno.serve(async (req) => {
     const shippingMethod = shippingMethodRaw === "express" ? "express" : "standard";
     const couponCode = body.couponCode ? String(body.couponCode) : undefined;
     const notes = body.notes ? String(body.notes).slice(0, 2000) : null;
+    const idempotencyKey = String(body.idempotencyKey || "").trim().toLowerCase();
+
+    if (!isCheckoutAttemptKey(idempotencyKey)) {
+      return json(req, 400, { success: false, error: "This checkout attempt is invalid. Please try again." });
+    }
 
     // Bind user from JWT only — never trust body.userId
     let userId: string | null = null;
@@ -126,6 +440,13 @@ Deno.serve(async (req) => {
       }
     }
 
+    const supabase = createClient(supabaseUrl, serviceRole);
+
+    const existing = await loadByIdempotencyKey(supabase, idempotencyKey);
+    if (existing.header) {
+      return await replayOwnedAttempt(req, supabase, keyId, keySecret, userId, existing);
+    }
+
     if (!Array.isArray(items) || items.length === 0) {
       return json(req, 400, { success: false, error: "Cart is empty" });
     }
@@ -137,7 +458,6 @@ Deno.serve(async (req) => {
       return json(req, 400, { success: false, error: "A valid 10-digit Indian mobile number is required" });
     }
 
-    const supabase = createClient(supabaseUrl, serviceRole);
     const uniqueProductIds = [...new Set(items.map((i) => String(i.productId || "")).filter(Boolean))];
     if (uniqueProductIds.length === 0) {
       return json(req, 400, { success: false, error: "No valid products in cart" });
@@ -164,8 +484,8 @@ Deno.serve(async (req) => {
       variant_name: string | null;
     }> = [];
 
-    let subtotal = 0;
-    let gstTotal = 0;
+    let subtotalPaise = 0;
+    let gstTotalPaise = 0;
 
     for (const raw of items) {
       const productId = String(raw.productId || "");
@@ -178,43 +498,50 @@ Deno.serve(async (req) => {
         return json(req, 409, { success: false, error: `${p.name} is no longer available in the requested quantity` });
       }
 
-      const unitPrice = unitPriceFromProduct(p as Record<string, unknown>);
-      if (!(unitPrice > 0)) {
+      const unitPricePaise = unitPricePaiseFromProduct(p as Record<string, unknown>);
+      if (!(unitPricePaise > 0)) {
         return json(req, 400, { success: false, error: `${p.name} has no valid server price` });
       }
 
-      const lineTotal = unitPrice * qty;
+      const lineTotalPaise = unitPricePaise * qty;
       const gstPercent = Number(p.gst_percent ?? 0);
-      subtotal += lineTotal;
-      gstTotal += Math.round((lineTotal * gstPercent) / 100);
+      subtotalPaise += lineTotalPaise;
+      gstTotalPaise += Math.round((lineTotalPaise * gstPercent) / 100);
 
       normalizedLines.push({
         product_id: p.id,
         product_name: p.name,
         sku: p.sku || null,
         quantity: qty,
-        unit_price: unitPrice,
+        unit_price: paiseToRupees(unitPricePaise),
         mrp: p.mrp != null ? Number(p.mrp) : null,
         gst_percent: gstPercent,
-        line_total: lineTotal,
+        line_total: paiseToRupees(lineTotalPaise),
         image_url: p.image_url || null,
         color_name: raw.colorName ? String(raw.colorName).slice(0, 80) : null,
         variant_name: raw.variantName ? String(raw.variantName).slice(0, 80) : null,
       });
     }
 
+    const subtotal = paiseToRupees(subtotalPaise);
+    const gstTotal = paiseToRupees(gstTotalPaise);
+
     const shippingCfg = await loadShippingConfig(supabase);
     const coupon = await resolveCouponDiscount(supabase, couponCode, subtotal);
 
-    let shippingTotal = shippingMethod === "express" ? shippingCfg.express : shippingCfg.standard;
+    let shippingTotalPaise =
+      Math.round((shippingMethod === "express" ? shippingCfg.express : shippingCfg.standard) * 100);
     if (coupon.freeShipping || subtotal >= shippingCfg.freeAbove) {
-      shippingTotal = 0;
+      shippingTotalPaise = 0;
     }
 
-    const discountTotal = Math.min(subtotal, Math.max(0, coupon.discount));
-    const grandTotal = Math.round((subtotal + shippingTotal - discountTotal) * 100) / 100;
+    const discountTotalPaise = Math.min(subtotalPaise, Math.max(0, Math.round(coupon.discount * 100)));
+    const amountPaise = subtotalPaise + shippingTotalPaise - discountTotalPaise;
+    const shippingTotal = paiseToRupees(shippingTotalPaise);
+    const discountTotal = paiseToRupees(discountTotalPaise);
+    const grandTotal = paiseToRupees(amountPaise);
 
-    if (!(grandTotal > 0)) {
+    if (!(amountPaise > 0)) {
       return json(req, 400, { success: false, error: "Order total must be greater than zero" });
     }
 
@@ -256,7 +583,6 @@ Deno.serve(async (req) => {
       reservedLines.push({ product_id: line.product_id, quantity: line.quantity });
     }
 
-    const amountPaise = Math.round(grandTotal * 100);
     const generatedOrderNumber = orderNumber();
     const accessToken = crypto.randomUUID();
 
@@ -278,6 +604,7 @@ Deno.serve(async (req) => {
         lineTotal: l.line_total,
       })),
       amountPaise,
+      moneyUnit: "paise",
       computedAt: new Date().toISOString(),
     };
 
@@ -305,11 +632,18 @@ Deno.serve(async (req) => {
         pricing_snapshot: pricingSnapshot,
         stock_reserved: true,
         coupon_reserved: couponReserved,
+        checkout_idempotency_key: idempotencyKey,
       })
       .select("*")
       .single();
     if (orderErr) {
       await releaseHolds();
+      if (isUniqueViolation(orderErr)) {
+        const raced = await loadByIdempotencyKey(supabase, idempotencyKey);
+        if (raced.header) {
+          return await replayOwnedAttempt(req, supabase, keyId, keySecret, userId, raced);
+        }
+      }
       throw orderErr;
     }
 
@@ -318,6 +652,7 @@ Deno.serve(async (req) => {
     );
     if (itemsErr) {
       await releaseHolds();
+      await markCreateFailed(supabase, order.id);
       throw itemsErr;
     }
 
@@ -334,79 +669,15 @@ Deno.serve(async (req) => {
       estimated_days: shippingMethod === "express" ? 2 : 5,
     });
 
-    try {
-      const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
-      const rpOrder = await razorpay.orders.create({
-        amount: amountPaise,
-        currency: "INR",
-        receipt: order.order_number.slice(0, 40),
-        notes: {
-          order_header_id: order.id,
-          order_number: order.order_number,
-          itemCount: String(normalizedLines.length),
-          customerEmail: String(customer.email || ""),
-        },
-      });
-
-      const { error: linkErr } = await supabase
-        .from("order_headers")
-        .update({
-          razorpay_order_id: rpOrder.id,
-          payment_status: "created",
-          updated_at: new Date().toISOString(),
-          pricing_snapshot: { ...pricingSnapshot, razorpay_order_id: rpOrder.id },
-        })
-        .eq("id", order.id);
-      if (linkErr) throw linkErr;
-
-      await supabase.from("payments").insert({
-        order_id: order.id,
-        provider: "razorpay",
-        razorpay_order_id: rpOrder.id,
-        amount: grandTotal,
-        currency: "INR",
-        status: "created",
-        raw_response: { create: rpOrder },
-      });
-
-      return json(req, 200, {
-        success: true,
-        keyId,
-        order: rpOrder,
-        amount: grandTotal,
-        amountPaise,
-        orderHeaderId: order.id,
-        orderNumber: order.order_number,
-        accessToken: order.access_token,
-        totals: {
-          subtotal,
-          gstTotal,
-          shippingTotal,
-          discountTotal,
-          grandTotal,
-          couponCode: coupon.code,
-        },
-        items: normalizedLines.map((l) => ({
-          productId: l.product_id,
-          productName: l.product_name,
-          quantity: l.quantity,
-          unitPrice: l.unit_price,
-        })),
-      });
-    } catch (rzpErr) {
-      await releaseHolds();
-      await supabase
-        .from("order_headers")
-        .update({
-          status: "failed",
-          payment_status: "failed",
-          stock_reserved: false,
-          coupon_reserved: false,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", order.id);
-      throw rzpErr;
-    }
+    return await ensureRazorpayOrder({
+      req,
+      supabase,
+      keyId,
+      keySecret,
+      header: order as HeaderRow,
+      duplicate: false,
+      itemCount: normalizedLines.length,
+    });
   } catch (e) {
     return json(req, 500, { success: false, error: publicError(e, "Unable to create payment order. Please try again.") });
   }

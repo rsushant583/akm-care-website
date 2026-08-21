@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { OFFICIAL_BROWSABLE_CATEGORIES, shopCategoryPath } from "@/data/catalog/categories";
+import { getProductImgProps } from "@/lib/images/productImage";
 
 const categoryHints: Record<string, string> = {
   sarees: "Elegant traditional sarees",
@@ -43,6 +44,13 @@ export default function HomeCategoryStrip({ images }: { images?: Record<string, 
           {OFFICIAL_BROWSABLE_CATEGORIES.map((cat) => {
             const src = images?.[cat.id] || cat.imageSrc;
             const label = shortLabel[cat.id] || cat.label;
+            const img = src
+              ? getProductImgProps({
+                  src,
+                  role: "category",
+                  decorative: true,
+                })
+              : null;
             return (
               <Link
                 key={cat.id}
@@ -53,13 +61,17 @@ export default function HomeCategoryStrip({ images }: { images?: Record<string, 
                   group relative aspect-[4/5] overflow-hidden bg-[#F5F0EB]
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40"
               >
-                {src ? (
+                {img ? (
                   <img
-                    src={src}
+                    src={img.src}
+                    srcSet={img.srcSet}
+                    sizes={img.sizes}
                     alt=""
+                    width={img.width}
+                    height={img.height}
                     className="absolute inset-0 h-full w-full product-photo motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-[1.04]"
-                    loading="lazy"
-                    decoding="async"
+                    loading={img.loading}
+                    decoding={img.decoding}
                   />
                 ) : (
                   <div

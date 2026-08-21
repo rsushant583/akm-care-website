@@ -45,7 +45,8 @@ export function ProductGrid({
           product={product}
           onQuickView={onQuickView}
           view={view}
-          priority={index < 4}
+          /* Only the first grid card may compete for LCP — never “first N” by habit. */
+          priority={view === "grid" && index === 0}
         />
       ))}
     </div>

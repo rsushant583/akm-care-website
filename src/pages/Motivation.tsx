@@ -3,6 +3,7 @@ import { useIndiaDayKey } from "@/hooks/useIndiaDayKey";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Quote } from "lucide-react";
 import { SEO } from "@/components/SEO";
+import { PAGE_SEO } from "@/data/seoPages";
 import { useMemo } from "react";
 import { Reveal } from "@/components/ui/Reveal";
 import { getDailyMotivationSlice } from "@/lib/dailyMotivation";
@@ -19,9 +20,8 @@ export default function Motivation() {
   return (
     <>
       <SEO
-        title="Daily Motivation — Inspiration for Professionals"
-        description="Read AKM Care daily motivational quotes and inspiration archive curated for professionals, teams, and leaders."
-        keywords="daily motivation India, inspiration quotes, AKM motivation, workplace motivation"
+        title={PAGE_SEO["/motivation"].title}
+        description={PAGE_SEO["/motivation"].description}
         canonical="/motivation"
       />
       <section className="section-padding section-shell bg-warm-beige">

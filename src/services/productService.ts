@@ -87,6 +87,7 @@ export async function listProducts(params: ProductListParams = {}): Promise<Prod
   }
 
   let query = client.from("catalog_product_list").select("*", { count: "exact" });
+  query = query.not("status", "in", "(draft,archived)");
 
   if (params.featuredOnly) query = query.eq("is_featured", true);
   if (params.bestSellerOnly) query = query.eq("is_best_seller", true);
@@ -133,6 +134,7 @@ export async function getProductBySlug(slug: string): Promise<CatalogProduct | n
     .from("catalog_product_list")
     .select("*")
     .eq("slug", slug)
+    .not("status", "in", "(draft,archived)")
     .maybeSingle();
 
   if (error) throw error;
@@ -144,7 +146,7 @@ export async function getProductById(id: string): Promise<CatalogProduct | null>
   const client = getSupabaseClient();
   if (!client) return null;
 
-  const { data, error } = await client.from("catalog_product_list").select("*").eq("id", id).maybeSingle();
+  const { data, error } = await client.from("catalog_product_list").select("*").eq("id", id).not("status", "in", "(draft,archived)").maybeSingle();
   if (error) throw error;
   if (!data) return null;
   return mapCatalogRow(data as CatalogListRow);
@@ -164,7 +166,7 @@ export async function getFeaturedProducts(limit = 8): Promise<CatalogProduct[]> 
 
   if (!featuredError && featured && featured.length > 0) {
     const ids = featured.map((f) => f.product_id as string);
-    const { data, error } = await client.from("catalog_product_list").select("*").in("id", ids);
+    const { data, error } = await client.from("catalog_product_list").select("*").in("id", ids).not("status", "in", "(draft,archived)");
     if (error) throw error;
     const map = new Map((data || []).map((row) => [String((row as CatalogListRow).id), mapCatalogRow(row as CatalogListRow)]));
     return ids.map((id) => map.get(id)).filter(Boolean) as CatalogProduct[];
@@ -202,7 +204,7 @@ export async function getRelatedProducts(productId: string, limit = 4): Promise<
 
   if (!linkError && links && links.length > 0) {
     const ids = links.map((l) => l.related_product_id as string);
-    const { data, error } = await client.from("catalog_product_list").select("*").in("id", ids);
+    const { data, error } = await client.from("catalog_product_list").select("*").in("id", ids).not("status", "in", "(draft,archived)");
     if (error) throw error;
     const map = new Map((data || []).map((row) => [String((row as CatalogListRow).id), mapCatalogRow(row as CatalogListRow)]));
     return ids.map((id) => map.get(id)).filter(Boolean) as CatalogProduct[];

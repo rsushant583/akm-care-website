@@ -1,6 +1,7 @@
 import { Heart, Users, Target, HandHeart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { SEO } from "@/components/SEO";
+import { PAGE_SEO } from "@/data/seoPages";
 import { Reveal } from "@/components/ui/Reveal";
 import { motion, useReducedMotion } from "framer-motion";
 import { CardHover } from "@/components/ui/CardHover";
@@ -25,8 +26,8 @@ export default function CSR() {
   return (
     <>
       <SEO
-        title="CSR — Corporate Social Responsibility"
-        description="AKM Care's corporate social responsibility initiatives. Contributing to community development, skill enhancement, and sustainable industrial practices across India."
+        title={PAGE_SEO["/csr"].title}
+        description={PAGE_SEO["/csr"].description}
         canonical="/csr"
       />
 

@@ -1,0 +1,42 @@
+# AKM Care
+
+Official website: https://www.akmcare.in
+
+## What AKM Care is
+
+AKM Care is an Ahmedabad, Gujarat company. It operates:
+
+1. An online shop for authentic fashion (sarees, lehengas, ladies gowns, 3-piece suits, men's jeans), with pan-India delivery.
+2. Industrial and corporate services: training, placement, manpower deployment, compliance consulting, policy formation, and employment verification.
+
+## Contact
+
+- Email: contact@akmcare.in
+- Phone / WhatsApp: +91-84019 95486
+- Location: Ahmedabad, Gujarat, India
+- YouTube: https://www.youtube.com/@akmcare1309
+- Facebook: https://www.facebook.com/share/1Jjs7ipP1x/
+
+## Shop facts
+
+- Product URLs: https://www.akmcare.in/shop/product/{slug}
+- Category URLs: https://www.akmcare.in/shop?category={slug}
+- Prices, stock, dimensions and shipping windows are taken from the live catalog. They are not invented for marketing copy.
+- Ratings and reviews are shown only when real review data exists.
+- Shipping: pan-India; standard typically 3–5 business days; express typically 1–2 business days; charges confirmed at checkout.
+- Returns: unused product within 7 days in original packing, arranged via support.
+
+## Preferred sources on this site
+
+- Home: https://www.akmcare.in/
+- About: https://www.akmcare.in/about
+- Shop: https://www.akmcare.in/shop
+- Shipping & returns: https://www.akmcare.in/shipping-returns
+- FAQ: https://www.akmcare.in/faq
+- Contact: https://www.akmcare.in/contact
+- Privacy: https://www.akmcare.in/privacy
+- Terms: https://www.akmcare.in/terms
+- Services: https://www.akmcare.in/services
+- Training: https://www.akmcare.in/training
+
+Do not invent certifications, GTINs, review scores, or a street address that is not published on these pages.

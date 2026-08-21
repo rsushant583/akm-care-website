@@ -14,6 +14,7 @@ import { CompareProvider } from "@/context/CompareContext";
 import { RecentlyViewedProvider } from "@/context/RecentlyViewedContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
+import { Ga4RouteTracker } from "@/lib/analytics/ga4";
 
 import Index from "./pages/Index";
 const About = lazy(() => import("./pages/About"));
@@ -44,6 +45,9 @@ const Contact = lazy(() => import("./pages/Contact"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const Disclaimer = lazy(() => import("./pages/Disclaimer"));
 const SellYourProduct = lazy(() => import("./pages/SellYourProduct"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Terms = lazy(() => import("./pages/Terms"));
+const ShippingReturns = lazy(() => import("./pages/ShippingReturns"));
 const AdminRoutes = lazy(() => import("./pages/admin/AdminRoutes"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -125,6 +129,9 @@ function AppRoutes() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/faq" element={<FAQ />} />
         <Route path="/disclaimer" element={<Disclaimer />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/shipping-returns" element={<ShippingReturns />} />
         <Route path="/admin/*" element={<AdminRoutes />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
@@ -146,6 +153,7 @@ const App = () => (
                     <Sonner />
                     <BrowserRouter>
                       <ScrollToTop />
+                      <Ga4RouteTracker />
                       <Layout>
                         <AppRoutes />
                       </Layout>

@@ -126,7 +126,6 @@ function buildSaree(input: {
     brand: "AKM Care",
     returnPolicy: "7 days return policy — unused product with original packing",
     tags,
-    rating: 4.5,
     reviewCount: 0,
     isFeatured: input.isFeatured,
     isNewArrival: input.isNewArrival,
@@ -190,6 +189,7 @@ export const catalogProductsFromExcel: CatalogProduct[] = [
     isBestSeller: true,
     popularity: 98,
     createdAt: "2026-07-19T12:00:00.000Z",
+    useStorageImages: true,
   }),
   buildSaree({
     id: "excel-2",
@@ -209,6 +209,7 @@ export const catalogProductsFromExcel: CatalogProduct[] = [
     isBestSeller: false,
     popularity: 92,
     createdAt: "2026-07-19T12:30:00.000Z",
+    useStorageImages: true,
   }),
 ];
 

@@ -11,6 +11,7 @@ import { productPath } from "@/lib/ecommerce/slug";
 import { isProductInStock } from "@/lib/ecommerce/availability";
 import { EmptyState, ShopBreadcrumbs } from "@/components/shop";
 import { shopBreadcrumbs } from "@/lib/ecommerce/seo";
+import { getProductImgProps } from "@/lib/images/productImage";
 
 export default function WishlistPage() {
   const { ids, count, remove } = useWishlist();
@@ -59,10 +60,26 @@ export default function WishlistPage() {
               {products.map((p) => {
                 const inStock = isProductInStock(p);
                 const price = getEffectivePrice(p);
+                const img = getProductImgProps({
+                  src: p.image_url || p.images[0]?.src,
+                  alt: p.images[0]?.alt,
+                  productName: p.name,
+                  role: "card",
+                });
                 return (
                 <article key={p.id} className="overflow-hidden bg-[#FAF8F5] ring-1 ring-black/[0.06]">
                   <Link to={productPath(p.slug)} className="block aspect-[3/4] bg-white">
-                    <img src={p.image_url || p.images[0]?.src || "/placeholder.svg"} alt={p.name} className="h-full w-full object-cover object-top" loading="lazy" />
+                    <img
+                      src={img.src}
+                      srcSet={img.srcSet}
+                      sizes={img.sizes}
+                      alt={img.alt}
+                      width={img.width}
+                      height={img.height}
+                      className="h-full w-full object-cover object-top"
+                      loading={img.loading}
+                      decoding={img.decoding}
+                    />
                   </Link>
                   <div className="p-4">
                     <Link to={productPath(p.slug)} className="font-heading text-lg hover:text-[#E8621A] line-clamp-2">

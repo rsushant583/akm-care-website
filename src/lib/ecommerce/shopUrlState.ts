@@ -49,7 +49,7 @@ export function parseShopSearchParams(sp: URLSearchParams): ShopUrlState {
     filters: {
       ...DEFAULT_FILTERS,
       category: normalizeCategorySlug(sp.get("category")),
-      query: sp.get("q") ?? sp.get("query") ?? "",
+      query: sp.get("q") ?? sp.get("query") ?? sp.get("search") ?? "",
       priceMin,
       priceMax,
       colors,

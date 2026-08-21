@@ -42,9 +42,14 @@ export default function AdminProductsPage() {
         title="Products"
         subtitle="Create, edit, feature, and archive catalog products."
         actions={
-          <Link to="/admin/products/new" className="inline-flex items-center gap-2 rounded-xl bg-orange-500 text-white px-4 py-2.5 text-sm font-semibold">
-            <Plus size={16} /> Add Product
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link to="/admin/catalog-import" className="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-2.5 text-sm font-semibold">
+              Bulk import
+            </Link>
+            <Link to="/admin/products/new" className="inline-flex items-center gap-2 rounded-xl bg-orange-500 text-white px-4 py-2.5 text-sm font-semibold">
+              <Plus size={16} /> Add Product
+            </Link>
+          </div>
         }
       />
 
@@ -62,7 +67,7 @@ export default function AdminProductsPage() {
         <button type="button" onClick={() => void load()} className="rounded-xl border bg-white px-4 py-2.5 text-sm font-semibold">
           Search
         </button>
-        {["all", "available", "sold_out", "archived"].map((s) => (
+        {["all", "available", "sold_out", "draft", "archived"].map((s) => (
           <Chip key={s} active={status === s} onClick={() => setStatus(s)}>
             {s.replace("_", " ")}
           </Chip>

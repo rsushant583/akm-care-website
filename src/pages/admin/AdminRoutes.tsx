@@ -20,6 +20,8 @@ import AdminMotivationPage from "@/pages/admin/AdminMotivation";
 import AdminFaqManagePage from "@/pages/admin/AdminFaqManage";
 import AdminServicesManagePage from "@/pages/admin/AdminServicesManage";
 import AdminInboxPage from "@/pages/admin/AdminInbox";
+import AdminCatalogImportPage from "@/pages/admin/AdminCatalogImport";
+import AdminCatalogImportDetailPage from "@/pages/admin/AdminCatalogImportDetail";
 
 export default function AdminRoutes() {
   return (
@@ -36,6 +38,8 @@ export default function AdminRoutes() {
         <Route path="products" element={<AdminProductsPage />} />
         <Route path="products/new" element={<AdminProductFormPage />} />
         <Route path="products/:id" element={<AdminProductFormPage />} />
+        <Route path="catalog-import" element={<AdminCatalogImportPage />} />
+        <Route path="catalog-import/:id" element={<AdminCatalogImportDetailPage />} />
         <Route path="categories" element={<AdminCategoriesPage />} />
         <Route path="brands" element={<AdminBrandsPage />} />
         <Route path="inventory" element={<AdminInventoryPage />} />

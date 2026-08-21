@@ -32,6 +32,7 @@ export const motivationQuotes = thoughts.map((t, idx) => ({
 }));
 
 export const faqs = [
+  { id: "0", question: "What is AKM Care?", answer: "AKM Care is an Ahmedabad, Gujarat company. It sells authentic fashion online — sarees, lehengas, ladies gowns, 3-piece suits and men's jeans — with pan-India delivery, and provides industrial training, HR and compliance services.", category: "General" },
   { id: "1", question: "What services does AKM Care provide?", answer: "AKM Care provides a comprehensive range of industrial solutions including corporate training, placement services, manpower deployment, compliance consulting, IT solutions (websites, apps, software development), catering & facility management, tours & travel, maintenance services, and customized need-based solutions. We serve industries Pan India.", category: "General" },
   { id: "2", question: "Do you offer training programs across India?", answer: "Yes, we offer training programs Pan India. Our specialized trainers deliver soft skills, technical, behavioral, commercial, leadership, sales & marketing, customer service, and safety & compliance training at your premises or in our training centers.", category: "Training" },
   { id: "3", question: "How can we collaborate with AKM Care?", answer: "You can reach out to us via our contact form, email at contact@akmcare.in, or call us at +91-84019 95486. Our team will assess your requirements and provide customized solutions.", category: "General" },
@@ -47,6 +48,8 @@ export const faqs = [
   { id: "13", question: "Are AKM Care products authentic?", answer: "Yes. Fashion products listed on AKM Care come from the live catalog with real pricing and stock. We do not invent reviews, ratings, or inventory counts.", category: "Products" },
   { id: "14", question: "Do you offer annual maintenance contracts?", answer: "Yes, we offer comprehensive AMCs covering repair, maintenance, civil works, housekeeping, gardening, and pest control services.", category: "Services" },
   { id: "15", question: "How can I request a CSR training session?", answer: "Training officers, HODs, HR heads, and directors can contact us at contact@akmcare.in or call +91-84019 95486 to schedule CSR training sessions for nearby communities.", category: "General" },
+  { id: "16", question: "How long does shipping take?", answer: "Standard delivery is typically 3–5 business days and express is typically 1–2 business days, pan-India. Some products list a catalog shipping window on the product page. Charges and the final date are confirmed at checkout.", category: "Products" },
+  { id: "17", question: "What is the return policy for shop orders?", answer: "Unused products can be returned within 7 days in original packing. Email contact@akmcare.in or call +91-84019 95486 with your order number to start a return.", category: "Products" },
 ];
 
 export const trainingCategories = [

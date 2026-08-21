@@ -279,6 +279,7 @@ export default function AdminProductFormPage() {
               <select className="mt-1 w-full rounded-xl border px-3 py-2.5" value={form.status} onChange={(e) => set("status", e.target.value)}>
                 <option value="available">Available</option>
                 <option value="sold_out">Sold out</option>
+                <option value="draft">Draft (hidden on shop)</option>
                 <option value="archived">Archived</option>
               </select>
             </label>

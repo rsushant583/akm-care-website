@@ -1,6 +1,7 @@
 import { Play, ExternalLink, Facebook } from "lucide-react";
 import { useMemo, useState } from "react";
 import { SEO } from "@/components/SEO";
+import { PAGE_SEO } from "@/data/seoPages";
 import {
   getChannelVideosForDisplay,
   YOUTUBE_CHANNEL_HANDLE_URL,
@@ -23,9 +24,8 @@ export default function Media() {
   return (
     <>
       <SEO
-        title="Videos & Media — Training Sessions & Motivation"
-        description="Watch AKM Care's videos on our official YouTube channel @akmcare1309 — training, motivation, spirituality, and industry insights. Follow us on Facebook."
-        keywords="AKM Care YouTube, AKM Care Facebook, @akmcare1309, industrial training videos, motivation videos India, HR training sessions"
+        title={PAGE_SEO["/media"].title}
+        description={PAGE_SEO["/media"].description}
         canonical="/media"
       />
       <section className="section-padding pt-6 sm:pt-8 lg:pt-10 relative overflow-hidden">

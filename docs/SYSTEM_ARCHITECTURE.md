@@ -186,11 +186,11 @@ ProductSearch → searchService.searchProducts
 ## 8. Deployment Architecture
 
 ```text
-GitHub main → Vercel build (vite build) → CDN SPA
+GitHub main → Vercel `npm run build` (sitemap + vite + HTML shells + verify) → CDN
                                       ↓
-                         vercel.json SPA rewrite → index.html
+                         middleware.js (404s, category HTML) + vercel.json SPA rewrite
                                       ↓
-                         Browser env: VITE_SUPABASE_* (anon only)
+                         Browser + Edge runtime: VITE_SUPABASE_* (anon only)
                                       ↓
                          Supabase cloud (DB / Auth / Storage / Functions)
 ```

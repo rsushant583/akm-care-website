@@ -63,7 +63,12 @@ export default function AuthCallbackPage() {
 
   return (
     <>
-      <SEO title="Confirming account" canonical="/auth/callback" robots="noindex, follow" />
+      <SEO
+        title="Confirming account"
+        description="Confirming your AKM Care account."
+        canonical="/auth/callback"
+        robots="noindex, follow"
+      />
       <section className="section-padding bg-[#FAF8F5] min-h-[60vh] flex items-center">
         <div className="container-premium max-w-md mx-auto text-center">
           {!failed ? (

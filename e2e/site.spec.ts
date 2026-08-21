@@ -15,6 +15,9 @@ const routes = [
   "/contact",
   "/faq",
   "/disclaimer",
+  "/privacy",
+  "/terms",
+  "/shipping-returns",
 ] as const;
 
 async function expectRouteStageVisible(page: Page) {

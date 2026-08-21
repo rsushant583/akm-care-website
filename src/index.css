@@ -114,6 +114,12 @@
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
 
+  .skip-to-content {
+    @apply sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:top-2 focus:left-2
+      focus:px-4 focus:py-2 focus:bg-white focus:text-[#1A1A1A] focus:font-semibold
+      focus:rounded-md focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#E8621A]/40;
+  }
+
   /* Button hierarchy — use across storefront CTAs */
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 h-11 px-5 rounded-full

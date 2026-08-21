@@ -3,6 +3,7 @@ import { useRecentlyViewed } from "@/context/RecentlyViewedContext";
 import { formatINR } from "@/lib/ecommerce/pricing";
 import { productPath } from "@/lib/ecommerce/slug";
 import { cn } from "@/lib/utils";
+import { getProductImgProps } from "@/lib/images/productImage";
 
 export function RecentlyViewedStrip({
   excludeId,
@@ -37,27 +38,40 @@ export function RecentlyViewedStrip({
         role="list"
         aria-label="Recently viewed products"
       >
-        {list.map((item) => (
-          <Link
-            key={item.id}
-            to={productPath(item.slug)}
-            role="listitem"
-            className="snap-start shrink-0 w-36 sm:w-40 overflow-hidden bg-white ring-1 ring-black/[0.06] hover:ring-black/[0.12] transition-all"
-          >
-            <div className="aspect-[3/4] bg-[#F5F0EB]">
-              <img
-                src={item.image || "/placeholder.svg"}
-                alt=""
-                className="h-full w-full product-photo"
-                loading="lazy"
-              />
-            </div>
-            <div className="p-2.5">
-              <p className="text-xs font-medium line-clamp-2 min-h-[2rem]">{item.name}</p>
-              <p className="text-sm font-semibold text-[#E8621A] mt-1">{formatINR(item.price)}</p>
-            </div>
-          </Link>
-        ))}
+        {list.map((item) => {
+          const img = getProductImgProps({
+            src: item.image,
+            productName: item.name,
+            role: "recent",
+            decorative: true,
+          });
+          return (
+            <Link
+              key={item.id}
+              to={productPath(item.slug)}
+              role="listitem"
+              className="snap-start shrink-0 w-36 sm:w-40 overflow-hidden bg-white ring-1 ring-black/[0.06] hover:ring-black/[0.12] transition-all"
+            >
+              <div className="aspect-[3/4] bg-[#F5F0EB]">
+                <img
+                  src={img.src}
+                  srcSet={img.srcSet}
+                  sizes={img.sizes}
+                  alt=""
+                  width={img.width}
+                  height={img.height}
+                  className="h-full w-full product-photo"
+                  loading={img.loading}
+                  decoding={img.decoding}
+                />
+              </div>
+              <div className="p-2.5">
+                <p className="text-xs font-medium line-clamp-2 min-h-[2rem]">{item.name}</p>
+                <p className="text-sm font-semibold text-[#E8621A] mt-1">{formatINR(item.price)}</p>
+              </div>
+            </Link>
+          );
+        })}
       </div>
     </section>
   );

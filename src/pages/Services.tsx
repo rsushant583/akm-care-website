@@ -6,7 +6,8 @@ import { useServices } from "@/hooks/useServices";
 import { iconMap } from "@/lib/iconMap";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SEO } from "@/components/SEO";
-import { servicesSchema } from "@/lib/schemas";
+import { servicesSchema, breadcrumbSchema } from "@/lib/schemas";
+import { PAGE_SEO } from "@/data/seoPages";
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { CardHover } from "@/components/ui/CardHover";
 
@@ -27,11 +28,16 @@ export default function Services() {
   return (
     <>
       <SEO
-        title="Our Services — Training, HR, Compliance & More"
-        description="Comprehensive industrial services including placement, manpower deployment, compliance consulting, policy formation, employment verification, and customized business solutions across India."
-        keywords="placement services India, manpower deployment, industrial compliance, policy formation India, employment verification services, customized industrial solutions"
+        title={PAGE_SEO["/services"].title}
+        description={PAGE_SEO["/services"].description}
         canonical="/services"
-        schema={servicesSchema}
+        schema={[
+          servicesSchema,
+          breadcrumbSchema([
+            { name: "Home", url: "/" },
+            { name: "Services", url: "/services" },
+          ]),
+        ]}
       />
       <section className="section-padding relative overflow-hidden bg-[#FAF8F5]">
         <div className="absolute inset-0 bg-gradient-to-br from-[#E8621A]/[0.06] via-transparent to-[#F5F0EB] pointer-events-none" />

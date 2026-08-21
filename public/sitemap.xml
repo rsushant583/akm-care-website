@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
         http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
   <url>
     <loc>https://www.akmcare.in/</loc>
-    <lastmod>2026-08-19</lastmod>
+    <lastmod>2026-08-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -37,37 +38,52 @@
   <url>
     <loc>https://www.akmcare.in/personal-booking</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.4</priority>
   </url>
   <url>
     <loc>https://www.akmcare.in/media</loc>
     <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://www.akmcare.in/motivation</loc>
     <changefreq>daily</changefreq>
-    <priority>0.6</priority>
+    <priority>0.5</priority>
   </url>
   <url>
     <loc>https://www.akmcare.in/csr</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.5</priority>
   </url>
   <url>
     <loc>https://www.akmcare.in/careers</loc>
     <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://www.akmcare.in/faq</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.akmcare.in/contact</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.akmcare.in/shipping-returns</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.akmcare.in/privacy</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://www.akmcare.in/terms</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
   </url>
   <url>
     <loc>https://www.akmcare.in/disclaimer</loc>
@@ -109,59 +125,98 @@
     <lastmod>2026-08-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+    <image:image>
+      <image:loc>https://tdqepnmysycxklqcvpai.supabase.co/storage/v1/object/public/products/akmc-turquoise-zari/image-01.webp</image:loc>
+    </image:image>
   </url>
   <url>
     <loc>https://www.akmcare.in/shop/product/akmc-wsomf-maer</loc>
     <lastmod>2026-08-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+    <image:image>
+      <image:loc>https://tdqepnmysycxklqcvpai.supabase.co/storage/v1/object/public/products/products/9208d952-38b0-4ff5-8dfa-195245dc6438/1786516596617-JPEG1.JPG</image:loc>
+    </image:image>
   </url>
   <url>
     <loc>https://www.akmcare.in/shop/product/akmc-ralrajs-madr</loc>
     <lastmod>2026-08-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+    <image:image>
+      <image:loc>https://tdqepnmysycxklqcvpai.supabase.co/storage/v1/object/public/products/products/36cb122a-749b-4c02-850b-d3843656d5a2/1786634942104-JPEG1.jpeg</image:loc>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.akmcare.in/shop/product/silk-embroidery-gown-semi-stiched-in-light-gray-shade</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <image:image>
+      <image:loc>https://tdqepnmysycxklqcvpai.supabase.co/storage/v1/object/public/products/products/f152a57d-6619-4892-9a26-ceb4a6830d6a/1787223874408-JPEG1.JPG</image:loc>
+    </image:image>
   </url>
   <url>
     <loc>https://www.akmcare.in/shop/product/top-dyed-veving-saree-with-unstiched-blouse</loc>
     <lastmod>2026-08-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+    <image:image>
+      <image:loc>https://tdqepnmysycxklqcvpai.supabase.co/storage/v1/object/public/products/products/2e2d8643-2985-4ff3-882b-c2d3f139f5e3/1786515971643-JPEG1.JPG</image:loc>
+    </image:image>
   </url>
   <url>
     <loc>https://www.akmcare.in/shop/product/tul-tilak-wedding-silk-saree-with-unstitched-blouse</loc>
     <lastmod>2026-08-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+    <image:image>
+      <image:loc>https://tdqepnmysycxklqcvpai.supabase.co/storage/v1/object/public/products/products/110d834e-6796-4ac4-b244-4f76ba500e00/1786635581272-JPEG1.jpeg</image:loc>
+    </image:image>
   </url>
   <url>
     <loc>https://www.akmcare.in/shop/product/akmc-sani-1007</loc>
-    <lastmod>2026-08-16</lastmod>
+    <lastmod>2026-08-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+    <image:image>
+      <image:loc>https://tdqepnmysycxklqcvpai.supabase.co/storage/v1/object/public/products/akmc-sani-1007/image-01.webp</image:loc>
+    </image:image>
   </url>
   <url>
     <loc>https://www.akmcare.in/shop/product/akmc-rooh-0002</loc>
     <lastmod>2026-08-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+    <image:image>
+      <image:loc>https://tdqepnmysycxklqcvpai.supabase.co/storage/v1/object/public/products/akmc-rooh-0002/image-01.webp</image:loc>
+    </image:image>
   </url>
   <url>
     <loc>https://www.akmcare.in/shop/product/akmc-dpb-lta</loc>
     <lastmod>2026-08-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+    <image:image>
+      <image:loc>https://tdqepnmysycxklqcvpai.supabase.co/storage/v1/object/public/products/akmc-dpb-lta/image-01.webp</image:loc>
+    </image:image>
   </url>
   <url>
     <loc>https://www.akmcare.in/shop/product/akmc-mte-mmle</loc>
     <lastmod>2026-08-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+    <image:image>
+      <image:loc>https://tdqepnmysycxklqcvpai.supabase.co/storage/v1/object/public/products/akmc-mte-mmle/image-01.webp</image:loc>
+    </image:image>
   </url>
   <url>
     <loc>https://www.akmcare.in/shop/product/akm-rfx-mcmd</loc>
     <lastmod>2026-08-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+    <image:image>
+      <image:loc>https://tdqepnmysycxklqcvpai.supabase.co/storage/v1/object/public/products/akm-rfx-mcmd/image-01.webp</image:loc>
+    </image:image>
   </url>
 </urlset>

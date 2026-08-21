@@ -6,6 +6,7 @@ import { productPath } from "@/lib/ecommerce/slug";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { useNavigate } from "react-router-dom";
+import { getProductImgProps } from "@/lib/images/productImage";
 
 export function QuickViewModal({
   product,
@@ -21,7 +22,12 @@ export function QuickViewModal({
   if (!product) return null;
 
   const price = getEffectivePrice(product);
-  const image = product.images[0]?.src || product.image_url || "/placeholder.svg";
+  const img = getProductImgProps({
+    src: product.images[0]?.src || product.image_url,
+    alt: product.images[0]?.alt,
+    productName: product.name,
+    role: "card",
+  });
   const inStock = product.stock_quantity > 0;
 
   return (
@@ -44,7 +50,17 @@ export function QuickViewModal({
         </div>
         <div className="grid md:grid-cols-2 gap-0">
           <div className="aspect-[3/4] bg-[#F5F0EB]">
-            <img src={image} alt={product.name} className="h-full w-full object-cover" loading="lazy" />
+            <img
+              src={img.src}
+              srcSet={img.srcSet}
+              sizes={img.sizes}
+              alt={img.alt}
+              width={img.width}
+              height={img.height}
+              className="h-full w-full object-cover"
+              loading={img.loading}
+              decoding={img.decoding}
+            />
           </div>
           <div className="p-5 sm:p-6 space-y-4">
             <div>

@@ -10,8 +10,11 @@ import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { ProductBadgeStack } from "./ProductBadge";
 import { cn } from "@/lib/utils";
-
-const FALLBACK_IMG = "/placeholder.svg";
+import {
+  PRODUCT_IMAGE_FALLBACK,
+  getProductImgProps,
+  resolveProductImageSrc,
+} from "@/lib/images/productImage";
 
 export function ProductCard({
   product,
@@ -39,10 +42,24 @@ export function ProductCard({
   const inStock = isProductInStock(product);
   const wished = isWishlisted(product.id);
   const href = productPath(product.slug);
-  const primaryRaw = product.images[0]?.src || product.image_url || FALLBACK_IMG;
-  const primary = imgFailed ? FALLBACK_IMG : primaryRaw;
-  const secondary = product.images[1]?.src || primary;
+  const primaryRaw = resolveProductImageSrc(product.images[0]?.src || product.image_url);
+  const primary = imgFailed ? PRODUCT_IMAGE_FALLBACK : primaryRaw;
+  const secondaryRaw = resolveProductImageSrc(product.images[1]?.src, primary);
+  const secondary = imgFailed ? PRODUCT_IMAGE_FALLBACK : secondaryRaw;
   const showSwap = hovered && secondary !== primary && !imgFailed;
+  const primaryImg = getProductImgProps({
+    src: primary,
+    productName: product.name,
+    alt: product.images[0]?.alt,
+    role: view === "list" ? "cardList" : "card",
+    priority,
+  });
+  const secondaryImg = getProductImgProps({
+    src: secondary,
+    productName: product.name,
+    role: "card",
+    decorative: true,
+  });
   const showRating = (product.reviewCount ?? 0) > 0 && product.rating != null;
   const savings = Math.max(0, product.mrp - price);
   const discountOff = displayDiscountPercent(product.discountPercent);
@@ -79,10 +96,15 @@ export function ProductCard({
         >
           {!imgLoaded && <div className="absolute inset-0 animate-pulse bg-black/[0.04]" aria-hidden />}
           <img
-            src={showSwap ? secondary : primary}
-            alt={product.name}
-            loading={priority ? "eager" : "lazy"}
-            decoding="async"
+            src={showSwap ? secondaryImg.src : primaryImg.src}
+            srcSet={showSwap ? secondaryImg.srcSet : primaryImg.srcSet}
+            sizes={showSwap ? secondaryImg.sizes : primaryImg.sizes}
+            alt={primaryImg.alt}
+            width={primaryImg.width}
+            height={primaryImg.height}
+            loading={primaryImg.loading}
+            decoding={primaryImg.decoding}
+            fetchPriority={primaryImg.fetchPriority}
             onLoad={() => setImgLoaded(true)}
             onError={() => {
               setImgFailed(true);
@@ -190,13 +212,15 @@ export function ProductCard({
         <Link to={href} className="block h-full w-full" aria-label={product.name}>
           {!imgLoaded && <div className="absolute inset-0 animate-pulse bg-black/[0.04]" aria-hidden />}
           <img
-            src={primary}
-            alt={product.name}
-            width={480}
-            height={640}
-            loading={priority ? "eager" : "lazy"}
-            fetchPriority={priority ? "high" : undefined}
-            decoding="async"
+            src={primaryImg.src}
+            srcSet={primaryImg.srcSet}
+            sizes={primaryImg.sizes}
+            alt={primaryImg.alt}
+            width={primaryImg.width}
+            height={primaryImg.height}
+            loading={primaryImg.loading}
+            decoding={primaryImg.decoding}
+            fetchPriority={primaryImg.fetchPriority}
             onLoad={() => setImgLoaded(true)}
             onError={() => {
               setImgFailed(true);
@@ -209,10 +233,12 @@ export function ProductCard({
           />
           {showSwap && (
             <img
-              src={secondary}
+              src={secondaryImg.src}
+              srcSet={secondaryImg.srcSet}
+              sizes={secondaryImg.sizes}
               alt=""
-              width={480}
-              height={640}
+              width={secondaryImg.width}
+              height={secondaryImg.height}
               loading="lazy"
               decoding="async"
               aria-hidden

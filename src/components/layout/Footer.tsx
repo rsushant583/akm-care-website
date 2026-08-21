@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Youtube, MessageCircle, Facebook, Phone, Mail, MapPin } from "lucide-react";
 import logo from "@/assets/akm-logo.jpeg";
 import { OFFICIAL_BROWSABLE_CATEGORIES, shopCategoryPath, shopCollectionPath } from "@/data/catalog/categories";
+import { BRAND } from "@/lib/config/brand";
 
 const shopLinks = [
   { label: "All Products", path: "/shop" },
@@ -26,6 +27,7 @@ const companyLinks = [
   { label: "Careers", path: "/careers" },
   { label: "FAQ", path: "/faq" },
   { label: "Contact", path: "/contact" },
+  { label: "Shipping & Returns", path: "/shipping-returns" },
 ];
 
 export default function Footer() {
@@ -41,7 +43,7 @@ export default function Footer() {
             </p>
             <div className="flex gap-3">
               <a
-                href="https://www.youtube.com/@akmcare1309"
+                href={BRAND.social.youtube}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#E8621A] transition-all duration-300"
@@ -50,7 +52,7 @@ export default function Footer() {
                 <Youtube size={16} />
               </a>
               <a
-                href="https://wa.me/918401995486"
+                href={BRAND.whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#E8621A] transition-all duration-300"
@@ -59,7 +61,7 @@ export default function Footer() {
                 <MessageCircle size={16} />
               </a>
               <a
-                href="https://www.facebook.com/share/1Jjs7ipP1x/"
+                href={BRAND.social.facebook}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#E8621A] transition-all duration-300"
@@ -126,28 +128,35 @@ export default function Footer() {
             <h4 className="font-heading text-lg mb-4 text-white">Contact Us</h4>
             <ul className="space-y-3">
               <li className="flex items-start gap-2.5">
-                <Phone size={16} className="text-[#E8621A] mt-0.5 shrink-0" />
-                <span className="text-sm text-white/65">+91-84019 95486</span>
+                <Phone size={16} className="text-[#E8621A] mt-0.5 shrink-0" aria-hidden />
+                <a href={`tel:${BRAND.phoneE164}`} className="text-sm text-white/65 hover:text-[#F5A623]">
+                  {BRAND.phoneDisplay}
+                </a>
               </li>
               <li className="flex items-start gap-2.5">
-                <Mail size={16} className="text-[#E8621A] mt-0.5 shrink-0" />
-                <span className="text-sm text-white/65">contact@akmcare.in</span>
+                <Mail size={16} className="text-[#E8621A] mt-0.5 shrink-0" aria-hidden />
+                <a href={`mailto:${BRAND.email}`} className="text-sm text-white/65 hover:text-[#F5A623]">
+                  {BRAND.email}
+                </a>
               </li>
               <li className="flex items-start gap-2.5">
-                <MapPin size={16} className="text-[#E8621A] mt-0.5 shrink-0" />
-                <span className="text-sm text-white/65">Ahmedabad, Gujarat, India</span>
+                <MapPin size={16} className="text-[#E8621A] mt-0.5 shrink-0" aria-hidden />
+                <span className="text-sm text-white/65">{BRAND.addressDisplay}</span>
               </li>
             </ul>
           </div>
         </div>
 
         <div className="mt-10 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-white/45">© 2025 AKM Care. All Rights Reserved.</p>
-          <div className="flex gap-4 text-xs text-white/45">
-            <Link to="/disclaimer" className="hover:text-[#F5A623] transition-colors">
+          <p className="text-xs text-white/45">© {new Date().getFullYear()} AKM Care. All Rights Reserved.</p>
+          <div className="flex flex-wrap justify-center gap-4 text-xs text-white/45">
+            <Link to="/shipping-returns" className="hover:text-[#F5A623] transition-colors">
+              Shipping & Returns
+            </Link>
+            <Link to="/privacy" className="hover:text-[#F5A623] transition-colors">
               Privacy Policy
             </Link>
-            <Link to="/disclaimer" className="hover:text-[#F5A623] transition-colors">
+            <Link to="/terms" className="hover:text-[#F5A623] transition-colors">
               Terms
             </Link>
             <Link to="/disclaimer" className="hover:text-[#F5A623] transition-colors">

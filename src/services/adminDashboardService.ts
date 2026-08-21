@@ -10,6 +10,9 @@ export async function adminUploadFile(params: {
   const { error } = await client.storage.from(params.bucket).upload(params.path, params.file, {
     upsert: true,
     contentType: params.file.type,
+    // Product paths are timestamped (`…/${Date.now()}-name`) so long-lived cache is safe.
+    // Other buckets may reuse/overwrite paths — leave default cache there.
+    ...(params.bucket === "products" ? { cacheControl: "31536000" } : {}),
   });
   if (error) throw error;
   const { data } = client.storage.from(params.bucket).getPublicUrl(params.path);

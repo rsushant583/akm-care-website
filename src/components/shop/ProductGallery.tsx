@@ -2,8 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Expand, X, ZoomIn } from "lucide-react";
 import type { ProductImage } from "@/lib/ecommerce/types";
 import { cn } from "@/lib/utils";
-
-const FALLBACK = "/placeholder.svg";
+import {
+  PRODUCT_IMAGE_FALLBACK,
+  getProductImgProps,
+  resolveProductImageSrc,
+  type ProductImageRole,
+} from "@/lib/images/productImage";
 
 function LazyImage({
   src,
@@ -11,16 +15,24 @@ function LazyImage({
   className,
   priority,
   fit = "contain",
+  role = "pdpMain",
 }: {
   src: string;
   alt: string;
   className?: string;
   priority?: boolean;
   fit?: "contain" | "cover";
+  role?: ProductImageRole;
 }) {
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
-  const url = failed ? FALLBACK : src || FALLBACK;
+  const props = getProductImgProps({
+    src: failed ? PRODUCT_IMAGE_FALLBACK : resolveProductImageSrc(src),
+    alt,
+    productName: alt,
+    role,
+    priority,
+  });
 
   return (
     <div className={cn("relative h-full w-full bg-[#F5F0EB]", className)}>
@@ -31,12 +43,15 @@ function LazyImage({
         />
       )}
       <img
-        src={url}
-        alt={alt}
-        width={900}
-        height={1200}
-        loading={priority ? "eager" : "lazy"}
-        decoding="async"
+        src={props.src}
+        srcSet={props.srcSet}
+        sizes={props.sizes}
+        alt={props.alt}
+        width={props.width}
+        height={props.height}
+        loading={props.loading}
+        decoding={props.decoding}
+        fetchPriority={props.fetchPriority}
         onLoad={() => setLoaded(true)}
         onError={() => {
           setFailed(true);
@@ -59,7 +74,9 @@ export function ProductGallery({
   images: ProductImage[];
   productName: string;
 }) {
-  const list = images.length ? images : [{ src: FALLBACK, alt: productName }];
+  const list = images.length
+    ? images
+    : [{ src: PRODUCT_IMAGE_FALLBACK, alt: productName }];
   const [active, setActive] = useState(0);
   const [zooming, setZooming] = useState(false);
   const [origin, setOrigin] = useState({ x: 50, y: 50 });
@@ -68,6 +85,14 @@ export function ProductGallery({
   const mainRef = useRef<HTMLDivElement>(null);
 
   const current = list[Math.min(active, list.length - 1)];
+  const fullscreenImg = getProductImgProps({
+    src: current.src,
+    alt: current.alt,
+    productName,
+    role: "pdpFullscreen",
+    /* Eager only while overlay is open — same original URL until transforms exist. */
+    priority: fullscreen,
+  });
 
   const go = useCallback(
     (dir: -1 | 1) => {
@@ -136,7 +161,7 @@ export function ProductGallery({
                   i === active ? "ring-[#E8621A] ring-2" : "ring-black/[0.08] opacity-80 hover:opacity-100",
                 )}
               >
-                <LazyImage src={img.src} alt="" fit="cover" />
+                <LazyImage src={img.src} alt="" fit="cover" role="thumb" />
               </button>
             ))}
           </div>
@@ -159,7 +184,13 @@ export function ProductGallery({
               )}
               style={zooming ? { transformOrigin: `${origin.x}% ${origin.y}%` } : undefined}
             >
-              <LazyImage src={current.src} alt={current.alt || productName} priority fit="contain" />
+              <LazyImage
+                src={current.src}
+                alt={current.alt || productName}
+                priority
+                fit="contain"
+                role="pdpMain"
+              />
             </div>
 
             <button
@@ -226,7 +257,7 @@ export function ProductGallery({
                     i === active ? "ring-[#E8621A] ring-2" : "ring-black/[0.08] opacity-75",
                   )}
                 >
-                  <LazyImage src={img.src} alt="" fit="cover" />
+                  <LazyImage src={img.src} alt="" fit="cover" role="thumb" />
                 </button>
               ))}
             </div>
@@ -260,8 +291,14 @@ export function ProductGallery({
             onTouchEnd={onTouchEnd}
           >
             <img
-              src={current.src || FALLBACK}
-              alt={current.alt || productName}
+              src={fullscreenImg.src}
+              srcSet={fullscreenImg.srcSet}
+              sizes={fullscreenImg.sizes}
+              alt={fullscreenImg.alt}
+              width={fullscreenImg.width}
+              height={fullscreenImg.height}
+              loading="eager"
+              decoding="async"
               className="max-h-full max-w-full object-contain select-none"
               draggable={false}
             />
@@ -287,7 +324,13 @@ export function ProductGallery({
             )}
           </div>
           <div className="flex gap-2 overflow-x-auto px-4 py-3 justify-center scrollbar-hide">
-            {list.map((img, i) => (
+            {list.map((img, i) => {
+              const thumb = getProductImgProps({
+                src: img.src,
+                role: "thumb",
+                decorative: true,
+              });
+              return (
               <button
                 key={`fs-${img.src}-${i}`}
                 type="button"
@@ -297,9 +340,20 @@ export function ProductGallery({
                   i === active ? "ring-[#E8621A]" : "ring-transparent opacity-60",
                 )}
               >
-                <img src={img.src || FALLBACK} alt="" className="h-full w-full object-cover" />
+                <img
+                  src={thumb.src}
+                  srcSet={thumb.srcSet}
+                  sizes={thumb.sizes}
+                  alt=""
+                  width={thumb.width}
+                  height={thumb.height}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-full w-full object-cover"
+                />
               </button>
-            ))}
+            );
+            })}
           </div>
         </div>
       )}

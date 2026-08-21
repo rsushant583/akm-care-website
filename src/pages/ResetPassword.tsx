@@ -46,7 +46,12 @@ export default function ResetPasswordPage() {
 
   return (
     <>
-      <SEO title="Reset password" canonical="/auth/reset-password" robots="noindex, follow" />
+      <SEO
+        title="Reset password"
+        description="Set a new password for your AKM Care account."
+        canonical="/auth/reset-password"
+        robots="noindex, follow"
+      />
       <section className="section-padding bg-[#FAF8F5] min-h-[60vh]">
         <div className="container-premium max-w-md mx-auto">
           <h1 className="font-heading text-3xl mb-6 text-center">Set a new password</h1>

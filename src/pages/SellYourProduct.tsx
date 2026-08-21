@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { toast } from "@/components/ui/sonner";
 import { submitVendorApplication } from "@/lib/submissions";
 import { SEO } from "@/components/SEO";
+import { PAGE_SEO } from "@/data/seoPages";
 import { motion, useReducedMotion } from "framer-motion";
 
 const benefits = [
@@ -105,9 +106,8 @@ export default function SellYourProduct() {
   return (
     <>
       <SEO
-        title="Sell Your Product — AKM Care Marketplace"
-        description="Become a vendor on AKM Care's marketplace. List your products, reach pan-India customers, and grow your business with our trusted platform."
-        keywords="sell on AKM Care, vendor registration, marketplace India, list products online"
+        title={PAGE_SEO["/sell-your-product"].title}
+        description={PAGE_SEO["/sell-your-product"].description}
         canonical="/sell-your-product"
       />
 
