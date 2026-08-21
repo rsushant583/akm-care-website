@@ -3,10 +3,13 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "@/components/ui/sonner";
 import { AdminPageHeader, ImageDropzone, ImagePreviewList } from "@/components/admin/AdminUI";
 import {
+  OFFICIAL_BROWSABLE_CATEGORIES,
+  getCategoryLabel,
+} from "@/data/catalog/categories";
+import {
   createProduct,
   getAdminProduct,
   listBrands,
-  listCategoriesAdmin,
   listSubcategories,
   updateProduct,
   uploadProductImages,
@@ -29,7 +32,7 @@ const empty = {
   detailed_description: "",
   description: "",
   video_url: "",
-  category: "apparel",
+  category: "",
   category_label: "",
   brand_id: "",
   category_id: "",
@@ -53,6 +56,10 @@ const empty = {
   sizesText: "",
 };
 
+function isOfficialCategoryId(id: string) {
+  return OFFICIAL_BROWSABLE_CATEGORIES.some((c) => c.id === id);
+}
+
 export default function AdminProductFormPage() {
   const { id } = useParams();
   const isNew = !id || id === "new";
@@ -60,16 +67,12 @@ export default function AdminProductFormPage() {
   const [form, setForm] = useState(empty);
   const [images, setImages] = useState<string[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
   const [subs, setSubs] = useState<any[]>([]);
   const [busy, setBusy] = useState(false);
   const [productId, setProductId] = useState<string | null>(isNew ? null : id!);
 
   useEffect(() => {
-    void Promise.all([listBrands(), listCategoriesAdmin()]).then(([b, c]) => {
-      setBrands(b);
-      setCategories(c);
-    });
+    void listBrands().then(setBrands);
   }, []);
 
   useEffect(() => {
@@ -105,7 +108,8 @@ export default function AdminProductFormPage() {
       detailed_description: p.detailed_description || p.description || "",
       description: p.description || "",
       video_url: p.video_url || "",
-      category: p.category || "apparel",
+      // Preserve stored values exactly — do not remap legacy categories.
+      category: p.category || "",
       category_label: p.category_label || "",
       brand_id: p.brand_id || "",
       category_id: p.category_id || "",
@@ -141,6 +145,21 @@ export default function AdminProductFormPage() {
 
   const set = (key: string, value: unknown) => setForm((f) => ({ ...f, [key]: value }));
 
+  const setOfficialCategory = (categoryId: string) => {
+    if (!categoryId) {
+      setForm((f) => ({ ...f, category: "", category_label: "" }));
+      return;
+    }
+    const official = OFFICIAL_BROWSABLE_CATEGORIES.find((c) => c.id === categoryId);
+    if (official) {
+      setForm((f) => ({ ...f, category: official.id, category_label: official.label }));
+      return;
+    }
+    // Legacy option selected — keep stored values unchanged.
+  };
+
+  const hasLegacyCategory = Boolean(form.category) && !isOfficialCategoryId(form.category);
+
   const buildPayload = () => {
     const variants = form.variantsText
       .split(",")
@@ -157,6 +176,11 @@ export default function AdminProductFormPage() {
       .map((s) => s.trim())
       .filter(Boolean)
       .map((name) => ({ name }));
+    const category = form.category || null;
+    const category_label =
+      form.category_label ||
+      (category ? getCategoryLabel(category) : undefined) ||
+      null;
     return {
       name: form.name,
       slug: form.slug || undefined,
@@ -173,9 +197,10 @@ export default function AdminProductFormPage() {
       detailed_description: form.detailed_description,
       description: form.detailed_description || form.description,
       video_url: form.video_url || null,
-      category: form.category,
-      category_label: form.category_label || categories.find((c) => c.id === form.category_id)?.name || null,
+      category,
+      category_label,
       brand_id: form.brand_id || null,
+      // Preserve optional legacy FK fields; do not invent UUIDs.
       category_id: form.category_id || null,
       subcategory_id: form.subcategory_id || null,
       gst_percent: Number(form.gst_percent) || 5,
@@ -202,6 +227,7 @@ export default function AdminProductFormPage() {
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return toast.error("Name is required");
+    if (!form.category.trim()) return toast.error("Category is required");
     setBusy(true);
     try {
       const payload = buildPayload();
@@ -229,6 +255,12 @@ export default function AdminProductFormPage() {
           name: form.name || "Untitled product",
           price: Number(form.price) || 0,
           stock_quantity: Number(form.stock_quantity) || 0,
+          ...(form.category
+            ? {
+                category: form.category,
+                category_label: form.category_label || getCategoryLabel(form.category) || null,
+              }
+            : {}),
         });
         setProductId(created.id);
         const urls = await uploadProductImages(created.id, files);
@@ -314,11 +346,22 @@ export default function AdminProductFormPage() {
               </select>
             </label>
             <label className="text-sm">
-              <span className="font-medium">Category</span>
-              <select className="mt-1 w-full rounded-xl border px-3 py-2.5" value={form.category_id} onChange={(e) => set("category_id", e.target.value)}>
+              <span className="font-medium">Category *</span>
+              <select
+                className="mt-1 w-full rounded-xl border px-3 py-2.5"
+                value={form.category}
+                onChange={(e) => setOfficialCategory(e.target.value)}
+              >
                 <option value="">—</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+                {hasLegacyCategory && (
+                  <option value={form.category}>
+                    {form.category_label || form.category} (legacy)
+                  </option>
+                )}
+                {OFFICIAL_BROWSABLE_CATEGORIES.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.label}
+                  </option>
                 ))}
               </select>
             </label>
@@ -331,7 +374,6 @@ export default function AdminProductFormPage() {
                 ))}
               </select>
             </label>
-            <Field label="Category label (legacy)" value={form.category_label} onChange={(v) => set("category_label", v)} />
           </div>
         </section>
 
