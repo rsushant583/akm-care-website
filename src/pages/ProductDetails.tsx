@@ -33,8 +33,11 @@ import { useRecentlyViewed } from "@/context/RecentlyViewedContext";
 import {
   EmptyState,
   ErrorState,
+  ProductAttributeDetails,
   ProductGallery,
+  ProductHighlights,
   ProductPdpSkeleton,
+  ProductShippingReturnsLink,
   RecentlyViewedStrip,
   RelatedProducts,
   ShopBreadcrumbs,
@@ -42,6 +45,12 @@ import {
 } from "@/components/shop";
 import { cn } from "@/lib/utils";
 import { trackViewItem } from "@/lib/analytics/events";
+import {
+  getProductDetailRows,
+  getProductDisplayTitle,
+  getProductMetaLine,
+  getProductShortCopy,
+} from "@/lib/ecommerce/productPresentation";
 
 function isMeaningful(value?: string | number | null): boolean {
   if (value == null) return false;
@@ -184,10 +193,14 @@ export default function ProductDetails() {
   const stock = getStockLabel(product);
   const discountOff = displayDiscountPercent(product.discountPercent);
   const maxQty = Math.max(1, availableQty);
+  const displayTitle = getProductDisplayTitle(product);
+  const shortCopy = getProductShortCopy(product);
+  const metaLine = getProductMetaLine(product);
+  const fashionRows = getProductDetailRows(product);
   const seo = productSeo(product);
   const crumbs = shopBreadcrumbs([
     { name: product.categoryLabel, url: `/shop?category=${product.category}` },
-    { name: product.name, url: seo.canonical },
+    { name: displayTitle, url: seo.canonical },
   ]);
   const wishlisted = isWishlisted(product.id);
   const compared = isCompared(product.id);
@@ -233,22 +246,18 @@ export default function ProductDetails() {
     setPinStatus(mockDeliveryAvailable(p) ? "ok" : "no");
   };
 
-  const specs: Array<[string, string]> = [
+  const catalogSpecs: Array<[string, string]> = [
     ["Brand", product.brand || "AKM Care"],
     ["Category", product.categoryLabel],
     isMeaningful(product.productCode) ? ["Product Code", product.productCode] : null,
-    isMeaningful(product.sku) ? ["SKU", product.sku] : null,
+    isMeaningful(product.sku) && product.sku !== product.productCode ? ["SKU", product.sku] : null,
     selectedVariant?.name && isMeaningful(selectedVariant.name)
       ? ["Variant", selectedVariant.name]
       : null,
-    selectedColor?.name && isMeaningful(selectedColor.name) ? ["Colour", selectedColor.name] : null,
-    isMeaningful(product.dimensions) ? ["Dimensions / Length", product.dimensions] : null,
     isMeaningful(product.weight) ? ["Weight", String(product.weight)] : null,
-    isMeaningful(product.packingType) ? ["Packaging", String(product.packingType)] : null,
     product.gstPercent > 0 ? ["GST", `${product.gstPercent}% (included in price where applicable)`] : null,
     isMeaningful(product.hsn) ? ["HSN", product.hsn] : null,
     warrantyLabel ? ["Warranty", warrantyLabel] : null,
-    shippingLabel ? ["Shipping duration", shippingLabel] : null,
   ].filter(Boolean) as Array<[string, string]>;
 
   return (
@@ -272,7 +281,7 @@ export default function ProductDetails() {
             <div className="lg:sticky lg:top-[calc(var(--nav-height,4.5rem)+1rem)]">
               <ProductGallery
                 images={galleryImages.length ? galleryImages : product.images}
-                productName={product.name}
+                productName={displayTitle}
               />
             </div>
 
@@ -282,15 +291,15 @@ export default function ProductDetails() {
                   {product.brand || "AKM Care"} · {product.categoryLabel}
                 </p>
                 <h1 className="type-product text-2xl sm:text-3xl lg:text-[2rem] text-[#1A1A1A] mt-1.5 leading-snug">
-                  {product.name}
+                  {displayTitle}
                 </h1>
-                {isMeaningful(product.productCode) && (
+                {metaLine && (
                   <p className="type-meta text-[#6B6B6B] mt-2">
-                    Product Code: <span className="text-[#1A1A1A]">{product.productCode}</span>
+                    Code: <span className="text-[#1A1A1A]">{metaLine}</span>
                   </p>
                 )}
-                {isMeaningful(product.shortDescription) && (
-                  <p className="text-sm text-[#6B6B6B] mt-2 leading-relaxed">{product.shortDescription}</p>
+                {isMeaningful(shortCopy) && (
+                  <p className="text-sm text-[#6B6B6B] mt-2 leading-relaxed">{shortCopy}</p>
                 )}
               </div>
 
@@ -507,7 +516,7 @@ export default function ProductDetails() {
                   <button
                     type="button"
                     onClick={() =>
-                      navigate(`/shop?interest=${encodeURIComponent(product.name)}`)
+                      navigate(`/shop?interest=${encodeURIComponent(displayTitle)}`)
                     }
                     className="btn-primary w-full h-12 inline-flex items-center justify-center gap-2"
                   >
@@ -529,7 +538,7 @@ export default function ProductDetails() {
                     type="button"
                     aria-pressed={wishlisted}
                     aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
-                    onClick={() => toggleWishlist(product.id, product.name)}
+                    onClick={() => toggleWishlist(product.id, displayTitle)}
                     className={cn(
                       "btn-tertiary h-11 px-4 inline-flex items-center gap-2",
                       wishlisted && "border-[#E8621A]/40 text-[#E8621A] bg-[#E8621A]/5",
@@ -553,7 +562,7 @@ export default function ProductDetails() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => void shareProduct({ name: product.name, slug: product.slug })}
+                    onClick={() => void shareProduct({ name: displayTitle, slug: product.slug })}
                     className="btn-tertiary h-11 px-4 inline-flex items-center gap-2"
                   >
                     <Share2 size={16} aria-hidden /> Share
@@ -561,41 +570,38 @@ export default function ProductDetails() {
                 </div>
               </div>
 
-              <ul className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] sm:text-xs text-[#6B6B6B]">
-                {[
-                  shippingLabel ? "Fast shipping" : null,
-                  returnLabel ? "Easy returns" : null,
-                  "Secure payment",
-                  "Genuine products",
-                ]
-                  .filter(Boolean)
-                  .map((label) => (
-                    <li
-                      key={label as string}
-                      className="rounded-lg border border-black/[0.06] px-2.5 py-2 text-center font-medium"
-                    >
-                      {label}
-                    </li>
-                  ))}
-              </ul>
+              <ProductHighlights shippingLabel={shippingLabel} returnLabel={returnLabel} />
             </div>
           </div>
 
           <div className="mt-10 sm:mt-14 grid lg:grid-cols-2 gap-8 lg:gap-12">
-            <div className="space-y-4">
-              <h2 className="type-section">About this product</h2>
-              {isMeaningful(product.detailedDescription) ? (
-                <p className="text-[#6B6B6B] leading-relaxed whitespace-pre-line text-sm sm:text-base">
-                  {product.detailedDescription}
-                </p>
-              ) : isMeaningful(product.shortDescription) ? (
-                <p className="text-[#6B6B6B] leading-relaxed text-sm sm:text-base">
-                  {product.shortDescription}
-                </p>
-              ) : (
-                <p className="text-[#6B6B6B] text-sm">
-                  Explore authentic {product.categoryLabel.toLowerCase()} from AKM Care.
-                </p>
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <h2 className="type-section">About this product</h2>
+                {isMeaningful(product.detailedDescription) &&
+                product.detailedDescription.trim() !== shortCopy.trim() ? (
+                  <p className="text-[#6B6B6B] leading-relaxed whitespace-pre-line text-sm sm:text-base">
+                    {product.detailedDescription}
+                  </p>
+                ) : (
+                  <p className="text-[#6B6B6B] leading-relaxed text-sm sm:text-base">{shortCopy}</p>
+                )}
+              </div>
+
+              {fashionRows.some((r) => r.label === "Includes" || r.label === "Care") && (
+                <div className="space-y-2">
+                  <h2 className="type-section text-xl">What&apos;s included &amp; care</h2>
+                  <ul className="text-sm text-[#6B6B6B] space-y-1.5">
+                    {fashionRows
+                      .filter((r) => r.label === "Includes" || r.label === "Care")
+                      .map((r) => (
+                        <li key={r.label}>
+                          <span className="font-semibold text-[#1A1A1A]">{r.label}: </span>
+                          {r.value}
+                        </li>
+                      ))}
+                  </ul>
+                </div>
               )}
 
               <div className="divide-y divide-black/[0.06] rounded-2xl border border-black/[0.06] overflow-hidden">
@@ -637,21 +643,23 @@ export default function ProductDetails() {
                     );
                   })}
               </div>
+              <ProductShippingReturnsLink />
             </div>
 
-            <div>
-              <h2 className="type-section mb-4">Specifications</h2>
-              {specs.length > 0 ? (
-                <dl className="rounded-2xl border border-black/[0.06] divide-y divide-black/[0.06] text-sm">
-                  {specs.map(([k, v]) => (
-                    <div key={k} className="flex justify-between gap-4 px-4 py-3">
-                      <dt className="text-[#6B6B6B] shrink-0">{k}</dt>
-                      <dd className="font-medium text-[#1A1A1A] text-right">{v}</dd>
-                    </div>
-                  ))}
-                </dl>
-              ) : (
-                <p className="text-sm text-[#6B6B6B]">Specifications will appear as product data is updated.</p>
+            <div className="space-y-8">
+              <ProductAttributeDetails product={product} />
+              {catalogSpecs.length > 0 && (
+                <div>
+                  <h2 className="type-section mb-4">Catalog information</h2>
+                  <dl className="rounded-2xl border border-black/[0.06] divide-y divide-black/[0.06] text-sm">
+                    {catalogSpecs.map(([k, v]) => (
+                      <div key={k} className="flex justify-between gap-4 px-4 py-3">
+                        <dt className="text-[#6B6B6B] shrink-0">{k}</dt>
+                        <dd className="font-medium text-[#1A1A1A] text-right">{v}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
               )}
             </div>
           </div>
@@ -676,7 +684,7 @@ export default function ProductDetails() {
         visible={showSticky}
         price={price}
         inStock={inStock}
-        productName={product.name}
+        productName={displayTitle}
         adding={adding}
         onAdd={handleAdd}
         onBuy={handleBuy}

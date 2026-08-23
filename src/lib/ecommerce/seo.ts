@@ -1,7 +1,8 @@
 import type { CatalogProduct } from "./types";
-import { absoluteSiteUrl, getCanonicalSiteOrigin } from "@/lib/config/siteUrl";
+import { absoluteSiteUrl } from "@/lib/config/siteUrl";
 import { getEffectivePrice } from "./pricing";
 import { productPath } from "./slug";
+import { getProductDisplayTitle, getProductShortCopy } from "./productPresentation";
 
 const DEFAULT_BRAND = "AKM Care";
 
@@ -10,12 +11,17 @@ function resolveAbsoluteAssetUrl(src: string): string {
 }
 
 function generatedProductTitle(product: CatalogProduct): string {
-  return `${product.name} — Buy Online`;
+  const display = getProductDisplayTitle(product);
+  const category = product.categoryLabel?.trim();
+  if (category && !display.toLowerCase().includes(category.toLowerCase().replace(/s$/, ""))) {
+    return `${display} | ${category} | Buy Online`;
+  }
+  return `${display} — Buy Online`;
 }
 
 function generatedProductDescription(product: CatalogProduct): string {
-  const source = product.shortDescription || product.detailedDescription || product.description || product.name;
-  return source.trim().slice(0, 160) || `${product.name} — shop online at AKM Care.`;
+  const source = getProductShortCopy(product);
+  return source.trim().slice(0, 160) || `${getProductDisplayTitle(product)} — shop online at AKM Care.`;
 }
 
 export function productSeo(product: CatalogProduct) {
@@ -28,14 +34,15 @@ export function productSeo(product: CatalogProduct) {
   const brandName = product.brand?.trim() || DEFAULT_BRAND;
   const seoTitle = product.seoTitle?.trim();
   const seoDescription = product.seoDescription?.trim();
+  const displayName = getProductDisplayTitle(product);
   const title = seoTitle || generatedProductTitle(product);
   const description = seoDescription || generatedProductDescription(product);
 
   const schema = {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: product.name,
-    description: product.shortDescription || product.detailedDescription || description,
+    name: displayName,
+    description: getProductShortCopy(product) || product.shortDescription || product.detailedDescription || description,
     sku: product.sku,
     productID: product.productCode,
     image: product.images.map((img) => resolveAbsoluteAssetUrl(img.src)),
@@ -58,7 +65,7 @@ export function productSeo(product: CatalogProduct) {
     title,
     exactTitle: Boolean(seoTitle),
     description,
-    keywords: [product.name, product.categoryLabel, DEFAULT_BRAND, ...product.tags].join(", "),
+    keywords: [displayName, product.categoryLabel, DEFAULT_BRAND, ...product.tags].join(", "),
     canonical: url,
     ogImage: image,
     ogType: "product" as const,

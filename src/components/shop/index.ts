@@ -14,3 +14,8 @@ export { FloatingCart } from "./FloatingCart";
 export { CompareTray } from "./CompareTray";
 export { RecentlyViewedStrip } from "./RecentlyViewedStrip";
 export { StickyBuyBar } from "./StickyBuyBar";
+export {
+  ProductAttributeDetails,
+  ProductHighlights,
+  ProductShippingReturnsLink,
+} from "./ProductAttributeDetails";

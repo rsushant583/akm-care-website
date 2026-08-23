@@ -93,6 +93,25 @@ export interface CatalogProduct {
   description: string;
   seoTitle?: string;
   seoDescription?: string;
+  /**
+   * Fashion / catalog attributes from products.specifications (jsonb).
+   * Optional keys only — never invent values on the client.
+   */
+  specifications?: {
+    colour?: string;
+    fabric?: string;
+    work?: string;
+    pattern?: string;
+    shape?: string;
+    style?: string;
+    occasion?: string;
+    includes?: string;
+    care?: string;
+    blouse?: string;
+    packing?: string;
+    size?: string;
+    variant?: string;
+  };
 }
 
 export type SortOption = "newest" | "price-asc" | "price-desc" | "popularity" | "discount";

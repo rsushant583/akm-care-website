@@ -44,6 +44,8 @@ export type AdminProduct = {
   tags: unknown;
   display_order: number | null;
   created_at: string;
+  /** Existing jsonb column — fashion attributes live here (no new migration). */
+  specifications?: unknown;
 };
 
 function slugify(input: string) {

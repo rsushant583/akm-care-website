@@ -2,6 +2,7 @@ import type { CatalogProduct, ProductColorOption, ProductImage, ProductVariantOp
 import { calcDiscountPercent } from "@/lib/ecommerce/pricing";
 import { slugify } from "@/lib/ecommerce/slug";
 import { SHIPPING_POLICY } from "@/lib/ecommerce/shippingPolicy";
+import { parseProductSpecifications } from "@/lib/ecommerce/productPresentation";
 
 /** Row shape from `catalog_product_list` view or products + joined payloads */
 export type CatalogListRow = {
@@ -177,5 +178,6 @@ export function mapCatalogRow(row: CatalogListRow, index = 0): CatalogProduct {
     description: String(row.description ?? row.short_description ?? ""),
     seoTitle: row.seo_title?.trim() || undefined,
     seoDescription: row.seo_description?.trim() || undefined,
+    specifications: parseProductSpecifications(row.specifications),
   };
 }

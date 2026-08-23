@@ -15,6 +15,7 @@ import {
   uploadProductImages,
   type AdminProduct,
 } from "@/services/adminCatalogService";
+import { mergeSpecifications, parseProductSpecifications } from "@/lib/ecommerce/productPresentation";
 
 const empty = {
   name: "",
@@ -54,6 +55,14 @@ const empty = {
   variantsText: "",
   colorsText: "",
   sizesText: "",
+  spec_colour: "",
+  spec_fabric: "",
+  spec_work: "",
+  spec_pattern: "",
+  spec_occasion: "",
+  spec_includes: "",
+  spec_care: "",
+  existingSpecifications: {} as Record<string, unknown>,
 };
 
 function isOfficialCategoryId(id: string) {
@@ -91,6 +100,11 @@ export default function AdminProductFormPage() {
   const hydrate = (p: AdminProduct) => {
     const variants = Array.isArray(p.variants) ? p.variants : [];
     const colors = Array.isArray(p.colors) ? p.colors : [];
+    const specs = parseProductSpecifications(p.specifications);
+    const existingSpecifications =
+      p.specifications && typeof p.specifications === "object" && !Array.isArray(p.specifications)
+        ? (p.specifications as Record<string, unknown>)
+        : {};
     setForm({
       ...empty,
       name: p.name || "",
@@ -137,6 +151,14 @@ export default function AdminProductFormPage() {
         .filter(Boolean)
         .join(", "),
       sizesText: "",
+      spec_colour: specs.colour || "",
+      spec_fabric: specs.fabric || "",
+      spec_work: specs.work || "",
+      spec_pattern: specs.pattern || "",
+      spec_occasion: specs.occasion || "",
+      spec_includes: specs.includes || "",
+      spec_care: specs.care || "",
+      existingSpecifications,
     });
     const imgs = Array.isArray(p.images) ? (p.images as string[]) : [];
     setImages(imgs.length ? imgs : p.image_url ? [p.image_url] : []);
@@ -221,6 +243,15 @@ export default function AdminProductFormPage() {
       colors,
       images,
       image_url: images[0] || null,
+      specifications: mergeSpecifications(form.existingSpecifications, {
+        colour: form.spec_colour,
+        fabric: form.spec_fabric,
+        work: form.spec_work,
+        pattern: form.spec_pattern,
+        occasion: form.spec_occasion,
+        includes: form.spec_includes,
+        care: form.spec_care,
+      }),
     };
   };
 
@@ -393,6 +424,23 @@ export default function AdminProductFormPage() {
                 ))}
               </select>
             </label>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border bg-white p-5 space-y-4">
+          <h2 className="font-semibold">Storefront attributes (optional)</h2>
+          <p className="text-xs text-[#6B6B6B]">
+            These fields power customer-facing titles and product details. Leave blank when unknown — do not invent values.
+            Stored in the existing <code className="text-[11px]">specifications</code> JSON column.
+          </p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <Field label="Colour" value={form.spec_colour} onChange={(v) => set("spec_colour", v)} />
+            <Field label="Fabric / Material" value={form.spec_fabric} onChange={(v) => set("spec_fabric", v)} />
+            <Field label="Work" value={form.spec_work} onChange={(v) => set("spec_work", v)} />
+            <Field label="Pattern" value={form.spec_pattern} onChange={(v) => set("spec_pattern", v)} />
+            <Field label="Occasion" value={form.spec_occasion} onChange={(v) => set("spec_occasion", v)} />
+            <Field label="Includes / What's included" value={form.spec_includes} onChange={(v) => set("spec_includes", v)} />
+            <Field label="Care" value={form.spec_care} onChange={(v) => set("spec_care", v)} />
           </div>
         </section>
 
