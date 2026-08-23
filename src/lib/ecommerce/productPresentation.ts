@@ -70,7 +70,8 @@ export function humanizeProductName(name: string): string {
 
   const letters = t.replace(/[^A-Za-z]/g, "");
   const upperRatio = letters ? [...letters].filter((c) => c === c.toUpperCase()).length / letters.length : 0;
-  if (upperRatio > 0.72 && letters.length > 8) {
+  const heavyCapsRun = /(?:[A-Z]{3,}[\s/()-]+){2,}[A-Z]{3,}/.test(t);
+  if ((upperRatio > 0.55 && letters.length > 8) || heavyCapsRun) {
     return titleCaseWords(t);
   }
   return t;
@@ -213,9 +214,11 @@ export function getProductDisplayTitle(product: CatalogProduct): string {
   const shape = attrs.shape || attrs.style;
 
   const structuredParts = [colour, work, fabric, shape].filter(Boolean) as string[];
+  // Require colour or fabric (or 2+ attributes) — variant-alone titles like "Print Saree" are too weak.
+  const strongEnough =
+    Boolean(colour || fabric) || structuredParts.filter((p) => p !== work).length >= 1 && structuredParts.length >= 2;
 
-  // Need at least one merchandising attribute + a known product type to compose a title.
-  if (structuredParts.length >= 1 && type) {
+  if (strongEnough && structuredParts.length >= 1 && type) {
     const core = [...structuredParts, type].join(" ");
     const includesLower = (attrs.includes || "").toLowerCase();
     if (includesLower.includes("dupatta") && !/with dupatta/i.test(core)) {
@@ -234,10 +237,12 @@ export function getProductDisplayTitle(product: CatalogProduct): string {
   // SKU-like catalog names: prefer a short, factual short_description as the title.
   if (isSkuLikeProductName(rawName)) {
     const short = cleanText(product.shortDescription);
-    if (short && short.length <= 90 && !/\bfor VIP\b/i.test(short)) {
+    if (short && short.length <= 90 && !/\bfor VIP\b/i.test(short) && !/\benhance the overall\b/i.test(short)) {
       const phrase = short.split(/[,.]/)[0]?.trim() || short;
       if (phrase.length >= 8) return humanizeProductName(phrase);
     }
+    // Keep the catalog code readable — do not title-case internal SKUs into "Akmc…".
+    return rawName;
   }
 
   return humanizedName;
