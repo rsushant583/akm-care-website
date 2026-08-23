@@ -100,50 +100,86 @@ export type HeroCategoryCollage = {
 
 const HERO_COLLAGE_SIZE = 3;
 
+function isUsableImageSrc(src?: string | null): boolean {
+  return Boolean(src && src.trim() && !src.includes("placeholder"));
+}
+
 /**
- * Build per-category 3-tile hero collages from real catalog products.
- * Categories with fewer than 3 usable images are omitted (links stay in the UI).
- * Never mixes categories within a collage.
+ * Collect up to `limit` visual assets for one category.
+ * Priority: distinct product primaries → additional gallery images on those products.
+ * Never mixes categories; never invents imagery.
+ */
+export function collectCategoryHeroAssets(
+  products: CatalogProduct[],
+  categoryId: OfficialCategoryId,
+  limit = HERO_COLLAGE_SIZE,
+): { src: string; alt: string; href: string }[] {
+  const max = Math.max(1, limit);
+  const matched = products
+    .filter(isStorefrontVisibleProduct)
+    .filter((p) => categoryMatchesProduct(categoryId, p))
+    .slice()
+    .sort(sortNewestFirst);
+
+  const seenSrc = new Set<string>();
+  const tiles: { src: string; alt: string; href: string }[] = [];
+
+  const push = (src: string, alt: string, href: string) => {
+    if (tiles.length >= max) return;
+    if (!isUsableImageSrc(src) || seenSrc.has(src)) return;
+    seenSrc.add(src);
+    tiles.push({ src, alt, href });
+  };
+
+  // Pass 1 — primary image per product (newest first).
+  for (const product of matched) {
+    const primary = product.images[0]?.src || product.image_url;
+    push(primary, product.name, productPath(product.slug));
+    if (tiles.length >= max) return tiles;
+  }
+
+  // Pass 2 — additional gallery frames from the same products.
+  for (const product of matched) {
+    const href = productPath(product.slug);
+    for (let i = 1; i < (product.images?.length || 0); i++) {
+      const img = product.images[i];
+      push(img.src, img.alt || product.name, href);
+      if (tiles.length >= max) return tiles;
+    }
+  }
+
+  return tiles;
+}
+
+/**
+ * Build per-category hero collages from real catalog visuals.
+ * Eligible when ≥1 usable asset exists. Categories with 0 assets are omitted.
+ * Tiles may be 1–3; the hero fills remaining mosaic cells with neutral plates.
  */
 export function buildHeroCategoryCollages(
   products: CatalogProduct[],
   tileCount = HERO_COLLAGE_SIZE,
 ): HeroCategoryCollage[] {
-  const need = Math.max(1, tileCount);
   const out: HeroCategoryCollage[] = [];
 
   for (const cat of OFFICIAL_BROWSABLE_CATEGORIES) {
-    const matched = products
-      .filter(isStorefrontVisibleProduct)
-      .filter(hasUsableProductImage)
-      .filter((p) => categoryMatchesProduct(cat.id, p))
-      .slice()
-      .sort(sortNewestFirst);
-
-    const seenIds = new Set<string>();
-    const seenSrc = new Set<string>();
-    const tiles: HeroCategoryCollage["tiles"] = [];
-
-    for (const product of matched) {
-      if (tiles.length >= need) break;
-      if (seenIds.has(product.id)) continue;
-      const src = product.images[0]?.src || product.image_url;
-      if (!src || seenSrc.has(src)) continue;
-      seenIds.add(product.id);
-      seenSrc.add(src);
-      tiles.push({
-        src,
-        alt: product.name,
-        href: productPath(product.slug),
-      });
-    }
-
-    if (tiles.length >= need) {
-      out.push({ categoryId: cat.id, tiles: tiles.slice(0, need) });
+    const tiles = collectCategoryHeroAssets(products, cat.id, tileCount);
+    if (tiles.length >= 1) {
+      out.push({ categoryId: cat.id, tiles });
     }
   }
 
   return out;
+}
+
+/** Dev/test helper: asset counts per official category (no logging). */
+export function getHeroCategoryAssetSummary(
+  products: CatalogProduct[],
+): { categoryId: OfficialCategoryId; assetCount: number; eligible: boolean }[] {
+  return OFFICIAL_BROWSABLE_CATEGORIES.map((cat) => {
+    const assetCount = collectCategoryHeroAssets(products, cat.id, HERO_COLLAGE_SIZE).length;
+    return { categoryId: cat.id, assetCount, eligible: assetCount >= 1 };
+  });
 }
 
 export type HomeCategoryRailSpec = {

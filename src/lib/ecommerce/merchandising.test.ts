@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { CatalogProduct } from "@/lib/ecommerce/types";
 import {
   buildHeroCategoryCollages,
+  getHeroCategoryAssetSummary,
   hasUsableProductImage,
   isStorefrontVisibleProduct,
   pickCategoryRailProducts,
@@ -121,21 +122,13 @@ describe("pickCategoryRailProducts", () => {
 });
 
 describe("buildHeroCategoryCollages", () => {
-  it("requires 3 same-category products and never mixes categories", () => {
+  it("includes categories with 3 products and preserves official order", () => {
     const sarees = [1, 2, 3].map((n) =>
       makeProduct({
         id: `s${n}`,
         category: "sarees",
         categoryLabel: "Sarees",
         createdAt: `2026-08-0${n}T00:00:00.000Z`,
-      }),
-    );
-    const gowns = [1, 2].map((n) =>
-      makeProduct({
-        id: `g${n}`,
-        category: "ladies-gown",
-        categoryLabel: "Ladies Gown",
-        createdAt: `2026-08-1${n}T00:00:00.000Z`,
       }),
     );
     const jeans = [1, 2, 3].map((n) =>
@@ -147,50 +140,135 @@ describe("buildHeroCategoryCollages", () => {
       }),
     );
 
-    const collages = buildHeroCategoryCollages([...sarees, ...gowns, ...jeans], 3);
+    const collages = buildHeroCategoryCollages([...jeans, ...sarees], 3);
     expect(collages.map((c) => c.categoryId)).toEqual(["sarees", "mens-jeans"]);
-    expect(collages.find((c) => c.categoryId === "ladies-gown")).toBeUndefined();
-
-    const sareeSlide = collages.find((c) => c.categoryId === "sarees")!;
-    expect(sareeSlide.tiles).toHaveLength(3);
-    expect(new Set(sareeSlide.tiles.map((t) => t.src)).size).toBe(3);
+    expect(collages[0].tiles).toHaveLength(3);
+    expect(new Set(collages[0].tiles.map((t) => t.src)).size).toBe(3);
   });
 
-  it("skips draft / unusable images and dedupes by src", () => {
+  it("includes a category with only 2 products", () => {
+    const gowns = [1, 2].map((n) =>
+      makeProduct({
+        id: `g${n}`,
+        category: "ladies-gown",
+        categoryLabel: "Ladies Gown",
+        createdAt: `2026-08-1${n}T00:00:00.000Z`,
+      }),
+    );
+    const collages = buildHeroCategoryCollages(gowns, 3);
+    expect(collages).toHaveLength(1);
+    expect(collages[0].categoryId).toBe("ladies-gown");
+    expect(collages[0].tiles).toHaveLength(2);
+  });
+
+  it("uses gallery images when a category has one product with multiple frames", () => {
+    const gown = makeProduct({
+      id: "semi-1",
+      category: "semi-stitched-gown",
+      categoryLabel: "Semi Stitched Gown",
+      images: [
+        { src: "/catalog/semi-1/01.png", alt: "front" },
+        { src: "/catalog/semi-1/02.png", alt: "side" },
+        { src: "/catalog/semi-1/03.png", alt: "detail" },
+      ],
+      image_url: "/catalog/semi-1/01.png",
+    });
+    const collages = buildHeroCategoryCollages([gown], 3);
+    expect(collages).toHaveLength(1);
+    expect(collages[0].categoryId).toBe("semi-stitched-gown");
+    expect(collages[0].tiles.map((t) => t.src)).toEqual([
+      "/catalog/semi-1/01.png",
+      "/catalog/semi-1/02.png",
+      "/catalog/semi-1/03.png",
+    ]);
+    expect(collages[0].tiles.every((t) => t.href.includes("semi-1"))).toBe(true);
+  });
+
+  it("includes a category with a single visual asset", () => {
+    const only = makeProduct({
+      id: "leh-1",
+      category: "stitched-lehenga",
+      categoryLabel: "Stitched Lehenga",
+    });
+    const collages = buildHeroCategoryCollages([only], 3);
+    expect(collages).toHaveLength(1);
+    expect(collages[0].tiles).toHaveLength(1);
+  });
+
+  it("skips categories with zero usable visuals", () => {
+    expect(buildHeroCategoryCollages([], 3)).toEqual([]);
+    expect(
+      buildHeroCategoryCollages(
+        [
+          makeProduct({
+            id: "bad",
+            category: "sarees",
+            images: [],
+            image_url: "",
+          }),
+        ],
+        3,
+      ),
+    ).toEqual([]);
+  });
+
+  it("never mixes categories within a collage", () => {
+    const saree = makeProduct({ id: "s1", category: "sarees", categoryLabel: "Sarees" });
+    const gown = makeProduct({ id: "g1", category: "ladies-gown", categoryLabel: "Ladies Gown" });
+    const collages = buildHeroCategoryCollages([saree, gown], 3);
+    expect(collages).toHaveLength(2);
+    expect(collages[0].tiles.every((t) => t.href.includes("s1"))).toBe(true);
+    expect(collages[1].tiles.every((t) => t.href.includes("g1"))).toBe(true);
+  });
+
+  it("dedupes by src and ignores drafts", () => {
     const products = [
       makeProduct({ id: "s1", category: "sarees", createdAt: "2026-08-03T00:00:00.000Z" }),
-      makeProduct({ id: "s2", category: "sarees", createdAt: "2026-08-02T00:00:00.000Z" }),
       makeProduct({
-        id: "s3-draft",
+        id: "s-draft",
         category: "sarees",
         status: "draft",
         createdAt: "2026-08-04T00:00:00.000Z",
       }),
       makeProduct({
-        id: "s4",
+        id: "s-dup",
         category: "sarees",
         images: [{ src: "/catalog/s1/01.png", alt: "dup" }],
         image_url: "/catalog/s1/01.png",
-        createdAt: "2026-08-01T00:00:00.000Z",
+        createdAt: "2026-08-02T00:00:00.000Z",
       }),
-      makeProduct({ id: "s5", category: "sarees", createdAt: "2026-07-01T00:00:00.000Z" }),
     ];
     const collages = buildHeroCategoryCollages(products, 3);
     expect(collages).toHaveLength(1);
-    expect(collages[0].tiles.map((t) => t.href)).toEqual([
-      "/shop/product/s1",
-      "/shop/product/s2",
-      "/shop/product/s5",
-    ]);
+    expect(collages[0].tiles).toHaveLength(1);
+    expect(collages[0].tiles[0].href).toContain("s1");
   });
 
-  it("returns empty when no category has 3 usable images", () => {
-    expect(buildHeroCategoryCollages([], 3)).toEqual([]);
-    expect(
-      buildHeroCategoryCollages(
-        [makeProduct({ id: "only", category: "sarees" })],
-        3,
-      ),
-    ).toEqual([]);
+  it("summarizes eligibility for debug/tests", () => {
+    const products = [
+      makeProduct({ id: "s1", category: "sarees" }),
+      makeProduct({
+        id: "g1",
+        category: "ladies-gown",
+        images: [
+          { src: "/g/1.png", alt: "a" },
+          { src: "/g/2.png", alt: "b" },
+        ],
+        image_url: "/g/1.png",
+      }),
+    ];
+    const summary = getHeroCategoryAssetSummary(products);
+    expect(summary.find((r) => r.categoryId === "sarees")).toMatchObject({
+      assetCount: 1,
+      eligible: true,
+    });
+    expect(summary.find((r) => r.categoryId === "ladies-gown")).toMatchObject({
+      assetCount: 2,
+      eligible: true,
+    });
+    expect(summary.find((r) => r.categoryId === "mens-jeans")).toMatchObject({
+      assetCount: 0,
+      eligible: false,
+    });
   });
 });

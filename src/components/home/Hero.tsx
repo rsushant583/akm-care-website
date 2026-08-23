@@ -97,18 +97,23 @@ function HeroMosaic({
     );
   };
 
-  if (shown.length === 1) {
-    return <Tile tile={shown[0]} className="h-full min-h-[12rem] lg:min-h-full" eager={priority} />;
-  }
+  const Neutral = ({ className }: { className?: string }) => (
+    <div className={cn("relative overflow-hidden bg-[#E8DFD6]", className)} aria-hidden />
+  );
 
+  // Always keep the approved 2×2 mosaic proportions; fill missing cells neutrally.
   return (
     <div className="grid grid-cols-2 grid-rows-2 gap-1.5 sm:gap-2 h-full min-h-[13.5rem] sm:min-h-[16rem] lg:min-h-[22rem]">
       <Tile tile={shown[0]} className="row-span-2" eager={priority} />
-      <Tile tile={shown[1]} eager={false} low={preload} />
+      {shown[1] ? (
+        <Tile tile={shown[1]} eager={false} low={preload} />
+      ) : (
+        <Neutral />
+      )}
       {shown[2] ? (
         <Tile tile={shown[2]} eager={false} low={preload} />
       ) : (
-        <div className="bg-[#E8DFD6]" aria-hidden />
+        <Neutral />
       )}
     </div>
   );

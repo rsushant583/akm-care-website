@@ -1,11 +1,17 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useCatalogMerchandising, useCatalogProducts } from "@/hooks/useCatalogProducts";
 import { ProductRail, RecentlyViewedStrip } from "@/components/shop";
 import Hero from "@/components/home/Hero";
 import HomeCategoryStrip from "@/components/home/HomeCategoryStrip";
 import TrustStrip from "@/components/home/TrustStrip";
 import CollectionBanner from "@/components/home/CollectionBanner";
-import { pickCategoryImages, pickHeroTiles, buildHeroCategoryCollages, uniqueProducts } from "@/lib/ecommerce/merchandising";
+import {
+  pickCategoryImages,
+  pickHeroTiles,
+  buildHeroCategoryCollages,
+  getHeroCategoryAssetSummary,
+  uniqueProducts,
+} from "@/lib/ecommerce/merchandising";
 import { shopCollectionPath } from "@/data/catalog/categories";
 
 const MIN_SECTION = 2;
@@ -38,6 +44,17 @@ export default function EcommercePreview() {
   );
 
   const heroCollages = useMemo(() => buildHeroCategoryCollages(pool, 3), [pool]);
+
+  useEffect(() => {
+    if (!import.meta.env.DEV || pool.length === 0) return;
+    // One-shot local debug of category eligibility — omitted from production runtime path.
+    console.info(
+      "[hero-category-assets]",
+      getHeroCategoryAssetSummary(pool).map(
+        (row) => `${row.categoryId} → ${row.assetCount} asset(s) → ${row.eligible ? "eligible" : "skipped"}`,
+      ),
+    );
+  }, [pool]);
 
   const primaryIds = useMemo(() => new Set(primary.map((p) => p.id)), [primary]);
 
