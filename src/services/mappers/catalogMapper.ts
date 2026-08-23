@@ -1,6 +1,7 @@
 import type { CatalogProduct, ProductColorOption, ProductImage, ProductVariantOption } from "@/lib/ecommerce/types";
 import { calcDiscountPercent } from "@/lib/ecommerce/pricing";
 import { slugify } from "@/lib/ecommerce/slug";
+import { SHIPPING_POLICY } from "@/lib/ecommerce/shippingPolicy";
 
 /** Row shape from `catalog_product_list` view or products + joined payloads */
 export type CatalogListRow = {
@@ -152,17 +153,17 @@ export function mapCatalogRow(row: CatalogListRow, index = 0): CatalogProduct {
     gstPercent: Number(row.gst_percent ?? 5),
     gstNumber: row.gst_number ?? undefined,
     hsn: String(row.hsn ?? ""),
-    shippingTime: String(row.shipping_time ?? "3–5 business days"),
+    shippingTime: String(row.shipping_time ?? SHIPPING_POLICY.standardWindow),
     warranty: String(row.warranty ?? "NA"),
     packingType: row.packing_type ?? undefined,
     freightCost: row.freight_cost,
     status,
-    category: (row.category_slug as CatalogProduct["category"]) ?? "apparel",
-    categoryLabel: String(row.category_label ?? row.category_name ?? "Apparel"),
+    category: (row.category_slug as CatalogProduct["category"]) ?? "",
+    categoryLabel: String(row.category_label ?? row.category_name ?? ""),
     brand: row.brand_name ?? "AKM Care",
-    returnPolicy: "7 days return policy — unused product with original packing",
+    returnPolicy: SHIPPING_POLICY.returnSummary,
     tags: asTags(row.tags),
-    rating: row.rating != null ? Number(row.rating) : 4.5,
+    rating: row.rating != null && Number(row.review_count ?? 0) > 0 ? Number(row.rating) : undefined,
     reviewCount: row.review_count != null ? Number(row.review_count) : 0,
     isFeatured: Boolean(row.is_featured),
     isNewArrival: Boolean(row.is_new_arrival),

@@ -58,6 +58,9 @@ const STATIC_PAGES = [
   { path: "/faq", changefreq: "monthly", priority: "0.6" },
   { path: "/contact", changefreq: "monthly", priority: "0.8" },
   { path: "/disclaimer", changefreq: "yearly", priority: "0.3" },
+  { path: "/privacy", changefreq: "yearly", priority: "0.4" },
+  { path: "/terms", changefreq: "yearly", priority: "0.4" },
+  { path: "/shipping-returns", changefreq: "monthly", priority: "0.7" },
 ];
 
 /** Matches OFFICIAL_BROWSABLE_CATEGORIES in src/data/catalog/categories.ts */

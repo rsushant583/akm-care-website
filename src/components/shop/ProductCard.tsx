@@ -10,8 +10,9 @@ import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { ProductBadgeStack } from "./ProductBadge";
 import { cn } from "@/lib/utils";
+import { getProductImgProps, PRODUCT_IMAGE_FALLBACK, resolveProductImageSrc } from "@/lib/images/productImage";
 
-const FALLBACK_IMG = "/placeholder.svg";
+const FALLBACK_IMG = PRODUCT_IMAGE_FALLBACK;
 
 export function ProductCard({
   product,
@@ -40,8 +41,15 @@ export function ProductCard({
   const wished = isWishlisted(product.id);
   const href = productPath(product.slug);
   const primaryRaw = product.images[0]?.src || product.image_url || FALLBACK_IMG;
-  const primary = imgFailed ? FALLBACK_IMG : primaryRaw;
-  const secondary = product.images[1]?.src || primary;
+  const primaryImg = getProductImgProps({
+    src: primaryRaw,
+    productName: product.name,
+    alt: product.images[0]?.alt,
+    role: view === "list" ? "cardList" : "card",
+    priority,
+  });
+  const primary = imgFailed ? FALLBACK_IMG : primaryImg.src;
+  const secondary = resolveProductImageSrc(product.images[1]?.src || primary);
   const showSwap = hovered && secondary !== primary && !imgFailed;
   const showRating = (product.reviewCount ?? 0) > 0 && product.rating != null;
   const savings = Math.max(0, product.mrp - price);
@@ -80,9 +88,14 @@ export function ProductCard({
           {!imgLoaded && <div className="absolute inset-0 animate-pulse bg-black/[0.04]" aria-hidden />}
           <img
             src={showSwap ? secondary : primary}
-            alt={product.name}
-            loading={priority ? "eager" : "lazy"}
-            decoding="async"
+            alt={primaryImg.alt || product.name}
+            width={primaryImg.width}
+            height={primaryImg.height}
+            loading={primaryImg.loading}
+            decoding={primaryImg.decoding}
+            fetchPriority={primaryImg.fetchPriority}
+            srcSet={!showSwap && !imgFailed ? primaryImg.srcSet : undefined}
+            sizes={!showSwap && !imgFailed ? primaryImg.sizes : undefined}
             onLoad={() => setImgLoaded(true)}
             onError={() => {
               setImgFailed(true);
@@ -191,12 +204,14 @@ export function ProductCard({
           {!imgLoaded && <div className="absolute inset-0 animate-pulse bg-black/[0.04]" aria-hidden />}
           <img
             src={primary}
-            alt={product.name}
-            width={480}
-            height={640}
-            loading={priority ? "eager" : "lazy"}
-            fetchPriority={priority ? "high" : undefined}
-            decoding="async"
+            alt={primaryImg.alt || product.name}
+            width={primaryImg.width}
+            height={primaryImg.height}
+            loading={primaryImg.loading}
+            fetchPriority={primaryImg.fetchPriority}
+            decoding={primaryImg.decoding}
+            srcSet={!imgFailed ? primaryImg.srcSet : undefined}
+            sizes={!imgFailed ? primaryImg.sizes : undefined}
             onLoad={() => setImgLoaded(true)}
             onError={() => {
               setImgFailed(true);
@@ -211,8 +226,8 @@ export function ProductCard({
             <img
               src={secondary}
               alt=""
-              width={480}
-              height={640}
+              width={primaryImg.width}
+              height={primaryImg.height}
               loading="lazy"
               decoding="async"
               aria-hidden

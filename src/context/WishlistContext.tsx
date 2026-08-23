@@ -11,6 +11,7 @@ import {
 import { toast } from "@/components/ui/sonner";
 import { useAuth } from "@/context/AuthContext";
 import { loadWishlistIds, mergeWishlistIds, syncWishlist } from "@/services/wishlistService";
+import { trackAddToWishlist, trackRemoveFromWishlist } from "@/lib/analytics/events";
 
 const WISHLIST_KEY = "akm_shop_wishlist_v1";
 const SESSION_KEY = "akm_cart_session_id";
@@ -96,9 +97,11 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
   const toggleWishlist = useCallback((productId: string, productName?: string) => {
     setIds((prev) => {
       if (prev.includes(productId)) {
+        trackRemoveFromWishlist({ productId, productName });
         toast.message(productName ? `Removed ${productName} from wishlist` : "Removed from wishlist");
         return prev.filter((id) => id !== productId);
       }
+      trackAddToWishlist({ productId, productName });
       toast.success(productName ? `Saved ${productName}` : "Added to wishlist");
       return [...prev, productId];
     });

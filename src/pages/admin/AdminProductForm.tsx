@@ -228,6 +228,21 @@ export default function AdminProductFormPage() {
     e.preventDefault();
     if (!form.name.trim()) return toast.error("Name is required");
     if (!form.category.trim()) return toast.error("Category is required");
+    const price = Number(form.akm_care_price || form.price);
+    const mrp = Number(form.mrp);
+    const selling = Number(form.selling_price || form.price);
+    const stock = Number(form.stock_quantity);
+    if (!Number.isFinite(price) || price < 0) return toast.error("Price cannot be negative");
+    if (!Number.isFinite(stock) || stock < 0) return toast.error("Stock cannot be negative");
+    if (Number.isFinite(mrp) && mrp > 0 && selling > mrp) {
+      return toast.error("Selling price cannot exceed MRP");
+    }
+    if (Number.isFinite(mrp) && mrp > 0 && price > mrp) {
+      return toast.error("AKM Care price cannot exceed MRP");
+    }
+    if (isNew && images.length === 0) {
+      return toast.error("Add at least one product image before saving");
+    }
     setBusy(true);
     try {
       const payload = buildPayload();
@@ -249,18 +264,22 @@ export default function AdminProductFormPage() {
 
   const onUpload = async (files: File[]) => {
     if (!productId) {
-      // create draft first
+      if (!form.name.trim()) {
+        toast.error("Enter a product name before uploading images");
+        return;
+      }
+      if (!form.category.trim()) {
+        toast.error("Select a category before uploading images");
+        return;
+      }
       try {
         const created = await createProduct({
-          name: form.name || "Untitled product",
-          price: Number(form.price) || 0,
-          stock_quantity: Number(form.stock_quantity) || 0,
-          ...(form.category
-            ? {
-                category: form.category,
-                category_label: form.category_label || getCategoryLabel(form.category) || null,
-              }
-            : {}),
+          name: form.name.trim(),
+          price: Number(form.akm_care_price || form.price) || 0,
+          stock_quantity: Math.max(0, Number(form.stock_quantity) || 0),
+          category: form.category,
+          category_label: form.category_label || getCategoryLabel(form.category) || null,
+          status: "draft",
         });
         setProductId(created.id);
         const urls = await uploadProductImages(created.id, files);

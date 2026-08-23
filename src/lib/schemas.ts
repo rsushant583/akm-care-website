@@ -10,7 +10,7 @@ export const organizationSchema = {
   url: siteOrigin,
   logo: absoluteSiteUrl("/logo.jpeg"),
   description:
-    "Industrial training, HR solutions, compliance consulting and rural e-commerce platform serving pan-India.",
+    "Industrial training, HR solutions, compliance consulting and authentic fashion ecommerce serving pan-India.",
   address: {
     "@type": "PostalAddress",
     addressLocality: "Ahmedabad",

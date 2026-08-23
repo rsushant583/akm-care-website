@@ -41,7 +41,9 @@ export default function Disclaimer() {
             <div>
               <h2 className="font-heading text-2xl mb-4">4. Product Disclaimer</h2>
               <p className="text-muted-foreground leading-relaxed">
-                Products listed on our e-commerce section are sourced from rural Indian villages. While we strive to maintain quality, product availability, pricing, and specifications may change without prior notice. Product images are representative and actual products may vary slightly.
+                Fashion products listed in the AKM Care shop come from the live catalog with published pricing and stock.
+                Availability, pricing, and specifications may change without prior notice. Product images are
+                representative and actual products may vary slightly in shade or finish.
               </p>
             </div>
 

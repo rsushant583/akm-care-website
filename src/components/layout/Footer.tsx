@@ -25,6 +25,7 @@ const companyLinks = [
   { label: "Motivation", path: "/motivation" },
   { label: "Careers", path: "/careers" },
   { label: "FAQ", path: "/faq" },
+  { label: "Shipping & Returns", path: "/shipping-returns" },
   { label: "Contact", path: "/contact" },
 ];
 
@@ -142,12 +143,12 @@ export default function Footer() {
         </div>
 
         <div className="mt-10 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-white/45">© 2025 AKM Care. All Rights Reserved.</p>
+          <p className="text-xs text-white/45">© 2026 AKM Care. All Rights Reserved.</p>
           <div className="flex gap-4 text-xs text-white/45">
-            <Link to="/disclaimer" className="hover:text-[#F5A623] transition-colors">
+            <Link to="/privacy" className="hover:text-[#F5A623] transition-colors">
               Privacy Policy
             </Link>
-            <Link to="/disclaimer" className="hover:text-[#F5A623] transition-colors">
+            <Link to="/terms" className="hover:text-[#F5A623] transition-colors">
               Terms
             </Link>
             <Link to="/disclaimer" className="hover:text-[#F5A623] transition-colors">

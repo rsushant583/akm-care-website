@@ -44,6 +44,9 @@ const Careers = lazy(() => import("./pages/Careers"));
 const Contact = lazy(() => import("./pages/Contact"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const Disclaimer = lazy(() => import("./pages/Disclaimer"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Terms = lazy(() => import("./pages/Terms"));
+const ShippingReturns = lazy(() => import("./pages/ShippingReturns"));
 const SellYourProduct = lazy(() => import("./pages/SellYourProduct"));
 const AdminRoutes = lazy(() => import("./pages/admin/AdminRoutes"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -126,6 +129,9 @@ function AppRoutes() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/faq" element={<FAQ />} />
         <Route path="/disclaimer" element={<Disclaimer />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/shipping-returns" element={<ShippingReturns />} />
         <Route path="/admin/*" element={<AdminRoutes />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

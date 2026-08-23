@@ -115,7 +115,11 @@ export default function Hero({ tiles }: { tiles?: HeroTile[] }) {
             </div>
 
             <p className="text-[11px] sm:text-xs text-[#6B6B6B] mb-3">
-              Pan-India delivery · 7-day returns · Secure checkout
+              Pan-India delivery ·{" "}
+              <Link to="/shipping-returns" className="underline-offset-2 hover:underline hover:text-[#E8621A]">
+                7-day returns
+              </Link>{" "}
+              · Secure checkout
             </p>
 
             <div className="flex flex-wrap gap-1.5" aria-label="Browse categories">

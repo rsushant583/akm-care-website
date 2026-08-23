@@ -209,3 +209,18 @@ export function trackPurchaseFromReceipt(receipt: OrderReceipt): void {
     }),
   );
 }
+
+/** Safe wishlist events — product id + name only; never PII. */
+export function trackAddToWishlist(params: { productId: string; productName?: string }): void {
+  ga4Event("add_to_wishlist", {
+    item_id: params.productId,
+    item_name: params.productName?.trim() || undefined,
+  });
+}
+
+export function trackRemoveFromWishlist(params: { productId: string; productName?: string }): void {
+  ga4Event("remove_from_wishlist", {
+    item_id: params.productId,
+    item_name: params.productName?.trim() || undefined,
+  });
+}
