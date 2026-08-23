@@ -45,6 +45,64 @@ export function trackViewItemList(params: {
   });
 }
 
+/** Homepage / rail product selection — no PII. */
+export function trackSelectItem(params: {
+  itemListId: string;
+  itemListName: string;
+  product: CatalogProduct;
+  index?: number;
+}): void {
+  const item = toGA4Item(params.product, 1);
+  ga4Event("select_item", {
+    item_list_id: params.itemListId,
+    item_list_name: params.itemListName,
+    items: [item],
+    ...(typeof params.index === "number" ? { index: params.index } : {}),
+  });
+  ga4Event("product_click", {
+    item_list_id: params.itemListId,
+    item_id: params.product.id,
+    item_name: params.product.name,
+  });
+}
+
+/** Hero spotlight impression — once per mount when products are ready. */
+export function trackHeroView(products: CatalogProduct[]): void {
+  if (products.length === 0) return;
+  ga4Event("hero_view", {
+    item_list_id: "home_hero",
+    item_count: products.length,
+    items: toGA4Items(products.slice(0, 8)),
+  });
+}
+
+export function trackHeroProductClick(product: CatalogProduct, index?: number): void {
+  const item = toGA4Item(product, 1);
+  ga4Event("hero_product_click", {
+    item_list_id: "home_hero",
+    item_id: product.id,
+    item_name: product.name,
+    items: [item],
+    ...(typeof index === "number" ? { index } : {}),
+  });
+}
+
+export function trackNewArrivalsView(products: CatalogProduct[]): void {
+  if (products.length === 0) return;
+  ga4Event("new_arrivals_view", {
+    item_list_id: "home_new_arrivals",
+    item_count: products.length,
+    items: toGA4Items(products.slice(0, 20)),
+  });
+}
+
+export function trackCategoryClick(params: { categoryId: string; categoryLabel: string }): void {
+  ga4Event("category_click", {
+    category_id: params.categoryId,
+    category_label: params.categoryLabel,
+  });
+}
+
 export function trackSearch(searchTerm: string): void {
   const term = searchTerm.trim();
   if (!term || isSensitiveSearchTerm(term)) return;

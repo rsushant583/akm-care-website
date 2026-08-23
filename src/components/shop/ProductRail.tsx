@@ -17,6 +17,10 @@ export function ProductRail({
   onQuickView,
   className,
   emptyLabel,
+  /** How many leading cards may use high image priority (0 for below-fold rails). */
+  priorityCount = 0,
+  itemListId,
+  itemListName,
 }: {
   id?: string;
   title: string;
@@ -30,10 +34,16 @@ export function ProductRail({
   onQuickView?: (product: CatalogProduct) => void;
   className?: string;
   emptyLabel?: string;
+  priorityCount?: number;
+  itemListId?: string;
+  itemListName?: string;
 }) {
   const headingId = id ? `${id}-heading` : undefined;
   const showEmpty = !loading && products.length === 0 && emptyLabel;
   if (!loading && products.length < minItems && !showEmpty) return null;
+
+  const listId = itemListId || id || "product-rail";
+  const listName = itemListName || title;
 
   return (
     <section id={id} className={cn("space-y-3 sm:space-y-4", className)} aria-labelledby={headingId}>
@@ -82,7 +92,10 @@ export function ProductRail({
                 product={product}
                 onQuickView={onQuickView}
                 compact
-                priority={index < 4}
+                priority={index < priorityCount}
+                itemListId={listId}
+                itemListName={listName}
+                listIndex={index}
               />
             </div>
           ))}

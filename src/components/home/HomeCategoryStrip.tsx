@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { OFFICIAL_BROWSABLE_CATEGORIES, shopCategoryPath } from "@/data/catalog/categories";
+import { trackCategoryClick } from "@/lib/analytics/events";
 
 const categoryHints: Record<string, string> = {
   sarees: "Elegant traditional sarees",
@@ -55,6 +56,7 @@ export default function HomeCategoryStrip({ images }: { images?: Record<string, 
                 to={shopCategoryPath(cat.id)}
                 role="listitem"
                 aria-label={`Shop ${cat.label}`}
+                onClick={() => trackCategoryClick({ categoryId: cat.id, categoryLabel: cat.label })}
                 className="snap-start shrink-0 w-[9.25rem] sm:w-[10.75rem] lg:w-auto lg:shrink
                   group relative aspect-[4/5] overflow-hidden bg-[#F5F0EB]
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40"

@@ -5,7 +5,7 @@
         http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
   <url>
     <loc>https://www.akmcare.in/</loc>
-    <lastmod>2026-08-19</lastmod>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -142,31 +142,49 @@
   </url>
   <url>
     <loc>https://www.akmcare.in/shop/product/akmc-wsomf-maer</loc>
-    <lastmod>2026-08-12</lastmod>
+    <lastmod>2026-08-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.akmcare.in/shop/product/NET%20EMBROIDERY%20SOROSKI%20LONG%20GOWN%20(SEMI-STICHED)%20in%20(Sapphire)%20off%20light%20Green%20Shade</loc>
+    <lastmod>2026-08-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.akmcare.in/shop/product/NET%20EMBROIDERY%20SOROSKI%20LONG%20GOWN%20(SEMI-STICHED)%20in%20(Soft%20Mint)%20off%20white%20Shade</loc>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.akmcare.in/shop/product/akmc-ralrajs-madr</loc>
-    <lastmod>2026-08-13</lastmod>
+    <lastmod>2026-08-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.akmcare.in/shop/product/silk-embroidery-gown-semi-stiched-in-light-gray-shade</loc>
+    <lastmod>2026-08-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.akmcare.in/shop/product/top-dyed-veving-saree-with-unstiched-blouse</loc>
-    <lastmod>2026-08-12</lastmod>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.akmcare.in/shop/product/tul-tilak-wedding-silk-saree-with-unstitched-blouse</loc>
-    <lastmod>2026-08-13</lastmod>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.akmcare.in/shop/product/akmc-sani-1007</loc>
-    <lastmod>2026-08-16</lastmod>
+    <lastmod>2026-08-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>

@@ -16,6 +16,7 @@ import { useWishlist } from "@/context/WishlistContext";
 import { ProductBadgeStack } from "./ProductBadge";
 import { cn } from "@/lib/utils";
 import { getProductImgProps, PRODUCT_IMAGE_FALLBACK } from "@/lib/images/productImage";
+import { trackSelectItem } from "@/lib/analytics/events";
 
 const FALLBACK_IMG = PRODUCT_IMAGE_FALLBACK;
 
@@ -25,12 +26,18 @@ export function ProductCard({
   view = "grid",
   priority = false,
   compact = false,
+  itemListId,
+  itemListName,
+  listIndex,
 }: {
   product: CatalogProduct;
   onQuickView?: (product: CatalogProduct) => void;
   view?: "grid" | "list";
   priority?: boolean;
   compact?: boolean;
+  itemListId?: string;
+  itemListName?: string;
+  listIndex?: number;
 }) {
   const navigate = useNavigate();
   const { addToCart, buyNowLine } = useCart();
@@ -39,6 +46,16 @@ export function ProductCard({
   const [imgFailed, setImgFailed] = useState(false);
   const [adding, setAdding] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
+
+  const trackProductClick = () => {
+    if (!itemListId || !itemListName) return;
+    trackSelectItem({
+      itemListId,
+      itemListName,
+      product,
+      index: listIndex,
+    });
+  };
 
   const price = getEffectivePrice(product);
   const inStock = isProductInStock(product);
@@ -82,7 +99,7 @@ export function ProductCard({
   if (view === "list") {
     return (
       <article className="group flex gap-4 sm:gap-5 p-3 sm:p-4 border border-black/[0.06] bg-white hover:border-black/[0.12] motion-safe:transition-colors duration-300">
-        <Link to={href} className="relative shrink-0 w-28 sm:w-36 aspect-[3/4] overflow-hidden bg-[#F5F0EB]">
+        <Link to={href} className="relative shrink-0 w-28 sm:w-36 aspect-[3/4] overflow-hidden bg-[#F5F0EB]" onClick={trackProductClick}>
           {!imgLoaded && <div className="absolute inset-0 animate-pulse bg-black/[0.04]" aria-hidden />}
           <img
             src={primary}
@@ -108,7 +125,7 @@ export function ProductCard({
         </Link>
 
         <div className="flex-1 min-w-0 flex flex-col">
-          <Link to={href} className="font-heading text-base sm:text-lg text-[#1A1A1A] hover:text-[#E8621A] line-clamp-2">
+          <Link to={href} className="font-heading text-base sm:text-lg text-[#1A1A1A] hover:text-[#E8621A] line-clamp-2" onClick={trackProductClick}>
             <h3 className="text-inherit font-inherit">{displayTitle}</h3>
           </Link>
           {cardMeta ? <p className="type-meta mt-1">{cardMeta}</p> : null}
@@ -194,7 +211,7 @@ export function ProductCard({
   return (
     <article className="group bg-white overflow-hidden ring-1 ring-black/[0.06] hover:ring-black/[0.12] hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.18)] motion-safe:transition-[box-shadow,ring-color] duration-300 flex flex-col h-full">
       <div className="relative aspect-[3/4] bg-[#F5F0EB] overflow-hidden">
-        <Link to={href} className="block h-full w-full" aria-label={displayTitle}>
+        <Link to={href} className="block h-full w-full" aria-label={displayTitle} onClick={trackProductClick}>
           {!imgLoaded && <div className="absolute inset-0 animate-pulse bg-black/[0.04]" aria-hidden />}
           <img
             src={primary}
@@ -235,6 +252,7 @@ export function ProductCard({
       <div className={cn("px-2.5 py-2.5 sm:px-3 sm:py-3 flex flex-col flex-1", compact ? "min-h-0" : "")}>
         <Link
           to={href}
+          onClick={trackProductClick}
           className="type-product line-clamp-2 min-h-[2.5rem] hover:text-[#E8621A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40"
         >
           <h3 className="text-inherit font-inherit leading-snug">{displayTitle}</h3>
