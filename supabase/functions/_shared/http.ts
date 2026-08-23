@@ -22,7 +22,7 @@ export function allowedOrigin(req: Request): string {
 export function corsHeadersFor(req: Request) {
   return {
     "Access-Control-Allow-Origin": allowedOrigin(req),
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-razorpay-signature",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-razorpay-signature, x-api-key",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     Vary: "Origin",
   };

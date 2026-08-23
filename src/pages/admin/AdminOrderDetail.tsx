@@ -14,6 +14,7 @@ import { useAdminAuth } from "@/context/AdminAuthContext";
 import { useAdminOrderAlerts } from "@/context/AdminOrderAlertsContext";
 import { formatINR } from "@/lib/ecommerce/pricing";
 import { formatOrderStatus, statusOptionsFor } from "@/lib/admin/orderFulfillment";
+import { AdminShippingPanel } from "@/components/admin/AdminShippingPanel";
 
 function addrField(address: Record<string, unknown> | null | undefined, keys: string[]) {
   if (!address) return "";
@@ -202,7 +203,7 @@ export default function AdminOrderDetailPage() {
       </section>
 
       <section className="rounded-2xl border bg-white p-4 text-sm space-y-1">
-        <h2 className="font-semibold mb-2">Shipping</h2>
+        <h2 className="font-semibold mb-2">Shipping address</h2>
         <p>
           {line1 || "—"}
           {line2 ? `, ${line2}` : ""}
@@ -212,7 +213,7 @@ export default function AdminOrderDetailPage() {
           {country ? ` · ${country}` : ""}
         </p>
         <p>Method: {order.shipping?.method || order.shipping_method || "—"}</p>
-        <p>Status: {order.shipping?.status || "—"}</p>
+        <p>Projection status: {order.shipping?.status || "—"}</p>
         {order.shipping?.estimated_days != null && <p>Estimated days: {order.shipping.estimated_days}</p>}
         {order.shipping?.tracking_number ? (
           <p>
@@ -221,6 +222,16 @@ export default function AdminOrderDetailPage() {
           </p>
         ) : null}
       </section>
+
+      <AdminShippingPanel
+        order={order}
+        canEdit={canEdit}
+        onChanged={() => {
+          void getAdminOrderDetail(order.id).then((row) => {
+            if (row) setOrder(row);
+          });
+        }}
+      />
 
       <section className="rounded-2xl border bg-white p-4 text-sm space-y-1">
         <h2 className="font-semibold mb-2">Payment</h2>

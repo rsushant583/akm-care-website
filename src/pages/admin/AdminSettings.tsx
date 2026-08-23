@@ -19,6 +19,7 @@ export default function AdminSettingsPage() {
   const [contact, setContact] = useState({ phones: "", emails: "", address: "" });
   const [social, setSocial] = useState({ facebook: "", instagram: "", youtube: "", linkedin: "" });
   const [shipping, setShipping] = useState({ standard: 49, express: 99, free_above: 999 });
+  const [parcel, setParcel] = useState({ weight_kg: "", length_cm: "", breadth_cm: "", height_cm: "" });
   const [tax, setTax] = useState({ default_gst: 5, currency: "INR" });
   const [theme, setTheme] = useState({ primary: "#E8621A" });
   const [catalog, setCatalog] = useState<CatalogBusinessSettings>({ ...DEFAULT_CATALOG_SETTINGS });
@@ -42,6 +43,20 @@ export default function AdminSettingsPage() {
         if (socialVal) setSocial({ facebook: "", instagram: "", youtube: "", linkedin: "", ...socialVal });
         const shippingVal = s.shipping as Partial<typeof shipping> | undefined;
         if (shippingVal) setShipping({ standard: 49, express: 99, free_above: 999, ...shippingVal });
+        const parcelVal = s.parcel_profile as {
+          weight_kg?: number | string;
+          length_cm?: number | string;
+          breadth_cm?: number | string;
+          height_cm?: number | string;
+        } | undefined;
+        if (parcelVal) {
+          setParcel({
+            weight_kg: parcelVal.weight_kg != null ? String(parcelVal.weight_kg) : "",
+            length_cm: parcelVal.length_cm != null ? String(parcelVal.length_cm) : "",
+            breadth_cm: parcelVal.breadth_cm != null ? String(parcelVal.breadth_cm) : "",
+            height_cm: parcelVal.height_cm != null ? String(parcelVal.height_cm) : "",
+          });
+        }
         const taxVal = s.tax as Partial<typeof tax> | undefined;
         if (taxVal) setTax({ default_gst: 5, currency: "INR", ...taxVal });
         const themeVal = s.theme as Partial<typeof theme> | undefined;
@@ -71,6 +86,12 @@ export default function AdminSettingsPage() {
         }),
         saveSetting("social", social),
         saveSetting("shipping", shipping),
+        saveSetting("parcel_profile", {
+          weight_kg: parcel.weight_kg === "" ? null : Number(parcel.weight_kg),
+          length_cm: parcel.length_cm === "" ? null : Number(parcel.length_cm),
+          breadth_cm: parcel.breadth_cm === "" ? null : Number(parcel.breadth_cm),
+          height_cm: parcel.height_cm === "" ? null : Number(parcel.height_cm),
+        }),
         saveSetting("tax", tax),
         saveSetting("theme", theme),
         saveSetting("catalog", {
@@ -153,6 +174,60 @@ export default function AdminSettingsPage() {
           <Num label="Standard (₹)" value={shipping.standard} onChange={(v) => setShipping({ ...shipping, standard: v })} />
           <Num label="Express (₹)" value={shipping.express} onChange={(v) => setShipping({ ...shipping, express: v })} />
           <Num label="Free above (₹)" value={shipping.free_above} onChange={(v) => setShipping({ ...shipping, free_above: v })} />
+        </div>
+      </Section>
+
+      <Section title="Default parcel profile (logistics)">
+        <p className="text-xs text-slate-500">
+          Required before creating Shiprocket shipments. Use real package deadweight (kg) and L×B×H (cm). Do not
+          enter saree length here — catalog dimensions stay separate.
+        </p>
+        <div className="grid sm:grid-cols-4 gap-3">
+          <label className="text-sm">
+            <span className="font-medium">Weight (kg)</span>
+            <input
+              type="number"
+              min={0}
+              step="0.01"
+              className="mt-1 w-full rounded-xl border px-3 py-2.5"
+              value={parcel.weight_kg}
+              onChange={(e) => setParcel({ ...parcel, weight_kg: e.target.value })}
+              placeholder="e.g. 0.5"
+            />
+          </label>
+          <label className="text-sm">
+            <span className="font-medium">Length (cm)</span>
+            <input
+              type="number"
+              min={0}
+              step="0.1"
+              className="mt-1 w-full rounded-xl border px-3 py-2.5"
+              value={parcel.length_cm}
+              onChange={(e) => setParcel({ ...parcel, length_cm: e.target.value })}
+            />
+          </label>
+          <label className="text-sm">
+            <span className="font-medium">Breadth (cm)</span>
+            <input
+              type="number"
+              min={0}
+              step="0.1"
+              className="mt-1 w-full rounded-xl border px-3 py-2.5"
+              value={parcel.breadth_cm}
+              onChange={(e) => setParcel({ ...parcel, breadth_cm: e.target.value })}
+            />
+          </label>
+          <label className="text-sm">
+            <span className="font-medium">Height (cm)</span>
+            <input
+              type="number"
+              min={0}
+              step="0.1"
+              className="mt-1 w-full rounded-xl border px-3 py-2.5"
+              value={parcel.height_cm}
+              onChange={(e) => setParcel({ ...parcel, height_cm: e.target.value })}
+            />
+          </label>
         </div>
       </Section>
 

@@ -66,6 +66,8 @@ export type CustomerOrderDetail = {
     estimated_days: number | null;
     shipped_at: string | null;
     delivered_at: string | null;
+    tracking_url?: string | null;
+    etd?: string | null;
   } | null;
   timeline: Array<{ id: string; status: string; note: string | null; created_at: string }>;
 };
@@ -238,6 +240,17 @@ export async function getMyOrderDetail(orderId: string): Promise<CustomerOrderDe
       .order("created_at", { ascending: true }),
   ]);
 
+  const shipmentRes = await client
+    .from("shipping_shipments")
+    .select("awb_code,courier_name,tracking_url,etd,status")
+    .eq("order_id", orderId)
+    .eq("kind", "forward")
+    .neq("status", "cancelled")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  // Ignore missing-table / RLS errors — projection still works.
+
   return {
     id: String(header.id),
     order_number: String(header.order_number),
@@ -269,15 +282,20 @@ export async function getMyOrderDetail(orderId: string): Promise<CustomerOrderDe
           updated_at: payRes.data.updated_at ? String(payRes.data.updated_at) : null,
         }
       : null,
-    shipping: shipRes.data
+    shipping: shipRes.data || shipmentRes.data
       ? {
-          method: shipRes.data.method ?? null,
-          status: shipRes.data.status ?? null,
-          carrier: shipRes.data.carrier ?? null,
-          tracking_number: shipRes.data.tracking_number ?? null,
-          estimated_days: shipRes.data.estimated_days ?? null,
-          shipped_at: shipRes.data.shipped_at ? String(shipRes.data.shipped_at) : null,
-          delivered_at: shipRes.data.delivered_at ? String(shipRes.data.delivered_at) : null,
+          method: shipRes.data?.method ?? null,
+          status: shipRes.data?.status ?? shipmentRes.data?.status ?? null,
+          carrier: shipRes.data?.carrier ?? shipmentRes.data?.courier_name ?? null,
+          tracking_number:
+            shipRes.data?.tracking_number ?? shipmentRes.data?.awb_code ?? null,
+          estimated_days: shipRes.data?.estimated_days ?? null,
+          shipped_at: shipRes.data?.shipped_at ? String(shipRes.data.shipped_at) : null,
+          delivered_at: shipRes.data?.delivered_at ? String(shipRes.data.delivered_at) : null,
+          tracking_url: shipmentRes.data?.tracking_url
+            ? String(shipmentRes.data.tracking_url)
+            : null,
+          etd: shipmentRes.data?.etd ? String(shipmentRes.data.etd) : null,
         }
       : null,
     timeline: (histRes.data || []) as CustomerOrderDetail["timeline"],

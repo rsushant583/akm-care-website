@@ -56,6 +56,10 @@ const empty = {
   freight_cost: "",
   weight: "",
   dimensions: "",
+  package_weight_kg: "",
+  package_length_cm: "",
+  package_breadth_cm: "",
+  package_height_cm: "",
   seo_title: "",
   seo_description: "",
   is_featured: false,
@@ -155,6 +159,10 @@ export default function AdminProductFormPage() {
       freight_cost: p.freight_cost || "",
       weight: p.weight || "",
       dimensions: p.dimensions || "",
+      package_weight_kg: p.package_weight_kg != null ? String(p.package_weight_kg) : "",
+      package_length_cm: p.package_length_cm != null ? String(p.package_length_cm) : "",
+      package_breadth_cm: p.package_breadth_cm != null ? String(p.package_breadth_cm) : "",
+      package_height_cm: p.package_height_cm != null ? String(p.package_height_cm) : "",
       seo_title: p.seo_title || "",
       seo_description: p.seo_description || "",
       is_featured: !!p.is_featured,
@@ -316,6 +324,10 @@ export default function AdminProductFormPage() {
       freight_cost: form.freight_cost || null,
       weight: form.weight || null,
       dimensions: form.dimensions || null,
+      package_weight_kg: form.package_weight_kg === "" ? null : Number(form.package_weight_kg),
+      package_length_cm: form.package_length_cm === "" ? null : Number(form.package_length_cm),
+      package_breadth_cm: form.package_breadth_cm === "" ? null : Number(form.package_breadth_cm),
+      package_height_cm: form.package_height_cm === "" ? null : Number(form.package_height_cm),
       // Leave blank to use storefront auto SEO; keep manual override when set.
       seo_title: form.seo_title.trim() || null,
       seo_description: form.seo_description.trim() || null,
@@ -764,6 +776,36 @@ export default function AdminProductFormPage() {
             <Field label="Freight cost" value={form.freight_cost} onChange={(v) => set("freight_cost", v)} />
             <Field label="Weight" value={form.weight} onChange={(v) => set("weight", v)} />
             <Field label="Dimensions" value={form.dimensions} onChange={(v) => set("dimensions", v)} />
+          </div>
+          <p className="text-xs text-slate-500">
+            Catalog weight/dimensions above are display-only (e.g. saree length). Parcel fields below are for
+            logistics only — leave blank to use the store default parcel profile.
+          </p>
+          <div className="grid sm:grid-cols-4 gap-3">
+            <Field
+              label="Parcel weight (kg)"
+              type="number"
+              value={form.package_weight_kg}
+              onChange={(v) => set("package_weight_kg", v)}
+            />
+            <Field
+              label="Parcel length (cm)"
+              type="number"
+              value={form.package_length_cm}
+              onChange={(v) => set("package_length_cm", v)}
+            />
+            <Field
+              label="Parcel breadth (cm)"
+              type="number"
+              value={form.package_breadth_cm}
+              onChange={(v) => set("package_breadth_cm", v)}
+            />
+            <Field
+              label="Parcel height (cm)"
+              type="number"
+              value={form.package_height_cm}
+              onChange={(v) => set("package_height_cm", v)}
+            />
           </div>
         </section>
 

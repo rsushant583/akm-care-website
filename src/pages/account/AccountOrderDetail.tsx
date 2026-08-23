@@ -362,10 +362,24 @@ export default function AccountOrderDetailPage() {
         )}
         {order.shipping?.estimated_days != null && <p>Estimated days: {order.shipping.estimated_days}</p>}
         {showTracking ? (
-          <p>
-            Tracking
-            {order.shipping?.carrier ? ` (${order.shipping.carrier})` : ""}: {tracking}
-          </p>
+          <div className="pt-2 space-y-1 border-t border-black/[0.06]">
+            <p className="font-medium">Track shipment</p>
+            {order.shipping?.carrier ? <p>Courier: {order.shipping.carrier}</p> : null}
+            <p>Tracking number: {tracking}</p>
+            {order.shipping?.etd ? (
+              <p>Expected delivery: {formatOrderDateTime(order.shipping.etd)}</p>
+            ) : null}
+            {order.shipping?.tracking_url ? (
+              <a
+                href={order.shipping.tracking_url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex mt-1 text-[#E8621A] font-semibold underline"
+              >
+                Open tracking link
+              </a>
+            ) : null}
+          </div>
         ) : (
           <p className="text-[#6B6B6B]">No tracking number yet.</p>
         )}

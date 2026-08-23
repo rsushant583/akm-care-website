@@ -36,6 +36,10 @@ export type AdminProduct = {
   freight_cost: string | null;
   weight: string | null;
   dimensions: string | null;
+  package_weight_kg?: number | null;
+  package_length_cm?: number | null;
+  package_breadth_cm?: number | null;
+  package_height_cm?: number | null;
   seo_title: string | null;
   seo_description: string | null;
   is_featured: boolean | null;
