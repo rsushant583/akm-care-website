@@ -1,6 +1,15 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { OFFICIAL_BROWSABLE_CATEGORIES, shopCategoryPath, shopCollectionPath } from "@/data/catalog/categories";
+import { useReducedMotion } from "framer-motion";
+import {
+  OFFICIAL_BROWSABLE_CATEGORIES,
+  shopCategoryPath,
+  shopCollectionPath,
+  type OfficialCategoryId,
+} from "@/data/catalog/categories";
 import { productPath } from "@/lib/ecommerce/slug";
+import { getProductImgProps } from "@/lib/images/productImage";
+import type { HeroCategoryCollage } from "@/lib/ecommerce/merchandising";
 import { cn } from "@/lib/utils";
 
 export type HeroTile = {
@@ -26,23 +35,49 @@ const shortLabel: Record<string, string> = {
   "mens-jeans": "Men's Jeans",
 };
 
-function HeroMosaic({ tiles, priority }: { tiles: HeroTile[]; priority?: boolean }) {
+const HOLD_MS = 2000;
+const FADE_MS = 550;
+
+function HeroMosaic({
+  tiles,
+  priority,
+  preload,
+}: {
+  tiles: HeroTile[];
+  priority?: boolean;
+  preload?: boolean;
+}) {
   const shown = tiles.slice(0, 3);
   if (shown.length === 0) {
     return <div className="h-full min-h-[12rem] bg-[#EDE8E2]" aria-hidden />;
   }
 
-  const Tile = ({ tile, className, eager }: { tile: HeroTile; className?: string; eager?: boolean }) => {
+  const Tile = ({
+    tile,
+    className,
+    eager,
+    low,
+  }: {
+    tile: HeroTile;
+    className?: string;
+    eager?: boolean;
+    low?: boolean;
+  }) => {
+    const imgProps = getProductImgProps({
+      src: tile.src,
+      alt: tile.alt,
+      productName: tile.alt,
+      role: "hero",
+      priority: Boolean(eager),
+    });
     const img = (
       <img
-        src={tile.src}
-        alt={tile.alt}
-        className="absolute inset-0 h-full w-full product-photo"
+        {...imgProps}
+        className="absolute inset-0 h-full w-full product-photo select-none"
         loading={eager ? "eager" : "lazy"}
-        fetchPriority={eager ? "high" : undefined}
-        decoding="async"
-        width={640}
-        height={800}
+        fetchPriority={eager ? "high" : low ? "low" : undefined}
+        alt={imgProps.alt}
+        draggable={false}
       />
     );
     const body = (
@@ -52,7 +87,11 @@ function HeroMosaic({ tiles, priority }: { tiles: HeroTile[]; priority?: boolean
     );
     if (!tile.href) return body;
     return (
-      <Link to={tile.href} className={cn("relative overflow-hidden bg-[#EDE8E2] block", className)} aria-label={tile.alt}>
+      <Link
+        to={tile.href}
+        className={cn("relative overflow-hidden bg-[#EDE8E2] block", className)}
+        aria-label={tile.alt}
+      >
         {img}
       </Link>
     );
@@ -65,9 +104,9 @@ function HeroMosaic({ tiles, priority }: { tiles: HeroTile[]; priority?: boolean
   return (
     <div className="grid grid-cols-2 grid-rows-2 gap-1.5 sm:gap-2 h-full min-h-[13.5rem] sm:min-h-[16rem] lg:min-h-[22rem]">
       <Tile tile={shown[0]} className="row-span-2" eager={priority} />
-      <Tile tile={shown[1]} eager={false} />
+      <Tile tile={shown[1]} eager={false} low={preload} />
       {shown[2] ? (
-        <Tile tile={shown[2]} eager={false} />
+        <Tile tile={shown[2]} eager={false} low={preload} />
       ) : (
         <div className="bg-[#E8DFD6]" aria-hidden />
       )}
@@ -75,20 +114,123 @@ function HeroMosaic({ tiles, priority }: { tiles: HeroTile[]; priority?: boolean
   );
 }
 
+function RotatingCategoryMosaic({
+  collages,
+  activeIndex,
+  reduceMotion,
+}: {
+  collages: HeroCategoryCollage[];
+  activeIndex: number;
+  reduceMotion: boolean | null;
+}) {
+  const count = collages.length;
+  const safeIndex = count > 0 ? activeIndex % count : 0;
+  const nextIndex = count > 1 ? (safeIndex + 1) % count : safeIndex;
+
+  const visible = useMemo(() => {
+    const set = new Set<number>([safeIndex]);
+    if (count > 1 && !reduceMotion) set.add(nextIndex);
+    return set;
+  }, [safeIndex, nextIndex, count, reduceMotion]);
+
+  return (
+    <div className="relative h-full min-h-[13.5rem] sm:min-h-[16rem] lg:min-h-[22rem]">
+      {[...visible].map((i) => {
+        const isActive = i === safeIndex;
+        return (
+          <div
+            key={collages[i].categoryId}
+            className={cn(
+              "inset-0",
+              isActive ? "relative z-[1] opacity-100" : "absolute inset-0 z-0 opacity-0 pointer-events-none",
+              !reduceMotion && "motion-safe:transition-opacity",
+            )}
+            style={!reduceMotion ? { transitionDuration: `${FADE_MS}ms` } : undefined}
+            aria-hidden={!isActive}
+          >
+            <HeroMosaic
+              tiles={collages[i].tiles}
+              priority={isActive}
+              preload={!isActive}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /**
  * Marketplace-first homepage hero.
- * Uses live catalog photography when provided; seed catalog paths otherwise.
- * Does not use the corporate collage as the primary visual.
+ * Layout preserved; right-side mosaic rotates by official category when collages are available.
  */
-export default function Hero({ tiles }: { tiles?: HeroTile[] }) {
-  const mosaic = tiles && tiles.length > 0 ? tiles : SEED_TILES;
+export default function Hero({
+  tiles,
+  collages = [],
+}: {
+  tiles?: HeroTile[];
+  collages?: HeroCategoryCollage[];
+}) {
+  const reduceMotion = useReducedMotion();
+  const [index, setIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const mosaicRef = useRef<HTMLDivElement>(null);
+
+  const rotatable = collages.length > 0;
+  const count = collages.length;
+  const safeIndex = count > 0 ? index % count : 0;
+  const activeCategoryId: OfficialCategoryId | null = rotatable
+    ? collages[safeIndex].categoryId
+    : null;
+
+  const collageKey = collages.map((c) => c.categoryId).join("|");
+  useEffect(() => {
+    setIndex(0);
+  }, [collageKey]);
+
+  const selectCategory = useCallback(
+    (categoryId: OfficialCategoryId) => {
+      const next = collages.findIndex((c) => c.categoryId === categoryId);
+      if (next >= 0) setIndex(next);
+    },
+    [collages],
+  );
+
+  useEffect(() => {
+    if (reduceMotion || paused || count <= 1) return;
+    const id = window.setInterval(() => {
+      setIndex((i) => (i + 1) % count);
+    }, HOLD_MS);
+    return () => window.clearInterval(id);
+  }, [reduceMotion, paused, count, index]);
+
+  const fallbackTiles = tiles && tiles.length > 0 ? tiles : SEED_TILES;
 
   return (
     <section className="relative overflow-hidden bg-[#F5F0EB]">
       <div className="container-premium relative z-10 py-4 sm:py-5 lg:py-6">
         <div className="grid lg:grid-cols-2 gap-4 lg:gap-8 items-stretch">
-          <div className="order-1 lg:order-2 min-h-0">
-            <HeroMosaic tiles={mosaic} priority />
+          <div
+            ref={mosaicRef}
+            className="order-1 lg:order-2 min-h-0"
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+            onFocusCapture={() => setPaused(true)}
+            onBlurCapture={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+                setPaused(false);
+              }
+            }}
+          >
+            {rotatable ? (
+              <RotatingCategoryMosaic
+                collages={collages}
+                activeIndex={safeIndex}
+                reduceMotion={reduceMotion}
+              />
+            ) : (
+              <HeroMosaic tiles={fallbackTiles} priority />
+            )}
           </div>
 
           <div className="order-2 lg:order-1 flex flex-col justify-center min-w-0 py-1">
@@ -96,7 +238,10 @@ export default function Hero({ tiles }: { tiles?: HeroTile[] }) {
               AKM Care Shop
             </p>
 
-            <h1 className="font-heading text-[1.65rem] sm:text-[2.1rem] lg:text-[2.45rem] leading-[1.12] tracking-tight text-[#1A1A1A] mb-2.5" style={{ textWrap: "balance" }}>
+            <h1
+              className="font-heading text-[1.65rem] sm:text-[2.1rem] lg:text-[2.45rem] leading-[1.12] tracking-tight text-[#1A1A1A] mb-2.5"
+              style={{ textWrap: "balance" }}
+            >
               Discover something
               <span className="block text-[#E8621A]">you&apos;ll love.</span>
             </h1>
@@ -123,15 +268,25 @@ export default function Hero({ tiles }: { tiles?: HeroTile[] }) {
             </p>
 
             <div className="flex flex-wrap gap-1.5" aria-label="Browse categories">
-              {OFFICIAL_BROWSABLE_CATEGORIES.map((cat) => (
-                <Link
-                  key={cat.id}
-                  to={shopCategoryPath(cat.id)}
-                  className="px-3 py-1.5 min-h-9 text-xs font-semibold bg-white ring-1 ring-black/[0.06] text-[#1A1A1A] hover:ring-[#E8621A]/40 hover:text-[#E8621A] transition-colors"
-                >
-                  {shortLabel[cat.id] || cat.label}
-                </Link>
-              ))}
+              {OFFICIAL_BROWSABLE_CATEGORIES.map((cat) => {
+                const isActive = activeCategoryId === cat.id;
+                return (
+                  <Link
+                    key={cat.id}
+                    to={shopCategoryPath(cat.id)}
+                    aria-current={isActive ? "true" : undefined}
+                    onClick={() => selectCategory(cat.id)}
+                    className={cn(
+                      "px-3 py-1.5 min-h-9 text-xs font-semibold bg-white ring-1 transition-colors",
+                      isActive
+                        ? "ring-[#E8621A]/50 text-[#E8621A]"
+                        : "ring-black/[0.06] text-[#1A1A1A] hover:ring-[#E8621A]/40 hover:text-[#E8621A]",
+                    )}
+                  >
+                    {shortLabel[cat.id] || cat.label}
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </div>

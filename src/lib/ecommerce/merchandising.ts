@@ -93,6 +93,59 @@ export function pickHeroTiles(
   return tiles;
 }
 
+export type HeroCategoryCollage = {
+  categoryId: OfficialCategoryId;
+  tiles: { src: string; alt: string; href: string }[];
+};
+
+const HERO_COLLAGE_SIZE = 3;
+
+/**
+ * Build per-category 3-tile hero collages from real catalog products.
+ * Categories with fewer than 3 usable images are omitted (links stay in the UI).
+ * Never mixes categories within a collage.
+ */
+export function buildHeroCategoryCollages(
+  products: CatalogProduct[],
+  tileCount = HERO_COLLAGE_SIZE,
+): HeroCategoryCollage[] {
+  const need = Math.max(1, tileCount);
+  const out: HeroCategoryCollage[] = [];
+
+  for (const cat of OFFICIAL_BROWSABLE_CATEGORIES) {
+    const matched = products
+      .filter(isStorefrontVisibleProduct)
+      .filter(hasUsableProductImage)
+      .filter((p) => categoryMatchesProduct(cat.id, p))
+      .slice()
+      .sort(sortNewestFirst);
+
+    const seenIds = new Set<string>();
+    const seenSrc = new Set<string>();
+    const tiles: HeroCategoryCollage["tiles"] = [];
+
+    for (const product of matched) {
+      if (tiles.length >= need) break;
+      if (seenIds.has(product.id)) continue;
+      const src = product.images[0]?.src || product.image_url;
+      if (!src || seenSrc.has(src)) continue;
+      seenIds.add(product.id);
+      seenSrc.add(src);
+      tiles.push({
+        src,
+        alt: product.name,
+        href: productPath(product.slug),
+      });
+    }
+
+    if (tiles.length >= need) {
+      out.push({ categoryId: cat.id, tiles: tiles.slice(0, need) });
+    }
+  }
+
+  return out;
+}
+
 export type HomeCategoryRailSpec = {
   id: string;
   title: string;

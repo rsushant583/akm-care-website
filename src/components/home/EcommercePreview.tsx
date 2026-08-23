@@ -5,7 +5,7 @@ import Hero from "@/components/home/Hero";
 import HomeCategoryStrip from "@/components/home/HomeCategoryStrip";
 import TrustStrip from "@/components/home/TrustStrip";
 import CollectionBanner from "@/components/home/CollectionBanner";
-import { pickCategoryImages, pickHeroTiles, uniqueProducts } from "@/lib/ecommerce/merchandising";
+import { pickCategoryImages, pickHeroTiles, buildHeroCategoryCollages, uniqueProducts } from "@/lib/ecommerce/merchandising";
 import { shopCollectionPath } from "@/data/catalog/categories";
 
 const MIN_SECTION = 2;
@@ -14,16 +14,18 @@ const MIN_SECTION = 2;
 export default function EcommercePreview() {
   const { featured, bestSellers, deals, newArrivals, loading: merchLoading } = useCatalogMerchandising(8);
   const { data: catalogPreview, loading: catalogLoading } = useCatalogProducts({
-    pageSize: 24,
+    pageSize: 48,
     enablePagination: false,
   });
 
   const loading = merchLoading || catalogLoading;
 
-  const categoryImages = useMemo(
-    () => pickCategoryImages([...catalogPreview, ...featured, ...newArrivals, ...deals, ...bestSellers]),
+  const pool = useMemo(
+    () => uniqueProducts([catalogPreview, featured, newArrivals, deals, bestSellers]),
     [catalogPreview, featured, newArrivals, deals, bestSellers],
   );
+
+  const categoryImages = useMemo(() => pickCategoryImages(pool), [pool]);
 
   const primary = useMemo(() => {
     if (featured.length > 0) return featured.slice(0, 8);
@@ -34,6 +36,8 @@ export default function EcommercePreview() {
     () => pickHeroTiles([...featured, ...catalogPreview, ...newArrivals], 3),
     [featured, catalogPreview, newArrivals],
   );
+
+  const heroCollages = useMemo(() => buildHeroCategoryCollages(pool, 3), [pool]);
 
   const primaryIds = useMemo(() => new Set(primary.map((p) => p.id)), [primary]);
 
@@ -64,7 +68,7 @@ export default function EcommercePreview() {
 
   return (
     <div>
-      <Hero tiles={heroTiles} />
+      <Hero tiles={heroTiles} collages={heroCollages} />
       <HomeCategoryStrip images={categoryImages} />
       <TrustStrip />
 
