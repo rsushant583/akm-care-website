@@ -134,6 +134,75 @@ export function pickLatestSpotlightProducts(
   return out;
 }
 
+export type LookbookSlide = {
+  featured: CatalogProduct;
+  supporting: CatalogProduct[];
+};
+
+const DEFAULT_SUPPORTING = 3;
+
+function categoryKey(product: CatalogProduct): string {
+  return String(product.category || product.categoryLabel || "")
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * Pick supporting looks for a featured product from the spotlight pool.
+ * Prefer different categories; never repeat the featured product; fill gracefully.
+ */
+export function pickLookbookSupporting(
+  pool: CatalogProduct[],
+  featured: CatalogProduct,
+  limit = DEFAULT_SUPPORTING,
+): CatalogProduct[] {
+  const max = Math.max(0, Math.min(limit, DEFAULT_SUPPORTING));
+  if (max === 0 || pool.length === 0) return [];
+
+  const remaining = pool.filter((p) => p.id !== featured.id);
+  if (remaining.length === 0) return [];
+
+  const featuredCat = categoryKey(featured);
+  const out: CatalogProduct[] = [];
+  const used = new Set<string>();
+  const usedCats = new Set<string>(featuredCat ? [featuredCat] : []);
+
+  // Pass 1 — different category (keeps lookbook variety).
+  for (const product of remaining) {
+    if (out.length >= max) break;
+    const cat = categoryKey(product);
+    if (cat && usedCats.has(cat)) continue;
+    out.push(product);
+    used.add(product.id);
+    if (cat) usedCats.add(cat);
+  }
+
+  // Pass 2 — fill remaining slots without duplicates.
+  for (const product of remaining) {
+    if (out.length >= max) break;
+    if (used.has(product.id)) continue;
+    out.push(product);
+    used.add(product.id);
+  }
+
+  return out;
+}
+
+/**
+ * Build rotating lookbook compositions from the spotlight pool.
+ * Each slide promotes one featured product and 0–3 supporting looks.
+ */
+export function buildLookbookSlides(
+  products: CatalogProduct[],
+  supportingCount = DEFAULT_SUPPORTING,
+): LookbookSlide[] {
+  if (!products.length) return [];
+  return products.map((featured) => ({
+    featured,
+    supporting: pickLookbookSupporting(products, featured, supportingCount),
+  }));
+}
+
 /** First real catalog image per official category. Never invents imagery. */
 export function pickCategoryImages(products: CatalogProduct[]): Record<string, string> {
   const map: Record<string, string> = {};

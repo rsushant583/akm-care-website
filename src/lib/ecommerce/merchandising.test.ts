@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { CatalogProduct } from "@/lib/ecommerce/types";
 import {
+  buildLookbookSlides,
   hasUsableProductImage,
   isStorefrontVisibleProduct,
   pickCategoryRailProducts,
   pickLatestSpotlightProducts,
+  pickLookbookSupporting,
   pickNewestArrivals,
 } from "@/lib/ecommerce/merchandising";
 
@@ -151,6 +153,61 @@ describe("pickLatestSpotlightProducts", () => {
     expect(result).toHaveLength(2);
     expect(result[0].id).toBe("a");
     expect(result.map((p) => p.id)).not.toContain("b");
+  });
+});
+
+describe("buildLookbookSlides / pickLookbookSupporting", () => {
+  it("builds one slide per pool product with featured + supporting", () => {
+    const saree = makeProduct({ id: "s1", category: "sarees", categoryLabel: "Sarees" });
+    const gown = makeProduct({ id: "g1", category: "ladies-gown", categoryLabel: "Ladies Gown" });
+    const lehenga = makeProduct({
+      id: "l1",
+      category: "stitched-lehenga",
+      categoryLabel: "Stitched Lehenga",
+    });
+    const slides = buildLookbookSlides([saree, gown, lehenga], 3);
+    expect(slides).toHaveLength(3);
+    expect(slides[0].featured.id).toBe("s1");
+    expect(slides[0].supporting.map((p) => p.id)).toEqual(["g1", "l1"]);
+    expect(slides[0].supporting.map((p) => p.id)).not.toContain("s1");
+  });
+
+  it("prefers category diversity in supporting looks", () => {
+    const s1 = makeProduct({ id: "s1", category: "sarees", categoryLabel: "Sarees" });
+    const s2 = makeProduct({ id: "s2", category: "sarees", categoryLabel: "Sarees" });
+    const gown = makeProduct({ id: "g1", category: "ladies-gown", categoryLabel: "Ladies Gown" });
+    const lehenga = makeProduct({
+      id: "l1",
+      category: "stitched-lehenga",
+      categoryLabel: "Stitched Lehenga",
+    });
+
+    const supports = pickLookbookSupporting([s1, s2, gown, lehenga], s1, 3);
+    expect(supports.map((p) => p.id)).toEqual(["g1", "l1", "s2"]);
+    expect(new Set(supports.map((p) => p.category)).size).toBeGreaterThanOrEqual(2);
+  });
+
+  it("never duplicates the featured product", () => {
+    const a = makeProduct({ id: "a", category: "sarees" });
+    const b = makeProduct({ id: "b", category: "ladies-gown" });
+    const supports = pickLookbookSupporting([a, b], a, 3);
+    expect(supports.every((p) => p.id !== "a")).toBe(true);
+  });
+
+  it("falls back gracefully with fewer than 3 usable products", () => {
+    const only = makeProduct({ id: "only", category: "sarees" });
+    expect(buildLookbookSlides([only], 3)).toEqual([{ featured: only, supporting: [] }]);
+
+    const a = makeProduct({ id: "a", category: "sarees" });
+    const b = makeProduct({ id: "b", category: "ladies-gown" });
+    const slides = buildLookbookSlides([a, b], 3);
+    expect(slides[0].supporting).toHaveLength(1);
+    expect(slides[0].supporting[0].id).toBe("b");
+  });
+
+  it("returns empty slides for empty pool", () => {
+    expect(buildLookbookSlides([], 3)).toEqual([]);
+    expect(pickLookbookSupporting([], makeProduct({ id: "x" }), 3)).toEqual([]);
   });
 });
 

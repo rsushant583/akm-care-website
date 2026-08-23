@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useReducedMotion } from "framer-motion";
@@ -6,8 +6,12 @@ import { getCategoryLabel, shopCategoryPath, shopCollectionPath } from "@/data/c
 import type { CatalogProduct } from "@/lib/ecommerce/types";
 import { formatINR, getEffectivePrice } from "@/lib/ecommerce/pricing";
 import { productPath } from "@/lib/ecommerce/slug";
-import { getHeroDisplayTitle, getHeroFactualMeta } from "@/lib/ecommerce/productPresentation";
-import { getProductImgProps } from "@/lib/images/productImage";
+import { getHeroDisplayTitle } from "@/lib/ecommerce/productPresentation";
+import {
+  buildLookbookSlides,
+  type LookbookSlide,
+} from "@/lib/ecommerce/merchandising";
+import { getProductImgProps, type ProductImageRole } from "@/lib/images/productImage";
 import { trackHeroProductClick, trackHeroView } from "@/lib/analytics/events";
 import { cn } from "@/lib/utils";
 
@@ -18,25 +22,29 @@ function padSlide(n: number): string {
   return String(n).padStart(2, "0");
 }
 
-/**
- * Portrait editorial plate — fixed aspect, never stretch.
- * Cover + mid-body focal softens baked-in top QR/logo without distorting proportions.
- */
-function EditorialPlate({
+function collectionLabel(product: CatalogProduct): string {
+  return getCategoryLabel(product.category) || product.categoryLabel || "New In";
+}
+
+function LookbookPlate({
   product,
+  role,
   priority,
   preload,
+  className,
 }: {
   product: CatalogProduct;
+  role: ProductImageRole;
   priority?: boolean;
   preload?: boolean;
+  className?: string;
 }) {
   const src = product.images[0]?.src || product.image_url;
   const img = getProductImgProps({
     src,
     alt: product.images[0]?.alt,
     productName: getHeroDisplayTitle(product),
-    role: "hero",
+    role,
     priority: Boolean(priority),
   });
 
@@ -45,146 +53,211 @@ function EditorialPlate({
       {...img}
       loading={priority ? "eager" : "lazy"}
       fetchPriority={priority ? "high" : preload ? "low" : undefined}
-      className="absolute inset-0 h-full w-full object-cover object-[center_32%] select-none"
+      className={cn(
+        "absolute inset-0 h-full w-full object-cover object-[center_32%] select-none",
+        className,
+      )}
       alt={img.alt}
       draggable={false}
     />
   );
 }
 
-function ProductCopy({
+function ProductFrame({
   product,
-  index,
-  count,
-  onShop,
+  role,
+  priority,
+  preload,
+  onNavigate,
+  className,
+  "aria-label": ariaLabel,
 }: {
   product: CatalogProduct;
-  index: number;
-  count: number;
-  onShop: () => void;
+  role: ProductImageRole;
+  priority?: boolean;
+  preload?: boolean;
+  onNavigate?: () => void;
+  className?: string;
+  "aria-label"?: string;
 }) {
-  const href = productPath(product.slug);
-  const title = getHeroDisplayTitle(product);
-  const meta = getHeroFactualMeta(product);
-  const price = getEffectivePrice(product);
-  const catLabel = getCategoryLabel(product.category) || product.categoryLabel || "Collection";
-  const catHref = shopCategoryPath(product.category);
-  const context = product.isNewArrival ? "New arrival" : catLabel;
-
   return (
-    <div className="min-w-0 max-w-md">
-      <p className="text-[0.65rem] sm:text-[0.7rem] font-semibold uppercase tracking-[0.22em] mb-3">
-        <span className="text-[#1A1A1A]/50">AKM Care</span>
-        <span className="mx-2 text-[#1A1A1A]/25" aria-hidden>
-          ·
-        </span>
-        <span className="text-[#E8621A]">{context}</span>
-      </p>
-
-      <h2
-        className="font-heading text-[1.75rem] sm:text-[2rem] lg:text-[2.15rem] leading-[1.14] tracking-tight text-[#1A1A1A] line-clamp-2"
-        style={{ textWrap: "balance" }}
-      >
-        {title}
-      </h2>
-
-      {meta ? <p className="mt-2.5 text-sm text-[#6B6B6B] line-clamp-1">{meta}</p> : null}
-
-      {price > 0 ? (
-        <p className="mt-4 text-[1.125rem] font-semibold text-[#1A1A1A] tabular-nums">{formatINR(price)}</p>
-      ) : null}
-
-      <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-3">
-        <Link
-          to={href}
-          onClick={onShop}
-          className="inline-flex h-11 min-w-[9.5rem] items-center justify-center px-6 text-xs font-semibold tracking-[0.12em] uppercase bg-[#E8621A] text-white hover:brightness-105 transition-[filter] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40"
-        >
-          Shop now
-        </Link>
-        <Link
-          to={catHref}
-          className="text-xs font-medium text-[#6B6B6B] underline-offset-4 hover:text-[#E8621A] hover:underline"
-        >
-          View collection
-        </Link>
-      </div>
-
-      {count > 1 ? (
-        <p className="mt-6 text-[0.7rem] font-medium tracking-[0.2em] tabular-nums text-[#1A1A1A]/40" aria-hidden>
-          {padSlide(index + 1)} / {padSlide(count)}
-        </p>
-      ) : null}
-    </div>
+    <Link
+      to={productPath(product.slug)}
+      onClick={onNavigate}
+      aria-label={ariaLabel || getHeroDisplayTitle(product)}
+      className={cn(
+        "relative block overflow-hidden bg-[#EDE8E2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40 focus-visible:ring-offset-2",
+        className,
+      )}
+    >
+      <LookbookPlate product={product} role={role} priority={priority} preload={preload} />
+    </Link>
   );
 }
 
-function NavControls({ onPrev, onNext }: { onPrev: () => void; onNext: () => void }) {
-  return (
-    <div className="flex items-center gap-0.5">
-      <button
-        type="button"
-        className="h-11 w-11 inline-flex items-center justify-center text-[#1A1A1A]/45 hover:text-[#1A1A1A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40"
-        aria-label="Previous product"
-        onClick={onPrev}
-      >
-        <ChevronLeft className="h-5 w-5" strokeWidth={1.5} aria-hidden />
-      </button>
-      <button
-        type="button"
-        className="h-11 w-11 inline-flex items-center justify-center text-[#1A1A1A]/45 hover:text-[#1A1A1A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40"
-        aria-label="Next product"
-        onClick={onNext}
-      >
-        <ChevronRight className="h-5 w-5" strokeWidth={1.5} aria-hidden />
-      </button>
-    </div>
-  );
-}
-
-function SlideLayers({
-  products,
-  safeIndex,
-  nextProduct,
+function LookbookComposition({
+  slide,
+  slideIndex,
+  isActive,
   reduceMotion,
   priorityFirst,
 }: {
-  products: CatalogProduct[];
-  safeIndex: number;
-  nextProduct: CatalogProduct | null;
+  slide: LookbookSlide;
+  slideIndex: number;
+  isActive: boolean;
   reduceMotion: boolean | null;
   priorityFirst?: boolean;
 }) {
+  const { featured, supporting } = slide;
+  const catLabel = collectionLabel(featured);
+  const catHref = shopCategoryPath(featured.category);
+  const exploreHref = shopCollectionPath("new-arrivals");
+  const price = getEffectivePrice(featured);
+  const title = getHeroDisplayTitle(featured);
+  const showTitle = title.toLowerCase() !== catLabel.toLowerCase();
+
+  const onFeaturedClick = () => trackHeroProductClick(featured, slideIndex);
+  const onSupportClick = (product: CatalogProduct, i: number) =>
+    trackHeroProductClick(product, slideIndex * 10 + i + 1);
+
   return (
-    <>
-      {products.map((product, i) => {
-        const isCurrent = i === safeIndex;
-        const isNext = nextProduct?.id === product.id;
-        if (!isCurrent && !isNext) return null;
-        return (
-          <div
-            key={product.id}
-            className={cn(
-              "absolute inset-0",
-              isCurrent ? "z-[1] opacity-100" : "z-0 opacity-0 pointer-events-none",
-              !reduceMotion && "motion-safe:transition-opacity",
-            )}
-            style={!reduceMotion ? { transitionDuration: `${TRANSITION_MS}ms` } : undefined}
-            aria-hidden={!isCurrent}
+    <div
+      className={cn(
+        "flex flex-col w-full",
+        // Active slide stays in flow (defines height); inactive overlay for soft crossfade.
+        isActive
+          ? "relative z-[1] opacity-100"
+          : "absolute inset-0 z-0 opacity-0 pointer-events-none",
+        !reduceMotion && "motion-safe:transition-opacity",
+      )}
+      style={!reduceMotion ? { transitionDuration: `${TRANSITION_MS}ms` } : undefined}
+      aria-hidden={!isActive}
+    >
+      {/* Desktop lookbook */}
+      <div className="hidden lg:flex lg:flex-col lg:h-full lg:min-h-0">
+        <div className="flex flex-1 items-center gap-6 xl:gap-10 min-h-0">
+          <ProductFrame
+            product={featured}
+            role="hero"
+            priority={Boolean(priorityFirst && isActive)}
+            onNavigate={onFeaturedClick}
+            className="aspect-[3/4] w-[min(52%,36rem)] shrink-0"
+            aria-label={`Shop ${title}`}
+          />
+
+          <Link
+            to={exploreHref}
+            className="shrink-0 self-center text-[0.7rem] font-semibold uppercase tracking-[0.35em] text-[#1A1A1A]/45 hover:text-[#E8621A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40"
           >
-            <EditorialPlate
-              product={product}
-              priority={Boolean(priorityFirst && isCurrent)}
-              preload={isNext && !isCurrent}
-            />
+            Explore
+          </Link>
+
+          {supporting.length > 0 ? (
+            <div className="flex items-stretch gap-3 xl:gap-4 min-w-0">
+              {supporting.map((product, i) => (
+                <ProductFrame
+                  key={product.id}
+                  product={product}
+                  role="lookbookSupport"
+                  preload={isActive && i === 0}
+                  onNavigate={() => onSupportClick(product, i)}
+                  className="aspect-[3/4] w-36 xl:w-44 2xl:w-48 shrink-0"
+                  aria-label={`Shop ${getHeroDisplayTitle(product)}`}
+                />
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="mt-6 flex items-end justify-between gap-6">
+          <div className="min-w-0">
+            <Link
+              to={catHref}
+              className="text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-[#1A1A1A] hover:text-[#E8621A] transition-colors"
+            >
+              {catLabel}
+            </Link>
+            {showTitle ? (
+              <p className="mt-1.5 text-sm text-[#6B6B6B] line-clamp-1 max-w-md">{title}</p>
+            ) : null}
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+              {price > 0 ? (
+                <span className="text-sm font-semibold tabular-nums text-[#1A1A1A]">{formatINR(price)}</span>
+              ) : null}
+              <Link
+                to={productPath(featured.slug)}
+                onClick={onFeaturedClick}
+                className="text-xs font-semibold uppercase tracking-[0.14em] text-[#E8621A] hover:underline underline-offset-4"
+              >
+                Shop now
+              </Link>
+            </div>
           </div>
-        );
-      })}
-    </>
+        </div>
+      </div>
+
+      {/* Mobile lookbook — image first, then support strip, then restrained copy */}
+      <div className="lg:hidden flex flex-col h-full">
+        <ProductFrame
+          product={featured}
+          role="hero"
+          priority={Boolean(priorityFirst && isActive)}
+          onNavigate={onFeaturedClick}
+          className="aspect-[3/4] w-full"
+          aria-label={`Shop ${title}`}
+        />
+
+        {supporting.length > 0 ? (
+          <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-2.5">
+            {supporting.slice(0, 3).map((product, i) => (
+              <ProductFrame
+                key={product.id}
+                product={product}
+                role="lookbookSupport"
+                preload={isActive && i === 0}
+                onNavigate={() => onSupportClick(product, i)}
+                className="aspect-[3/4] w-full"
+                aria-label={`Shop ${getHeroDisplayTitle(product)}`}
+              />
+            ))}
+          </div>
+        ) : null}
+
+        <div className="mt-4 px-0.5" aria-live={isActive ? "polite" : undefined}>
+          <Link
+            to={catHref}
+            className="text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-[#1A1A1A]"
+          >
+            {catLabel}
+          </Link>
+          {showTitle ? (
+            <p className="mt-1.5 text-[0.95rem] text-[#1A1A1A] line-clamp-2 leading-snug">{title}</p>
+          ) : null}
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+            {price > 0 ? (
+              <span className="text-sm font-semibold tabular-nums text-[#1A1A1A]">{formatINR(price)}</span>
+            ) : null}
+            <Link
+              to={productPath(featured.slug)}
+              onClick={onFeaturedClick}
+              className="text-xs font-semibold uppercase tracking-[0.14em] text-[#E8621A]"
+            >
+              Shop now
+            </Link>
+            <Link
+              to={exploreHref}
+              className="text-xs font-medium uppercase tracking-[0.18em] text-[#1A1A1A]/40"
+            >
+              Explore
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
-function ProductSpotlight({ products }: { products: CatalogProduct[] }) {
+function LookbookSpotlight({ products }: { products: CatalogProduct[] }) {
   const reduceMotion = useReducedMotion();
   const labelId = useId();
   const [index, setIndex] = useState(0);
@@ -192,10 +265,10 @@ function ProductSpotlight({ products }: { products: CatalogProduct[] }) {
   const viewedRef = useRef(false);
   const regionRef = useRef<HTMLDivElement>(null);
 
-  const count = products.length;
+  const slides = useMemo(() => buildLookbookSlides(products, 3), [products]);
+  const count = slides.length;
   const safeIndex = count > 0 ? index % count : 0;
-  const current = count > 0 ? products[safeIndex] : null;
-  const nextProduct = count > 1 ? products[(safeIndex + 1) % count] : null;
+  const current = count > 0 ? slides[safeIndex] : null;
 
   useEffect(() => {
     if (viewedRef.current || products.length === 0) return;
@@ -244,8 +317,11 @@ function ProductSpotlight({ products }: { products: CatalogProduct[] }) {
     return <div className="aspect-[3/4] max-w-md bg-[#EDE8E2]" aria-hidden />;
   }
 
-  const onProductNav = () => trackHeroProductClick(current, safeIndex);
-  const announceTitle = getHeroDisplayTitle(current);
+  // Only mount active + adjacent compositions to limit image downloads.
+  const visibleIndexes = new Set<number>([safeIndex]);
+  if (count > 1) {
+    visibleIndexes.add((safeIndex + 1) % count);
+  }
 
   return (
     <div
@@ -265,50 +341,75 @@ function ProductSpotlight({ products }: { products: CatalogProduct[] }) {
       }}
     >
       <p id={labelId} className="sr-only">
-        Latest fashion products
+        Latest fashion lookbook
       </p>
 
-      {/*
-        Single image plate + copy column.
-        Mobile stacks image → copy; desktop uses asymmetric 1.2fr / 0.85fr split.
-        One SlideLayers tree avoids duplicate hero downloads.
-      */}
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.85fr)] gap-5 sm:gap-6 lg:gap-8 xl:gap-12 lg:items-center">
-        <div className="relative w-full max-w-[40rem] justify-self-stretch mx-auto lg:mx-0">
-          <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#EDE8E2] ring-1 ring-black/[0.05] shadow-[0_1px_0_rgba(0,0,0,0.03)]">
-            <SlideLayers
-              products={products}
-              safeIndex={safeIndex}
-              nextProduct={nextProduct}
+      <div className="relative">
+        {slides.map((slide, i) => {
+          if (!visibleIndexes.has(i)) return null;
+          return (
+            <LookbookComposition
+              key={slide.featured.id}
+              slide={slide}
+              slideIndex={i}
+              isActive={i === safeIndex}
               reduceMotion={reduceMotion}
-              priorityFirst
+              priorityFirst={i === safeIndex}
             />
-          </div>
-        </div>
-
-        <div
-          className="flex items-start justify-between gap-3 min-w-0 px-1 sm:px-2 lg:px-0 lg:py-4 lg:flex-col lg:justify-center"
-          aria-live="polite"
-        >
-          <ProductCopy product={current} index={safeIndex} count={count} onShop={onProductNav} />
-          {count > 1 ? (
-            <div className="shrink-0 lg:mt-2 lg:-ml-2">
-              <NavControls onPrev={() => go(-1)} onNext={() => go(1)} />
-            </div>
-          ) : null}
-        </div>
+          );
+        })}
       </div>
 
-      <span className="sr-only">
-        Slide {safeIndex + 1} of {count}: {announceTitle}
-      </span>
+      {count > 1 ? (
+        <div className="mt-5 flex items-center justify-between gap-3">
+          <p className="text-[0.7rem] font-medium tracking-[0.2em] tabular-nums text-[#1A1A1A]/40">
+            <span className="sr-only">
+              Slide {safeIndex + 1} of {count}: {getHeroDisplayTitle(current.featured)}
+            </span>
+            <span aria-hidden>
+              {padSlide(safeIndex + 1)} / {padSlide(count)}
+            </span>
+          </p>
+
+          <div className="flex items-center gap-1.5" aria-hidden>
+            {slides.map((s, i) => (
+              <span
+                key={s.featured.id}
+                className={cn(
+                  "h-1.5 w-1.5 rounded-full transition-colors",
+                  i === safeIndex ? "bg-[#E8621A]" : "bg-[#1A1A1A]/20",
+                )}
+              />
+            ))}
+          </div>
+
+          <div className="flex items-center">
+            <button
+              type="button"
+              className="h-11 w-11 inline-flex items-center justify-center text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40"
+              aria-label="Previous look"
+              onClick={() => go(-1)}
+            >
+              <ChevronLeft className="h-5 w-5" strokeWidth={1.5} aria-hidden />
+            </button>
+            <button
+              type="button"
+              className="h-11 w-11 inline-flex items-center justify-center text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40"
+              aria-label="Next look"
+              onClick={() => go(1)}
+            >
+              <ChevronRight className="h-5 w-5" strokeWidth={1.5} aria-hidden />
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
 
 /**
- * Concept A — premium editorial split hero.
- * Cream typography column + framed portrait plate. No dark overlay / category chips.
+ * Editorial lookbook hero — featured product + supporting looks + minimal labels.
+ * Inspired by fashion lookbook composition; original AKM Care implementation.
  */
 export default function Hero({
   products,
@@ -320,40 +421,32 @@ export default function Hero({
   const spotlight = products && products.length > 0 ? products : [];
 
   return (
-    <section className="relative overflow-hidden bg-[#FAF8F5]">
-      <div className="container-premium relative z-10 py-5 sm:py-6 lg:py-8 xl:py-10">
+    <section className="relative overflow-hidden bg-white">
+      <div className="container-premium relative z-10 py-6 sm:py-8 lg:py-10 xl:py-12">
         <h1 className="sr-only">AKM Care</h1>
 
         {spotlight.length > 0 ? (
-          <ProductSpotlight products={spotlight} />
+          <LookbookSpotlight products={spotlight} />
         ) : loading ? (
-          <div className="grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.85fr)] gap-8 xl:gap-12 items-center">
-            <div className="aspect-[3/4] w-full max-w-[40rem] bg-[#EDE8E2] animate-pulse" aria-hidden />
-            <div className="hidden lg:block space-y-3" aria-hidden>
-              <div className="h-3 w-40 bg-[#EDE8E2] animate-pulse" />
-              <div className="h-8 w-72 bg-[#EDE8E2] animate-pulse" />
-              <div className="h-4 w-48 bg-[#EDE8E2] animate-pulse" />
-              <div className="h-11 w-36 bg-[#EDE8E2] animate-pulse mt-4" />
+          <div className="space-y-4" aria-hidden>
+            <div className="flex gap-6 items-center">
+              <div className="aspect-[3/4] w-[min(52%,36rem)] bg-[#EDE8E2] animate-pulse" />
+              <div className="hidden lg:flex gap-3 flex-1">
+                <div className="aspect-[3/4] w-40 bg-[#EDE8E2] animate-pulse" />
+                <div className="aspect-[3/4] w-40 bg-[#EDE8E2] animate-pulse" />
+                <div className="aspect-[3/4] w-40 bg-[#EDE8E2] animate-pulse" />
+              </div>
             </div>
           </div>
         ) : (
-          <div className="grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.85fr)] gap-8 items-center">
-            <div className="aspect-[3/4] max-w-[40rem] bg-[#EDE8E2]" aria-hidden />
-            <div>
-              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-[#E8621A] mb-3">
-                AKM Care
-              </p>
-              <p className="font-heading text-2xl lg:text-[2.15rem] text-[#1A1A1A]">Shop the collection</p>
-              <Link to="/shop" className="btn-primary mt-5 inline-flex h-11">
-                Shop now
-              </Link>
-              <Link
-                to={shopCollectionPath("new-arrivals")}
-                className="ml-4 text-xs font-medium text-[#6B6B6B] underline-offset-4 hover:underline"
-              >
-                View collection
-              </Link>
-            </div>
+          <div className="py-8">
+            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-[#E8621A] mb-3">
+              New in
+            </p>
+            <p className="font-heading text-2xl text-[#1A1A1A]">Shop the collection</p>
+            <Link to="/shop" className="btn-primary mt-5 inline-flex h-11">
+              Explore
+            </Link>
           </div>
         )}
       </div>
