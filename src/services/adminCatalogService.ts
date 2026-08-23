@@ -1,5 +1,6 @@
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { adminUploadFile } from "@/services/adminDashboardService";
+import { applyAdminClientFilters } from "@/lib/admin/adminProductListFilters";
 
 export type AdminProduct = {
   id: string;
@@ -94,12 +95,27 @@ export type ListAdminProductsOpts = {
   q?: string;
   status?: string;
   category?: string;
-  /** low_stock | out_of_stock | missing_image | missing_category */
-  stock?: "low_stock" | "out_of_stock" | "missing_image" | "missing_category" | "all";
+  /** Inventory facet only */
+  stock?: "low_stock" | "out_of_stock" | "all";
+  /** Optional quality facet (independent of stock) */
+  quality?: "missing_image" | "missing_category" | "";
+  /**
+   * @deprecated Legacy: missing_image / missing_category used to live under stock.
+   * Still accepted for backward compatibility with old dashboard deep-links.
+   */
+  stockOrLegacyQuality?: string;
   sort?: "newest" | "oldest" | "name_asc" | "name_desc";
   lowStockThreshold?: number;
   limit?: number;
 };
+
+export async function adminCatalogHasProducts(): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+  const { count, error } = await client.from("products").select("id", { count: "exact", head: true });
+  if (error) throw error;
+  return (count ?? 0) > 0;
+}
 
 export async function listAdminProducts(opts?: ListAdminProductsOpts) {
   const client = getSupabaseClient();
@@ -120,31 +136,36 @@ export async function listAdminProducts(opts?: ListAdminProductsOpts) {
   if (opts?.category?.trim()) q = q.eq("category", opts.category.trim());
 
   if (opts?.q?.trim()) {
-    const s = opts.q.trim();
-    q = q.or(`name.ilike.%${s}%,sku.ilike.%${s}%,slug.ilike.%${s}%`);
+    const s = opts.q.trim().replace(/,/g, " ");
+    q = q.or(
+      [
+        `name.ilike.%${s}%`,
+        `sku.ilike.%${s}%`,
+        `slug.ilike.%${s}%`,
+        `product_code.ilike.%${s}%`,
+      ].join(","),
+    );
   }
 
   const { data, error } = await q;
   if (error) throw error;
   let rows = (data || []) as AdminProduct[];
 
-  const low = opts?.lowStockThreshold ?? 5;
-  const stockFilter = opts?.stock;
-  if (stockFilter === "out_of_stock") {
-    rows = rows.filter((p) => Number(p.stock_quantity ?? 0) <= 0);
-  } else if (stockFilter === "low_stock") {
-    rows = rows.filter((p) => {
-      const n = Number(p.stock_quantity ?? 0);
-      return n > 0 && n <= low;
-    });
-  } else if (stockFilter === "missing_image") {
-    rows = rows.filter((p) => {
-      const imgs = Array.isArray(p.images) ? (p.images as string[]) : [];
-      return !String(p.image_url || "").trim() && !imgs.some((u) => String(u || "").trim());
-    });
-  } else if (stockFilter === "missing_category") {
-    rows = rows.filter((p) => !String(p.category || "").trim());
+  // Resolve legacy ?stock=missing_* deep-links from older dashboards.
+  let stock = opts?.stock || "all";
+  let quality = opts?.quality || "";
+  const legacy = opts?.stockOrLegacyQuality;
+  if (legacy === "missing_image" || legacy === "missing_category") {
+    quality = legacy;
+  } else if (legacy === "low_stock" || legacy === "out_of_stock") {
+    stock = legacy;
   }
+
+  rows = applyAdminClientFilters(rows, {
+    stock: stock === "low_stock" || stock === "out_of_stock" ? stock : "all",
+    quality: quality === "missing_image" || quality === "missing_category" ? quality : "",
+    lowStockThreshold: opts?.lowStockThreshold ?? 5,
+  });
 
   return rows;
 }

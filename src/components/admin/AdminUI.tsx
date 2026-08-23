@@ -85,8 +85,29 @@ export function AdminPageHeader({
   );
 }
 
-export function AdminEmpty({ message }: { message: string }) {
-  return <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">{message}</div>;
+export function AdminEmpty({
+  message,
+  actionLabel,
+  onAction,
+}: {
+  message: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500 space-y-4">
+      <p>{message}</p>
+      {actionLabel && onAction ? (
+        <button
+          type="button"
+          onClick={onAction}
+          className="inline-flex items-center rounded-xl border bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:border-slate-400"
+        >
+          {actionLabel}
+        </button>
+      ) : null}
+    </div>
+  );
 }
 
 export function Chip({ active, children, onClick }: { active?: boolean; children: React.ReactNode; onClick?: () => void }) {

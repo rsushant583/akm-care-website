@@ -1,20 +1,31 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Copy, Archive, Pencil, Plus, Search, Star, TrendingUp, Trash2, Award } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { AdminEmpty, AdminPageHeader, Chip } from "@/components/admin/AdminUI";
 import { OFFICIAL_BROWSABLE_CATEGORIES } from "@/data/catalog/categories";
 import {
+  adminCatalogHasProducts,
   archiveProduct,
   deleteProduct,
   duplicateProduct,
   listAdminProducts,
   updateProduct,
   type AdminProduct,
-  type ListAdminProductsOpts,
 } from "@/services/adminCatalogService";
 import { formatINR } from "@/lib/ecommerce/pricing";
 import { loadCatalogSettings } from "@/lib/admin/catalogSettings";
+import {
+  adminProductEmptyCopy,
+  adminProductFiltersActive,
+  adminProductFiltersToSearchParams,
+  classifyAdminProductEmptyState,
+  parseAdminProductFilters,
+  type AdminProductListFilters,
+  type AdminProductQualityFilter,
+  type AdminProductStockFilter,
+  type AdminProductStatusFilter,
+} from "@/lib/admin/adminProductListFilters";
 
 function errMessage(e: unknown, fallback: string) {
   return e instanceof Error ? e.message : fallback;
@@ -22,92 +33,105 @@ function errMessage(e: unknown, fallback: string) {
 
 export default function AdminProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const filters = parseAdminProductFilters(searchParams);
+  const [qInput, setQInput] = useState(filters.q);
   const [items, setItems] = useState<AdminProduct[]>([]);
-  const [qInput, setQInput] = useState(searchParams.get("q") || "");
   const [lowStockThreshold, setLowStockThreshold] = useState(5);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [catalogHasProducts, setCatalogHasProducts] = useState<boolean | null>(null);
+  const requestIdRef = useRef(0);
 
-  const q = searchParams.get("q") || "";
-  const status = searchParams.get("status") || "all";
-  const category = searchParams.get("category") || "";
-  const stock = searchParams.get("stock") || "all";
-  const sort = searchParams.get("sort") || "newest";
+  const setFilters = useCallback(
+    (patch: Partial<AdminProductListFilters>) => {
+      const next: AdminProductListFilters = { ...filters, ...patch };
+      setSearchParams(adminProductFiltersToSearchParams(next), { replace: true });
+    },
+    [filters, setSearchParams],
+  );
 
-  const patchParams = (patch: Record<string, string | undefined>) => {
-    const next = new URLSearchParams(searchParams);
-    for (const [key, value] of Object.entries(patch)) {
-      if (!value || value === "all" || (key === "sort" && value === "newest") || (key === "q" && !value.trim())) {
-        next.delete(key);
-      } else {
-        next.set(key, value);
-      }
-    }
-    setSearchParams(next, { replace: true });
-  };
+  const clearFilters = useCallback(() => {
+    setQInput("");
+    setSearchParams(new URLSearchParams(), { replace: true });
+  }, [setSearchParams]);
 
   useEffect(() => {
     void loadCatalogSettings().then((s) => setLowStockThreshold(s.low_stock_threshold));
+    void adminCatalogHasProducts()
+      .then(setCatalogHasProducts)
+      .catch(() => setCatalogHasProducts(null));
   }, []);
 
   useEffect(() => {
-    setQInput(q);
-  }, [q]);
+    setQInput(filters.q);
+  }, [filters.q]);
+
+  const fetchProducts = useCallback(
+    async (active: AdminProductListFilters, threshold: number) => {
+      const requestId = ++requestIdRef.current;
+      setLoading(true);
+      setError(null);
+      try {
+        const rows = await listAdminProducts({
+          q: active.q || undefined,
+          status: active.status,
+          category: active.category || undefined,
+          stock: active.stock,
+          quality: active.quality,
+          sort: active.sort,
+          lowStockThreshold: threshold,
+        });
+        if (requestId !== requestIdRef.current) return;
+        setItems(rows);
+        if (rows.length > 0) setCatalogHasProducts(true);
+      } catch (e: unknown) {
+        if (requestId !== requestIdRef.current) return;
+        const msg = errMessage(e, "Failed to load products");
+        setError(msg);
+        toast.error(msg);
+      } finally {
+        if (requestId === requestIdRef.current) setLoading(false);
+      }
+    },
+    [],
+  );
+
+  const filterKey = [
+    filters.q,
+    filters.status,
+    filters.category,
+    filters.stock,
+    filters.quality,
+    filters.sort,
+    String(lowStockThreshold),
+  ].join("|");
 
   useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    void listAdminProducts({
-      q,
-      status,
-      category: category || undefined,
-      stock: stock === "all" ? undefined : (stock as ListAdminProductsOpts["stock"]),
-      sort: sort as ListAdminProductsOpts["sort"],
-      lowStockThreshold,
-    })
-      .then((rows) => {
-        if (!cancelled) setItems(rows);
-      })
-      .catch((e: unknown) => {
-        if (!cancelled) toast.error(errMessage(e, "Failed to load products"));
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [q, status, category, stock, sort, lowStockThreshold]);
+    void fetchProducts(parseAdminProductFilters(searchParams), lowStockThreshold);
+    // filterKey encodes all list-query inputs; searchParams read inside for current values.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterKey, fetchProducts]);
 
   useEffect(() => {
     const t = window.setTimeout(() => {
-      if (qInput !== q) patchParams({ q: qInput.trim() || undefined });
+      if (qInput.trim() !== filters.q) {
+        setFilters({ q: qInput.trim() });
+      }
     }, 350);
     return () => window.clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [qInput]);
+  }, [qInput, filters.q, setFilters]);
 
-  const load = () => {
-    // Force reload with current URL filters
-    patchParams({
-      q: q || undefined,
-      status: status === "all" ? undefined : status,
-      category: category || undefined,
-      stock: stock === "all" ? undefined : stock,
-      sort: sort === "newest" ? undefined : sort,
-    });
-    void listAdminProducts({
-      q,
-      status,
-      category: category || undefined,
-      stock: stock === "all" ? undefined : (stock as ListAdminProductsOpts["stock"]),
-      sort: sort as ListAdminProductsOpts["sort"],
-      lowStockThreshold,
-    })
-      .then(setItems)
-      .catch((e: unknown) => toast.error(errMessage(e, "Failed to load products")));
-  };
+  const reload = () => void fetchProducts(filters, lowStockThreshold);
 
-  const filtered = useMemo(() => items, [items]);
+  const emptyKind = classifyAdminProductEmptyState({
+    loading,
+    error,
+    resultCount: items.length,
+    catalogHasProducts,
+    filters,
+  });
+  const empty = emptyKind ? adminProductEmptyCopy(emptyKind) : null;
+  const filtersActive = adminProductFiltersActive(filters);
 
   return (
     <div>
@@ -116,19 +140,34 @@ export default function AdminProductsPage() {
         subtitle="Search, filter, draft, publish, and merchandise catalog products."
         actions={
           <div className="flex flex-wrap gap-2">
-            <Link to="/admin/products?status=draft" className="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-2.5 text-sm font-semibold">
+            <Link
+              to="/admin/products?status=draft"
+              className="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-2.5 text-sm font-semibold"
+            >
               Drafts
             </Link>
-            <Link to="/admin/products?stock=low_stock" className="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-2.5 text-sm font-semibold">
+            <Link
+              to="/admin/products?stock=low_stock"
+              className="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-2.5 text-sm font-semibold"
+            >
               Low stock
             </Link>
-            <Link to="/admin/catalog-quality" className="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-2.5 text-sm font-semibold">
+            <Link
+              to="/admin/catalog-quality"
+              className="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-2.5 text-sm font-semibold"
+            >
               Data quality
             </Link>
-            <Link to="/admin/catalog-import" className="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-2.5 text-sm font-semibold">
+            <Link
+              to="/admin/catalog-import"
+              className="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-2.5 text-sm font-semibold"
+            >
               Bulk import
             </Link>
-            <Link to="/admin/products/new" className="inline-flex items-center gap-2 rounded-xl bg-orange-500 text-white px-4 py-2.5 text-sm font-semibold">
+            <Link
+              to="/admin/products/new"
+              className="inline-flex items-center gap-2 rounded-xl bg-orange-500 text-white px-4 py-2.5 text-sm font-semibold"
+            >
               <Plus size={16} /> Add Product
             </Link>
           </div>
@@ -137,53 +176,84 @@ export default function AdminProductsPage() {
 
       <div className="flex flex-wrap gap-2 mb-3">
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} aria-hidden />
           <input
             className="w-full rounded-xl border bg-white pl-9 pr-3 py-2.5 text-sm"
-            placeholder="Search name, SKU, slug…"
+            placeholder="Search name, SKU, slug, code…"
             value={qInput}
             onChange={(e) => setQInput(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") patchParams({ q: qInput.trim() || undefined });
+              if (e.key === "Enter") setFilters({ q: qInput.trim() });
             }}
+            aria-label="Search products"
           />
         </div>
         <select
           className="rounded-xl border bg-white px-3 py-2.5 text-sm"
-          value={category}
-          onChange={(e) => patchParams({ category: e.target.value || undefined })}
+          value={filters.category}
+          onChange={(e) => setFilters({ category: e.target.value })}
+          aria-label="Category"
         >
           <option value="">All categories</option>
           {OFFICIAL_BROWSABLE_CATEGORIES.map((c) => (
-            <option key={c.id} value={c.id}>{c.label}</option>
+            <option key={c.id} value={c.id}>
+              {c.label}
+            </option>
           ))}
         </select>
         <select
           className="rounded-xl border bg-white px-3 py-2.5 text-sm"
-          value={sort}
-          onChange={(e) => patchParams({ sort: e.target.value })}
+          value={filters.sort}
+          onChange={(e) => setFilters({ sort: e.target.value as AdminProductListFilters["sort"] })}
+          aria-label="Sort"
         >
           <option value="newest">Newest</option>
           <option value="oldest">Oldest</option>
           <option value="name_asc">Name A–Z</option>
           <option value="name_desc">Name Z–A</option>
         </select>
+        {filtersActive ? (
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="rounded-xl border bg-white px-4 py-2.5 text-sm font-semibold"
+          >
+            Clear filters
+          </button>
+        ) : null}
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-4">
-        {["all", "available", "sold_out", "draft", "archived"].map((s) => (
-          <Chip key={s} active={status === s} onClick={() => patchParams({ status: s })}>
+      <div className="flex flex-wrap gap-2 mb-2" role="group" aria-label="Status">
+        {(["all", "available", "sold_out", "draft", "archived"] as AdminProductStatusFilter[]).map((s) => (
+          <Chip key={s} active={filters.status === s} onClick={() => setFilters({ status: s })}>
             {s.replace("_", " ")}
           </Chip>
         ))}
-        {[
-          ["all", "Any stock"],
-          ["low_stock", "Low stock"],
-          ["out_of_stock", "Out of stock"],
-          ["missing_image", "Missing image"],
-          ["missing_category", "Missing category"],
-        ].map(([id, label]) => (
-          <Chip key={id} active={stock === id} onClick={() => patchParams({ stock: id })}>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-2" role="group" aria-label="Stock">
+        {(
+          [
+            ["all", "Any stock"],
+            ["low_stock", "Low stock"],
+            ["out_of_stock", "Out of stock"],
+          ] as Array<[AdminProductStockFilter, string]>
+        ).map(([id, label]) => (
+          <Chip key={id} active={filters.stock === id} onClick={() => setFilters({ stock: id })}>
+            {label}
+          </Chip>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-4" role="group" aria-label="Quality">
+        {(
+          [
+            ["", "Any quality"],
+            ["missing_image", "Missing image"],
+            ["missing_category", "Missing category"],
+          ] as Array<[AdminProductQualityFilter, string]>
+        ).map(([id, label]) => (
+          <Chip key={id || "any_quality"} active={filters.quality === id} onClick={() => setFilters({ quality: id })}>
             {label}
           </Chip>
         ))}
@@ -191,8 +261,26 @@ export default function AdminProductsPage() {
 
       {loading ? (
         <p className="text-sm text-slate-500">Loading products…</p>
-      ) : !filtered.length ? (
-        <AdminEmpty message="No products found. Add your first product." />
+      ) : empty ? (
+        <AdminEmpty
+          message={empty.message}
+          actionLabel={
+            empty.actionLabel === "clear_filters"
+              ? "Clear filters"
+              : empty.actionLabel === "clear_search"
+                ? "Clear search"
+                : empty.actionLabel === "retry"
+                  ? "Retry"
+                  : undefined
+          }
+          onAction={
+            empty.actionLabel === "clear_filters" || empty.actionLabel === "clear_search"
+              ? clearFilters
+              : empty.actionLabel === "retry"
+                ? reload
+                : undefined
+          }
+        />
       ) : (
         <div className="rounded-2xl border bg-white overflow-hidden">
           <div className="overflow-x-auto">
@@ -209,7 +297,7 @@ export default function AdminProductsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((p) => (
+                {items.map((p) => (
                   <tr key={p.id} className="border-t">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
@@ -218,14 +306,22 @@ export default function AdminProductsPage() {
                         </div>
                         <div>
                           <p className="font-semibold">{p.name}</p>
-                          <p className="text-xs text-slate-500">{p.sku || p.slug}</p>
+                          <p className="text-xs text-slate-500">{p.sku || p.product_code || p.slug}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-xs">{p.category_label || p.category || "—"}</td>
                     <td className="px-4 py-3">{formatINR(Number(p.akm_care_price ?? p.price ?? 0))}</td>
                     <td className="px-4 py-3">
-                      <span className={Number(p.stock_quantity) <= 0 ? "text-red-600 font-semibold" : Number(p.stock_quantity) <= lowStockThreshold ? "text-amber-700 font-semibold" : ""}>
+                      <span
+                        className={
+                          Number(p.stock_quantity) <= 0
+                            ? "text-red-600 font-semibold"
+                            : Number(p.stock_quantity) <= lowStockThreshold
+                              ? "text-amber-700 font-semibold"
+                              : ""
+                        }
+                      >
                         {p.stock_quantity}
                       </span>
                     </td>
@@ -250,7 +346,7 @@ export default function AdminProductsPage() {
                           onClick={async () => {
                             await updateProduct(p.id, { is_featured: !p.is_featured });
                             toast.success(p.is_featured ? "Unfeatured" : "Featured");
-                            void load();
+                            reload();
                           }}
                         >
                           <Star size={14} />
@@ -262,7 +358,7 @@ export default function AdminProductsPage() {
                           onClick={async () => {
                             await updateProduct(p.id, { is_trending: !p.is_trending });
                             toast.success("Updated trending");
-                            void load();
+                            reload();
                           }}
                         >
                           <TrendingUp size={14} />
@@ -274,7 +370,7 @@ export default function AdminProductsPage() {
                           onClick={async () => {
                             await updateProduct(p.id, { is_best_seller: !p.is_best_seller });
                             toast.success("Updated best seller");
-                            void load();
+                            reload();
                           }}
                         >
                           <Award size={14} />
@@ -286,7 +382,7 @@ export default function AdminProductsPage() {
                           onClick={async () => {
                             await duplicateProduct(p.id);
                             toast.success("Duplicated");
-                            void load();
+                            reload();
                           }}
                         >
                           <Copy size={14} />
@@ -298,7 +394,7 @@ export default function AdminProductsPage() {
                           onClick={async () => {
                             await archiveProduct(p.id);
                             toast.success("Archived");
-                            void load();
+                            reload();
                           }}
                         >
                           <Archive size={14} />
@@ -311,7 +407,7 @@ export default function AdminProductsPage() {
                             if (!confirm("Delete this product permanently?")) return;
                             await deleteProduct(p.id);
                             toast.success("Deleted");
-                            void load();
+                            reload();
                           }}
                         >
                           <Trash2 size={14} />
@@ -323,6 +419,10 @@ export default function AdminProductsPage() {
               </tbody>
             </table>
           </div>
+          <p className="px-4 py-2 text-xs text-slate-500 border-t bg-slate-50/80">
+            Showing {items.length} product{items.length === 1 ? "" : "s"}
+            {filtersActive ? " (filtered)" : ""}
+          </p>
         </div>
       )}
     </div>
