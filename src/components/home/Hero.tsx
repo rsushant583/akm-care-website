@@ -6,7 +6,7 @@ import { getCategoryLabel, shopCategoryPath, shopCollectionPath } from "@/data/c
 import type { CatalogProduct } from "@/lib/ecommerce/types";
 import { formatINR, getEffectivePrice } from "@/lib/ecommerce/pricing";
 import { productPath } from "@/lib/ecommerce/slug";
-import { getProductCardMeta, getProductDisplayTitle } from "@/lib/ecommerce/productPresentation";
+import { getHeroDisplayTitle, getHeroFactualMeta } from "@/lib/ecommerce/productPresentation";
 import { getProductImgProps } from "@/lib/images/productImage";
 import { trackHeroProductClick, trackHeroView } from "@/lib/analytics/events";
 import { cn } from "@/lib/utils";
@@ -18,22 +18,24 @@ function padSlide(n: number): string {
   return String(n).padStart(2, "0");
 }
 
-function SpotlightMedia({
+/**
+ * Portrait editorial plate — fixed aspect, never stretch.
+ * Cover + mid-body focal softens baked-in top QR/logo without distorting proportions.
+ */
+function EditorialPlate({
   product,
   priority,
   preload,
-  className,
 }: {
   product: CatalogProduct;
   priority?: boolean;
   preload?: boolean;
-  className?: string;
 }) {
   const src = product.images[0]?.src || product.image_url;
   const img = getProductImgProps({
     src,
     alt: product.images[0]?.alt,
-    productName: product.name,
+    productName: getHeroDisplayTitle(product),
     role: "hero",
     priority: Boolean(priority),
   });
@@ -43,12 +45,9 @@ function SpotlightMedia({
       {...img}
       loading={priority ? "eager" : "lazy"}
       fetchPriority={priority ? "high" : preload ? "low" : undefined}
-      className={cn(
-        // Hero-only focal crop — avoids global .product-photo QR bias on cards
-        "absolute inset-0 h-full w-full object-cover object-[center_30%]",
-        className,
-      )}
+      className="absolute inset-0 h-full w-full object-cover object-[center_32%] select-none"
       alt={img.alt}
+      draggable={false}
     />
   );
 }
@@ -58,92 +57,61 @@ function ProductCopy({
   index,
   count,
   onShop,
-  tone = "light",
 }: {
   product: CatalogProduct;
   index: number;
   count: number;
   onShop: () => void;
-  tone?: "light" | "dark";
 }) {
   const href = productPath(product.slug);
-  const title = getProductDisplayTitle(product);
-  const meta = getProductCardMeta(product);
+  const title = getHeroDisplayTitle(product);
+  const meta = getHeroFactualMeta(product);
   const price = getEffectivePrice(product);
   const catLabel = getCategoryLabel(product.category) || product.categoryLabel || "Collection";
   const catHref = shopCategoryPath(product.category);
-  const eyebrow = product.isNewArrival ? "New arrival" : catLabel;
-  const isLight = tone === "light";
+  const context = product.isNewArrival ? "New arrival" : catLabel;
 
   return (
-    <div className="min-w-0">
-      <p
-        className={cn(
-          "text-[0.65rem] sm:text-[0.7rem] font-semibold uppercase tracking-[0.22em] mb-2",
-          isLight ? "text-[#E8621A]" : "text-white/85",
-        )}
-      >
-        <span className={isLight ? "text-[#1A1A1A]/55" : "text-white/55"}>AKM Care</span>
-        <span className="mx-2 opacity-40" aria-hidden>
+    <div className="min-w-0 max-w-md">
+      <p className="text-[0.65rem] sm:text-[0.7rem] font-semibold uppercase tracking-[0.22em] mb-3">
+        <span className="text-[#1A1A1A]/50">AKM Care</span>
+        <span className="mx-2 text-[#1A1A1A]/25" aria-hidden>
           ·
         </span>
-        {eyebrow}
+        <span className="text-[#E8621A]">{context}</span>
       </p>
 
       <h2
-        className={cn(
-          "font-heading text-[1.55rem] sm:text-[1.85rem] lg:text-[2.15rem] leading-[1.15] tracking-tight line-clamp-2",
-          isLight ? "text-[#1A1A1A]" : "text-white",
-        )}
+        className="font-heading text-[1.75rem] sm:text-[2rem] lg:text-[2.15rem] leading-[1.14] tracking-tight text-[#1A1A1A] line-clamp-2"
         style={{ textWrap: "balance" }}
       >
         {title}
       </h2>
 
-      {meta ? (
-        <p className={cn("mt-2 text-sm line-clamp-1", isLight ? "text-[#6B6B6B]" : "text-white/80")}>
-          {meta}
-        </p>
-      ) : null}
+      {meta ? <p className="mt-2.5 text-sm text-[#6B6B6B] line-clamp-1">{meta}</p> : null}
 
       {price > 0 ? (
-        <p className={cn("mt-3 text-lg font-semibold", isLight ? "text-[#1A1A1A]" : "text-white")}>
-          {formatINR(price)}
-        </p>
+        <p className="mt-4 text-[1.125rem] font-semibold text-[#1A1A1A] tabular-nums">{formatINR(price)}</p>
       ) : null}
 
-      <div className="mt-4 flex flex-wrap items-center gap-3">
+      <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-3">
         <Link
           to={href}
           onClick={onShop}
-          className={cn(
-            "inline-flex h-11 min-w-[9rem] items-center justify-center px-5 text-xs font-semibold tracking-wide uppercase transition-colors focus-visible:outline-none focus-visible:ring-2",
-            isLight
-              ? "bg-[#E8621A] text-white hover:brightness-105 focus-visible:ring-[#E8621A]/40"
-              : "bg-white text-[#1A1A1A] hover:bg-[#F5F0EB] focus-visible:ring-white/60",
-          )}
+          className="inline-flex h-11 min-w-[9.5rem] items-center justify-center px-6 text-xs font-semibold tracking-[0.12em] uppercase bg-[#E8621A] text-white hover:brightness-105 transition-[filter] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40"
         >
           Shop now
         </Link>
         <Link
           to={catHref}
-          className={cn(
-            "text-xs font-medium underline-offset-4 hover:underline",
-            isLight ? "text-[#6B6B6B] hover:text-[#E8621A]" : "text-white/85 hover:text-white",
-          )}
+          className="text-xs font-medium text-[#6B6B6B] underline-offset-4 hover:text-[#E8621A] hover:underline"
         >
           View collection
         </Link>
       </div>
 
       {count > 1 ? (
-        <p
-          className={cn(
-            "mt-5 text-[0.7rem] font-medium tracking-[0.18em] tabular-nums",
-            isLight ? "text-[#1A1A1A]/45" : "text-white/55",
-          )}
-          aria-hidden
-        >
+        <p className="mt-6 text-[0.7rem] font-medium tracking-[0.2em] tabular-nums text-[#1A1A1A]/40" aria-hidden>
           {padSlide(index + 1)} / {padSlide(count)}
         </p>
       ) : null}
@@ -151,45 +119,68 @@ function ProductCopy({
   );
 }
 
-function NavControls({
-  onPrev,
-  onNext,
-  tone = "dark",
-}: {
-  onPrev: () => void;
-  onNext: () => void;
-  tone?: "light" | "dark";
-}) {
-  const dark = tone === "dark";
+function NavControls({ onPrev, onNext }: { onPrev: () => void; onNext: () => void }) {
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-0.5">
       <button
         type="button"
-        className={cn(
-          "h-11 w-11 inline-flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2",
-          dark
-            ? "text-white/80 hover:text-white focus-visible:ring-white/50"
-            : "text-[#1A1A1A]/55 hover:text-[#1A1A1A] focus-visible:ring-[#E8621A]/40",
-        )}
+        className="h-11 w-11 inline-flex items-center justify-center text-[#1A1A1A]/45 hover:text-[#1A1A1A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40"
         aria-label="Previous product"
         onClick={onPrev}
       >
-        <ChevronLeft className="h-5 w-5" aria-hidden />
+        <ChevronLeft className="h-5 w-5" strokeWidth={1.5} aria-hidden />
       </button>
       <button
         type="button"
-        className={cn(
-          "h-11 w-11 inline-flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2",
-          dark
-            ? "text-white/80 hover:text-white focus-visible:ring-white/50"
-            : "text-[#1A1A1A]/55 hover:text-[#1A1A1A] focus-visible:ring-[#E8621A]/40",
-        )}
+        className="h-11 w-11 inline-flex items-center justify-center text-[#1A1A1A]/45 hover:text-[#1A1A1A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/40"
         aria-label="Next product"
         onClick={onNext}
       >
-        <ChevronRight className="h-5 w-5" aria-hidden />
+        <ChevronRight className="h-5 w-5" strokeWidth={1.5} aria-hidden />
       </button>
     </div>
+  );
+}
+
+function SlideLayers({
+  products,
+  safeIndex,
+  nextProduct,
+  reduceMotion,
+  priorityFirst,
+}: {
+  products: CatalogProduct[];
+  safeIndex: number;
+  nextProduct: CatalogProduct | null;
+  reduceMotion: boolean | null;
+  priorityFirst?: boolean;
+}) {
+  return (
+    <>
+      {products.map((product, i) => {
+        const isCurrent = i === safeIndex;
+        const isNext = nextProduct?.id === product.id;
+        if (!isCurrent && !isNext) return null;
+        return (
+          <div
+            key={product.id}
+            className={cn(
+              "absolute inset-0",
+              isCurrent ? "z-[1] opacity-100" : "z-0 opacity-0 pointer-events-none",
+              !reduceMotion && "motion-safe:transition-opacity",
+            )}
+            style={!reduceMotion ? { transitionDuration: `${TRANSITION_MS}ms` } : undefined}
+            aria-hidden={!isCurrent}
+          >
+            <EditorialPlate
+              product={product}
+              priority={Boolean(priorityFirst && isCurrent)}
+              preload={isNext && !isCurrent}
+            />
+          </div>
+        );
+      })}
+    </>
   );
 }
 
@@ -250,11 +241,11 @@ function ProductSpotlight({ products }: { products: CatalogProduct[] }) {
   }, [go]);
 
   if (!current) {
-    return <div className="min-h-[18rem] bg-[#EDE8E2]" aria-hidden />;
+    return <div className="aspect-[3/4] max-w-md bg-[#EDE8E2]" aria-hidden />;
   }
 
   const onProductNav = () => trackHeroProductClick(current, safeIndex);
-  const title = getProductDisplayTitle(current);
+  const announceTitle = getHeroDisplayTitle(current);
 
   return (
     <div
@@ -277,108 +268,47 @@ function ProductSpotlight({ products }: { products: CatalogProduct[] }) {
         Latest fashion products
       </p>
 
-      {/* Mobile: image first, copy below — no overlay squeeze */}
-      <div className="lg:hidden">
-        <div className="relative w-full aspect-[3/4] overflow-hidden bg-[#EDE8E2]">
-          {products.map((product, i) => {
-            const isCurrent = i === safeIndex;
-            const isNext = nextProduct?.id === product.id;
-            if (!isCurrent && !isNext) return null;
-            return (
-              <div
-                key={`m-${product.id}`}
-                className={cn(
-                  "absolute inset-0",
-                  isCurrent ? "z-[1] opacity-100" : "z-0 opacity-0 pointer-events-none",
-                  !reduceMotion && "motion-safe:transition-opacity",
-                )}
-                style={!reduceMotion ? { transitionDuration: `${TRANSITION_MS}ms` } : undefined}
-                aria-hidden={!isCurrent}
-              >
-                <SpotlightMedia product={product} priority={isCurrent} preload={isNext && !isCurrent} />
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="bg-[#F5F0EB] px-4 py-5 sm:px-6" aria-live="polite">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <ProductCopy
-                product={current}
-                index={safeIndex}
-                count={count}
-                onShop={onProductNav}
-                tone="light"
-              />
-            </div>
-            {count > 1 ? (
-              <NavControls onPrev={() => go(-1)} onNext={() => go(1)} tone="light" />
-            ) : null}
+      {/*
+        Single image plate + copy column.
+        Mobile stacks image → copy; desktop uses asymmetric 1.2fr / 0.85fr split.
+        One SlideLayers tree avoids duplicate hero downloads.
+      */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.85fr)] gap-5 sm:gap-6 lg:gap-8 xl:gap-12 lg:items-center">
+        <div className="relative w-full max-w-[40rem] justify-self-stretch mx-auto lg:mx-0">
+          <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#EDE8E2] ring-1 ring-black/[0.05] shadow-[0_1px_0_rgba(0,0,0,0.03)]">
+            <SlideLayers
+              products={products}
+              safeIndex={safeIndex}
+              nextProduct={nextProduct}
+              reduceMotion={reduceMotion}
+              priorityFirst
+            />
           </div>
         </div>
-      </div>
 
-      {/* Desktop: image-dominant editorial with translucent panel */}
-      <div className="hidden lg:block relative overflow-hidden bg-[#EDE8E2] min-h-[32rem] h-[min(70vh,42rem)]">
-        {products.map((product, i) => {
-          const isCurrent = i === safeIndex;
-          const isNext = nextProduct?.id === product.id;
-          if (!isCurrent && !isNext) return null;
-          return (
-            <div
-              key={`d-${product.id}`}
-              className={cn(
-                "absolute inset-0",
-                isCurrent ? "z-[1] opacity-100" : "z-0 opacity-0 pointer-events-none",
-                !reduceMotion && "motion-safe:transition-opacity",
-              )}
-              style={!reduceMotion ? { transitionDuration: `${TRANSITION_MS}ms` } : undefined}
-              aria-hidden={!isCurrent}
-            >
-              <SpotlightMedia product={product} priority={isCurrent} preload={isNext && !isCurrent} />
-            </div>
-          );
-        })}
-
-        {/* Soft left wash so panel text stays readable without opaque card */}
         <div
-          className="absolute inset-y-0 left-0 z-[2] w-[min(52%,36rem)] bg-gradient-to-r from-black/55 via-black/25 to-transparent pointer-events-none"
-          aria-hidden
-        />
-
-        <div className="absolute inset-0 z-[3] flex flex-col justify-end p-8 xl:p-10">
-          <div className="flex items-end justify-between gap-6">
-            <div
-              className="max-w-md rounded-sm bg-black/25 backdrop-blur-[2px] px-5 py-5 xl:px-6 xl:py-6 ring-1 ring-white/10"
-              aria-live="polite"
-            >
-              <ProductCopy
-                product={current}
-                index={safeIndex}
-                count={count}
-                onShop={onProductNav}
-                tone="dark"
-              />
+          className="flex items-start justify-between gap-3 min-w-0 px-1 sm:px-2 lg:px-0 lg:py-4 lg:flex-col lg:justify-center"
+          aria-live="polite"
+        >
+          <ProductCopy product={current} index={safeIndex} count={count} onShop={onProductNav} />
+          {count > 1 ? (
+            <div className="shrink-0 lg:mt-2 lg:-ml-2">
+              <NavControls onPrev={() => go(-1)} onNext={() => go(1)} />
             </div>
-
-            {count > 1 ? (
-              <NavControls onPrev={() => go(-1)} onNext={() => go(1)} tone="dark" />
-            ) : null}
-          </div>
+          ) : null}
         </div>
       </div>
 
       <span className="sr-only">
-        Slide {safeIndex + 1} of {count}: {title}
+        Slide {safeIndex + 1} of {count}: {announceTitle}
       </span>
     </div>
   );
 }
 
 /**
- * Image-dominant fashion editorial hero.
- * Stable h1 for SEO; rotating product is h2. Category nav lives outside this component.
+ * Concept A — premium editorial split hero.
+ * Cream typography column + framed portrait plate. No dark overlay / category chips.
  */
 export default function Hero({
   products,
@@ -390,27 +320,36 @@ export default function Hero({
   const spotlight = products && products.length > 0 ? products : [];
 
   return (
-    <section className="relative overflow-hidden bg-[#F5F0EB]">
-      <div className="container-premium relative z-10 pt-3 pb-0 sm:pt-4 lg:pt-5 lg:pb-2">
+    <section className="relative overflow-hidden bg-[#FAF8F5]">
+      <div className="container-premium relative z-10 py-5 sm:py-6 lg:py-8 xl:py-10">
         <h1 className="sr-only">AKM Care</h1>
 
         {spotlight.length > 0 ? (
           <ProductSpotlight products={spotlight} />
         ) : loading ? (
-          <div
-            className="min-h-[18rem] lg:min-h-[32rem] lg:h-[min(70vh,42rem)] bg-[#EDE8E2] animate-pulse"
-            aria-hidden
-          />
+          <div className="grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.85fr)] gap-8 xl:gap-12 items-center">
+            <div className="aspect-[3/4] w-full max-w-[40rem] bg-[#EDE8E2] animate-pulse" aria-hidden />
+            <div className="hidden lg:block space-y-3" aria-hidden>
+              <div className="h-3 w-40 bg-[#EDE8E2] animate-pulse" />
+              <div className="h-8 w-72 bg-[#EDE8E2] animate-pulse" />
+              <div className="h-4 w-48 bg-[#EDE8E2] animate-pulse" />
+              <div className="h-11 w-36 bg-[#EDE8E2] animate-pulse mt-4" />
+            </div>
+          </div>
         ) : (
-          <div className="min-h-[14rem] lg:min-h-[24rem] bg-[#EDE8E2] flex items-end p-6">
+          <div className="grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.85fr)] gap-8 items-center">
+            <div className="aspect-[3/4] max-w-[40rem] bg-[#EDE8E2]" aria-hidden />
             <div>
-              <p className="font-heading text-2xl text-[#1A1A1A]">Shop the collection</p>
-              <Link to="/shop" className="btn-primary mt-4 inline-flex h-11">
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-[#E8621A] mb-3">
+                AKM Care
+              </p>
+              <p className="font-heading text-2xl lg:text-[2.15rem] text-[#1A1A1A]">Shop the collection</p>
+              <Link to="/shop" className="btn-primary mt-5 inline-flex h-11">
                 Shop now
               </Link>
               <Link
                 to={shopCollectionPath("new-arrivals")}
-                className="ml-3 text-xs font-medium text-[#6B6B6B] underline-offset-4 hover:underline"
+                className="ml-4 text-xs font-medium text-[#6B6B6B] underline-offset-4 hover:underline"
               >
                 View collection
               </Link>
