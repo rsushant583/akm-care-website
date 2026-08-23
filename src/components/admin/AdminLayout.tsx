@@ -21,6 +21,7 @@ import {
   Menu,
   X,
   FileUp,
+  ClipboardList,
 } from "lucide-react";
 import { useState } from "react";
 import { SEO } from "@/components/SEO";
@@ -31,6 +32,7 @@ import { cn } from "@/lib/utils";
 const nav = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/admin/products", label: "Products", icon: Package },
+  { to: "/admin/catalog-quality", label: "Data quality", icon: ClipboardList },
   { to: "/admin/catalog-import", label: "Bulk import", icon: FileUp },
   { to: "/admin/categories", label: "Categories", icon: FolderTree },
   { to: "/admin/brands", label: "Brands", icon: Award },
@@ -46,7 +48,7 @@ const nav = [
   { to: "/admin/faq", label: "FAQ", icon: HelpCircle },
   { to: "/admin/services", label: "Services", icon: Briefcase },
   { to: "/admin/motivation", label: "Motivation", icon: Quote },
-  { to: "/admin/settings", label: "Settings", icon: Settings },
+  { to: "/admin/settings", label: "Store Settings", icon: Settings },
 ];
 
 export function AdminGuard({ children }: { children: React.ReactNode }) {

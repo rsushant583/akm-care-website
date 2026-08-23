@@ -90,20 +90,63 @@ function mapRlsError(error: { message: string }, action: string): Error {
   return error as Error;
 }
 
-export async function listAdminProducts(opts?: { q?: string; status?: string }) {
+export type ListAdminProductsOpts = {
+  q?: string;
+  status?: string;
+  category?: string;
+  /** low_stock | out_of_stock | missing_image | missing_category */
+  stock?: "low_stock" | "out_of_stock" | "missing_image" | "missing_category" | "all";
+  sort?: "newest" | "oldest" | "name_asc" | "name_desc";
+  lowStockThreshold?: number;
+  limit?: number;
+};
+
+export async function listAdminProducts(opts?: ListAdminProductsOpts) {
   const client = getSupabaseClient();
   if (!client) return [] as AdminProduct[];
-  let q = client.from("products").select("*").order("updated_at", { ascending: false }).limit(500);
+  const sort = opts?.sort || "newest";
+  const limit = opts?.limit ?? 500;
+  let q = client.from("products").select("*").limit(limit);
+
+  if (sort === "oldest") q = q.order("created_at", { ascending: true });
+  else if (sort === "name_asc") q = q.order("name", { ascending: true });
+  else if (sort === "name_desc") q = q.order("name", { ascending: false });
+  else q = q.order("updated_at", { ascending: false });
+
   if (opts?.status === "archived") q = q.eq("status", "archived");
   else if (opts?.status && opts.status !== "all") q = q.eq("status", opts.status);
   else q = q.neq("status", "archived");
+
+  if (opts?.category?.trim()) q = q.eq("category", opts.category.trim());
+
   if (opts?.q?.trim()) {
     const s = opts.q.trim();
     q = q.or(`name.ilike.%${s}%,sku.ilike.%${s}%,slug.ilike.%${s}%`);
   }
+
   const { data, error } = await q;
   if (error) throw error;
-  return (data || []) as AdminProduct[];
+  let rows = (data || []) as AdminProduct[];
+
+  const low = opts?.lowStockThreshold ?? 5;
+  const stockFilter = opts?.stock;
+  if (stockFilter === "out_of_stock") {
+    rows = rows.filter((p) => Number(p.stock_quantity ?? 0) <= 0);
+  } else if (stockFilter === "low_stock") {
+    rows = rows.filter((p) => {
+      const n = Number(p.stock_quantity ?? 0);
+      return n > 0 && n <= low;
+    });
+  } else if (stockFilter === "missing_image") {
+    rows = rows.filter((p) => {
+      const imgs = Array.isArray(p.images) ? (p.images as string[]) : [];
+      return !String(p.image_url || "").trim() && !imgs.some((u) => String(u || "").trim());
+    });
+  } else if (stockFilter === "missing_category") {
+    rows = rows.filter((p) => !String(p.category || "").trim());
+  }
+
+  return rows;
 }
 
 export async function getAdminProduct(id: string) {
@@ -167,31 +210,95 @@ export async function duplicateProduct(id: string) {
 
 export async function uploadProductImages(productId: string, files: File[]) {
   const urls: string[] = [];
-  for (const file of files) {
-    const path = `products/${productId}/${Date.now()}-${file.name.replace(/\s+/g, "-")}`;
-    const { url } = await adminUploadFile({ bucket: "products", path, file });
-    urls.push(url);
-    const client = getSupabaseClient();
-    if (client) {
-      await client.from("product_images").insert({
-        product_id: productId,
-        url,
-        storage_path: path,
-        is_primary: urls.length === 1,
-        sort_order: urls.length - 1,
-      });
-    }
-  }
+  const client = await requireAdminClient();
   const product = await getAdminProduct(productId);
-  if (product) {
-    const existing = Array.isArray(product.images) ? (product.images as string[]) : [];
-    const images = [...existing, ...urls];
+  const existing = Array.isArray(product?.images) ? (product!.images as string[]) : [];
+  const hadPrimary = Boolean(product?.image_url) || existing.length > 0;
+
+  for (const file of files) {
+    const safeName = file.name.replace(/\s+/g, "-").replace(/[^a-zA-Z0-9._-]/g, "");
+    const path = `products/${productId}/${Date.now()}-${safeName || "image"}`;
+    const { url } = await adminUploadFile({ bucket: "products", path, file });
+
+    // Skip duplicate URL rows for the same product.
+    const { data: dup } = await client
+      .from("product_images")
+      .select("id")
+      .eq("product_id", productId)
+      .eq("url", url)
+      .maybeSingle();
+    if (dup?.id) {
+      if (!existing.includes(url) && !urls.includes(url)) urls.push(url);
+      continue;
+    }
+
+    urls.push(url);
+    const isFirstBatch = urls.length === 1 && !hadPrimary;
+    await client.from("product_images").insert({
+      product_id: productId,
+      url,
+      storage_path: path,
+      is_primary: isFirstBatch && urls.length === 1,
+      sort_order: existing.length + urls.length - 1,
+      alt: `${product?.name || "Product"} image`,
+    });
+  }
+
+  if (urls.length) {
+    const images = [...existing, ...urls.filter((u) => !existing.includes(u))];
     await updateProduct(productId, {
       images,
-      image_url: product.image_url || images[0] || null,
+      image_url: product?.image_url || images[0] || null,
     });
   }
   return urls;
+}
+
+/** Set primary gallery image and sync products.image_url + product_images.is_primary. */
+export async function setPrimaryProductImage(productId: string, imageUrl: string) {
+  const client = await requireAdminClient();
+  const product = await getAdminProduct(productId);
+  if (!product) throw new Error("Product not found");
+  const existing = Array.isArray(product.images) ? (product.images as string[]) : [];
+  const images = [imageUrl, ...existing.filter((u) => u !== imageUrl)];
+  await updateProduct(productId, { images, image_url: imageUrl });
+  await client.from("product_images").update({ is_primary: false }).eq("product_id", productId);
+  await client.from("product_images").update({ is_primary: true }).eq("product_id", productId).eq("url", imageUrl);
+}
+
+/** Remove a gallery URL from product jsonb and best-effort delete product_images (+ storage). */
+export async function removeProductImage(productId: string, imageUrl: string) {
+  const client = await requireAdminClient();
+  const product = await getAdminProduct(productId);
+  if (!product) throw new Error("Product not found");
+  const existing = Array.isArray(product.images) ? (product.images as string[]) : [];
+  const images = existing.filter((u) => u !== imageUrl);
+  const nextPrimary = product.image_url === imageUrl ? images[0] || null : product.image_url;
+
+  const { data: rows } = await client
+    .from("product_images")
+    .select("id, storage_path")
+    .eq("product_id", productId)
+    .eq("url", imageUrl);
+
+  for (const row of rows || []) {
+    if (row.storage_path) {
+      await client.storage.from("products").remove([row.storage_path]);
+    }
+    await client.from("product_images").delete().eq("id", row.id);
+  }
+
+  await updateProduct(productId, {
+    images,
+    image_url: nextPrimary,
+  });
+
+  if (nextPrimary) {
+    await client.from("product_images").update({ is_primary: false }).eq("product_id", productId);
+    await client.from("product_images").update({ is_primary: true }).eq("product_id", productId).eq("url", nextPrimary);
+  }
+
+  return images;
 }
 
 export async function listBrands() {

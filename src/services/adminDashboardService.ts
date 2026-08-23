@@ -16,13 +16,20 @@ export async function adminUploadFile(params: {
   return { url: data.publicUrl, path: params.path };
 }
 
-export async function getDashboardStats() {
+export async function getDashboardStats(opts?: { lowStockThreshold?: number }) {
   const client = getSupabaseClient();
+  const low = opts?.lowStockThreshold ?? 5;
   if (!client) {
     return {
       totalProducts: 0,
       activeProducts: 0,
+      draftProducts: 0,
       outOfStock: 0,
+      lowStock: 0,
+      missingImage: 0,
+      missingCategory: 0,
+      pendingOrders: 0,
+      todayOrders: 0,
       categories: 0,
       orders: 0,
       revenue: 0,
@@ -31,32 +38,72 @@ export async function getDashboardStats() {
     };
   }
 
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
   const [
     products,
     active,
+    drafts,
     oos,
     categories,
     orders,
     paidOrders,
     customers,
     vendors,
+    pendingOrders,
+    todayOrders,
+    catalogSlice,
   ] = await Promise.all([
-    client.from("products").select("id", { count: "exact", head: true }),
+    client.from("products").select("id", { count: "exact", head: true }).neq("status", "archived"),
     client.from("products").select("id", { count: "exact", head: true }).eq("status", "available"),
-    client.from("products").select("id", { count: "exact", head: true }).lte("stock_quantity", 0),
+    client.from("products").select("id", { count: "exact", head: true }).eq("status", "draft"),
+    client.from("products").select("id", { count: "exact", head: true }).neq("status", "archived").lte("stock_quantity", 0),
     client.from("categories").select("id", { count: "exact", head: true }),
     client.from("order_headers").select("id", { count: "exact", head: true }),
     client.from("order_headers").select("grand_total").in("payment_status", ["paid"]).limit(5000),
     client.from("profiles").select("id", { count: "exact", head: true }),
     client.from("vendor_applications").select("id", { count: "exact", head: true }),
+    client
+      .from("order_headers")
+      .select("id", { count: "exact", head: true })
+      .in("status", ["pending", "confirmed", "packed"]),
+    client
+      .from("order_headers")
+      .select("id", { count: "exact", head: true })
+      .gte("created_at", startOfDay.toISOString()),
+    client
+      .from("products")
+      .select("id, stock_quantity, image_url, images, category, status")
+      .neq("status", "archived")
+      .limit(2000),
   ]);
 
   const revenue = (paidOrders.data || []).reduce((n, r) => n + Number(r.grand_total || 0), 0);
 
+  let lowStock = 0;
+  let missingImage = 0;
+  let missingCategory = 0;
+  for (const row of catalogSlice.data || []) {
+    const stock = Number(row.stock_quantity ?? 0);
+    if (stock > 0 && stock <= low) lowStock += 1;
+    const imgs = Array.isArray(row.images) ? row.images : [];
+    if (!String(row.image_url || "").trim() && !imgs.some((u: unknown) => String(u || "").trim())) {
+      missingImage += 1;
+    }
+    if (!String(row.category || "").trim()) missingCategory += 1;
+  }
+
   return {
     totalProducts: products.count ?? 0,
     activeProducts: active.count ?? 0,
+    draftProducts: drafts.count ?? 0,
     outOfStock: oos.count ?? 0,
+    lowStock,
+    missingImage,
+    missingCategory,
+    pendingOrders: pendingOrders.count ?? 0,
+    todayOrders: todayOrders.count ?? 0,
     categories: categories.count ?? 0,
     orders: orders.count ?? 0,
     revenue,

@@ -106,29 +106,60 @@ export function Chip({ active, children, onClick }: { active?: boolean; children
 
 export function ImagePreviewList({
   urls,
+  primaryUrl,
   onRemove,
+  onSetPrimary,
 }: {
   urls: string[];
+  primaryUrl?: string | null;
   onRemove?: (url: string) => void;
+  onSetPrimary?: (url: string) => void;
 }) {
   if (!urls.length) return null;
+  const primary = primaryUrl || urls[0];
   return (
     <div className="flex flex-wrap gap-2">
-      {urls.map((url) => (
-        <div key={url} className="relative h-20 w-20 rounded-lg overflow-hidden border bg-white">
-          <img src={url} alt="" className="h-full w-full object-cover" />
-          {onRemove && (
-            <button
-              type="button"
-              className="absolute top-1 right-1 rounded-full bg-black/60 text-white p-0.5"
-              onClick={() => onRemove(url)}
-              aria-label="Remove image"
-            >
-              <X size={12} />
-            </button>
-          )}
-        </div>
-      ))}
+      {urls.map((url) => {
+        const isPrimary = url === primary;
+        return (
+          <div
+            key={url}
+            className={cn(
+              "relative h-24 w-24 rounded-lg overflow-hidden border bg-white",
+              isPrimary && "ring-2 ring-orange-500",
+            )}
+          >
+            <img src={url} alt="" className="h-full w-full object-cover" loading="lazy" />
+            {isPrimary && (
+              <span className="absolute bottom-1 left-1 rounded bg-orange-500 text-white text-[9px] font-bold px-1.5 py-0.5">
+                Primary
+              </span>
+            )}
+            <div className="absolute top-1 right-1 flex flex-col gap-0.5">
+              {onSetPrimary && !isPrimary && (
+                <button
+                  type="button"
+                  className="rounded-full bg-black/60 text-white px-1.5 py-0.5 text-[9px] font-semibold"
+                  onClick={() => onSetPrimary(url)}
+                  aria-label="Set as primary image"
+                >
+                  Primary
+                </button>
+              )}
+              {onRemove && (
+                <button
+                  type="button"
+                  className="rounded-full bg-black/60 text-white p-0.5 self-end"
+                  onClick={() => onRemove(url)}
+                  aria-label="Remove image"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

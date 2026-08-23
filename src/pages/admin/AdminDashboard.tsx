@@ -8,7 +8,10 @@ import {
   ShoppingBag,
   IndianRupee,
   Users,
-  Store,
+  FileEdit,
+  ImageOff,
+  Tag,
+  Clock,
 } from "lucide-react";
 import {
   Area,
@@ -31,6 +34,7 @@ import {
 } from "@/services/adminDashboardService";
 import { formatINR } from "@/lib/ecommerce/pricing";
 import { useAdminOrderAlerts } from "@/context/AdminOrderAlertsContext";
+import { loadCatalogSettings } from "@/lib/admin/catalogSettings";
 
 const COLORS = ["#E8621A", "#0f172a", "#10b981", "#6366f1", "#f59e0b", "#94a3b8"];
 
@@ -39,20 +43,27 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState<Awaited<ReturnType<typeof getDashboardStats>> | null>(null);
   const [series, setSeries] = useState<Awaited<ReturnType<typeof getSalesSeries>>>([]);
   const [dist, setDist] = useState<Awaited<ReturnType<typeof getCategoryDistribution>>>([]);
+  const [lowStockThreshold, setLowStockThreshold] = useState(5);
   const skipFirstReconnect = useRef(true);
 
-  const refresh = () => {
-    void Promise.all([getDashboardStats(), getSalesSeries(14), getCategoryDistribution()]).then(
-      ([s, ser, d]) => {
-        setStats(s);
-        setSeries(ser);
-        setDist(d);
-      },
-    );
+  const refresh = (threshold = lowStockThreshold) => {
+    void Promise.all([
+      getDashboardStats({ lowStockThreshold: threshold }),
+      getSalesSeries(14),
+      getCategoryDistribution(),
+    ]).then(([s, ser, d]) => {
+      setStats(s);
+      setSeries(ser);
+      setDist(d);
+    });
   };
 
   useEffect(() => {
-    refresh();
+    void loadCatalogSettings().then((cfg) => {
+      setLowStockThreshold(cfg.low_stock_threshold);
+      refresh(cfg.low_stock_threshold);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- initial load only
   }, []);
 
   useEffect(() => {
@@ -61,26 +72,38 @@ export default function AdminDashboardPage() {
       skipFirstReconnect.current = false;
       return;
     }
-    const t = window.setTimeout(refresh, 400);
+    const t = window.setTimeout(() => refresh(), 400);
     return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh on order alert events only
   }, [lastEvent]);
 
   const cards = [
-    { label: "Total Products", value: stats?.totalProducts ?? "—", icon: Package, to: "/admin/products" },
-    { label: "Active Products", value: stats?.activeProducts ?? "—", icon: CheckCircle2, to: "/admin/products" },
-    { label: "Out of Stock", value: stats?.outOfStock ?? "—", icon: AlertTriangle, to: "/admin/inventory" },
-    { label: "Categories", value: stats?.categories ?? "—", icon: FolderTree, to: "/admin/categories" },
-    { label: "Orders", value: stats?.orders ?? "—", icon: ShoppingBag, to: "/admin/orders" },
-    { label: "Revenue", value: stats ? formatINR(stats.revenue) : "—", icon: IndianRupee, to: "/admin/analytics" },
+    { label: "Published products", value: stats?.activeProducts ?? "—", icon: CheckCircle2, to: "/admin/products?status=available" },
+    { label: "Draft products", value: stats?.draftProducts ?? "—", icon: FileEdit, to: "/admin/products?status=draft" },
+    { label: "Low stock", value: stats?.lowStock ?? "—", icon: AlertTriangle, to: "/admin/products?stock=low_stock" },
+    { label: "Out of stock", value: stats?.outOfStock ?? "—", icon: Package, to: "/admin/products?stock=out_of_stock" },
+    { label: "Missing images", value: stats?.missingImage ?? "—", icon: ImageOff, to: "/admin/products?stock=missing_image" },
+    { label: "Missing category", value: stats?.missingCategory ?? "—", icon: Tag, to: "/admin/products?stock=missing_category" },
+    { label: "Pending orders", value: stats?.pendingOrders ?? "—", icon: ShoppingBag, to: "/admin/orders?status=pending" },
+    { label: "Today's orders", value: stats?.todayOrders ?? "—", icon: Clock, to: "/admin/orders" },
+    { label: "Revenue (paid)", value: stats ? formatINR(stats.revenue) : "—", icon: IndianRupee, to: "/admin/analytics" },
     { label: "Customers", value: stats?.customers ?? "—", icon: Users, to: "/admin/customers" },
-    { label: "Vendors", value: stats?.vendors ?? "—", icon: Store, to: "/admin/inbox", hint: "Future-ready" },
+    { label: "Categories (DB)", value: stats?.categories ?? "—", icon: FolderTree, to: "/admin/categories" },
+    { label: "All products", value: stats?.totalProducts ?? "—", icon: Package, to: "/admin/products" },
   ];
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-sm text-slate-500">Platform overview for AKM Care operations.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <p className="text-sm text-slate-500">
+            Live catalog and order signals. Low-stock threshold: {lowStockThreshold} units.
+          </p>
+        </div>
+        <Link to="/admin/catalog-quality" className="rounded-xl border bg-white px-4 py-2.5 text-sm font-semibold">
+          Data quality report
+        </Link>
       </div>
 
       <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -90,7 +113,6 @@ export default function AdminDashboardPage() {
               <div>
                 <p className="text-xs uppercase tracking-wide text-slate-500">{c.label}</p>
                 <p className="text-2xl font-bold mt-1">{c.value}</p>
-                {c.hint && <p className="text-[10px] text-slate-400 mt-1">{c.hint}</p>}
               </div>
               <span className="h-10 w-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
                 <c.icon size={18} />
