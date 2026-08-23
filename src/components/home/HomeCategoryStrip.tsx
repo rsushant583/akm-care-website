@@ -6,6 +6,9 @@ const categoryHints: Record<string, string> = {
   "ladies-gown": "Contemporary styles",
   "stitched-lehenga": "Wedding & festive wear",
   "unstitched-lehenga": "Custom craft",
+  "semi-stitched-gown": "Ready to finish",
+  "semi-stitched-lehenga": "Ready to finish",
+  "semi-stitched-blouse": "Ready to finish",
   "3-piece-suits": "Salwar + Dupatta",
   "mens-jeans": "Everyday denim",
 };
@@ -15,6 +18,9 @@ const shortLabel: Record<string, string> = {
   "ladies-gown": "Ladies Gown",
   "stitched-lehenga": "Stitched Lehenga",
   "unstitched-lehenga": "Unstitched Lehenga",
+  "semi-stitched-gown": "Semi Gown",
+  "semi-stitched-lehenga": "Semi Lehenga",
+  "semi-stitched-blouse": "Semi Blouse",
 };
 
 export default function HomeCategoryStrip({ images }: { images?: Record<string, string> }) {
@@ -36,7 +42,7 @@ export default function HomeCategoryStrip({ images }: { images?: Record<string, 
         </div>
 
         <div
-          className="-mx-4 px-4 sm:mx-0 sm:px-0 flex lg:grid lg:grid-cols-6 gap-2.5 lg:gap-3 overflow-x-auto lg:overflow-visible snap-x snap-mandatory lg:snap-none scrollbar-hide"
+          className="-mx-4 px-4 sm:mx-0 sm:px-0 flex lg:grid lg:grid-cols-3 gap-2.5 lg:gap-3 overflow-x-auto lg:overflow-visible snap-x snap-mandatory lg:snap-none scrollbar-hide"
           role="list"
           aria-label="Product categories"
         >

@@ -7,6 +7,9 @@ export type ProductCategorySlug =
   | "ladies-gown"
   | "stitched-lehenga"
   | "unstitched-lehenga"
+  | "semi-stitched-gown"
+  | "semi-stitched-lehenga"
+  | "semi-stitched-blouse"
   | "3-piece-suits"
   | "mens-jeans"
   /** Legacy / seed catalog values — still readable */

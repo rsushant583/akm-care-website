@@ -1,7 +1,7 @@
 import type { CatalogProduct, ShopFilters, SortOption } from "@/lib/ecommerce/types";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { mapCatalogRow, type CatalogListRow } from "@/services/mappers/catalogMapper";
-import { getCategoryMatchTerms } from "@/data/catalog/categories";
+import { getCategoryMatchTerms, OFFICIAL_BROWSABLE_CATEGORIES } from "@/data/catalog/categories";
 
 export type ProductListParams = {
   page?: number;
@@ -45,15 +45,24 @@ function applyFilters(query: any, filters?: Partial<ShopFilters>) {
   if (!filters) return query;
 
   if (filters.category && filters.category !== "all") {
-    const terms = getCategoryMatchTerms(filters.category);
-    const clauses = [
-      `category_slug.eq.${filters.category}`,
-      ...terms.map((term) => {
+    const slug = filters.category;
+    const terms = getCategoryMatchTerms(slug);
+    const labelClauses = [...new Set(terms)]
+      .map((term) => {
         const safe = term.replace(/%/g, "").replace(/,/g, " ").replace(/'/g, "");
         return `category_label.ilike.%${safe}%`;
-      }),
-    ];
-    query = query.or([...new Set(clauses)].join(","));
+      })
+      .filter(Boolean);
+    // Exact products.category (exposed as category_slug) is authoritative.
+    // Fuzzy label matching applies only to legacy rows that do not already
+    // have a different official slug (avoids "semi stitched lehenga"
+    // matching the "stitched-lehenga" filter via substring).
+    const officialSlugs = OFFICIAL_BROWSABLE_CATEGORIES.map((c) => c.id).join(",");
+    const clauses = [`category_slug.eq.${slug}`];
+    if (labelClauses.length > 0) {
+      clauses.push(`and(category_slug.not.in.(${officialSlugs}),or(${labelClauses.join(",")}))`);
+    }
+    query = query.or(clauses.join(","));
   }
   if (filters.priceMin != null) query = query.gte("akm_care_price", filters.priceMin);
   if (filters.priceMax != null) query = query.lte("akm_care_price", filters.priceMax);

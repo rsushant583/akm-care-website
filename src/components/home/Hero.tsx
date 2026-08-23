@@ -20,6 +20,9 @@ const shortLabel: Record<string, string> = {
   "ladies-gown": "Gowns",
   "stitched-lehenga": "Stitched Lehenga",
   "unstitched-lehenga": "Unstitched Lehenga",
+  "semi-stitched-gown": "Semi Gown",
+  "semi-stitched-lehenga": "Semi Lehenga",
+  "semi-stitched-blouse": "Semi Blouse",
   "mens-jeans": "Men's Jeans",
 };
 

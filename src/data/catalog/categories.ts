@@ -6,6 +6,9 @@ export type OfficialCategoryId =
   | "ladies-gown"
   | "stitched-lehenga"
   | "unstitched-lehenga"
+  | "semi-stitched-gown"
+  | "semi-stitched-lehenga"
+  | "semi-stitched-blouse"
   | "3-piece-suits"
   | "mens-jeans";
 
@@ -22,6 +25,9 @@ export const OFFICIAL_SHOP_CATEGORIES: readonly OfficialShopCategory[] = [
   { id: "ladies-gown", label: "Ladies Gown" },
   { id: "stitched-lehenga", label: "Stitched Lehenga" },
   { id: "unstitched-lehenga", label: "Unstitched Lehenga" },
+  { id: "semi-stitched-gown", label: "Semi Stitched Gown" },
+  { id: "semi-stitched-lehenga", label: "Semi Stitched Lehenga" },
+  { id: "semi-stitched-blouse", label: "Semi Stitched Blouse" },
   { id: "3-piece-suits", label: "3-Piece Suit — Salwar + Dupatta" },
   { id: "mens-jeans", label: "Men's Jeans" },
 ] as const;
@@ -63,7 +69,14 @@ export function categoryMatchesProduct(
 ): boolean {
   if (!categorySlug || categorySlug === "all") return true;
   const slug = categorySlug.toLowerCase();
-  if (product.category.toLowerCase() === slug) return true;
+  const productSlug = product.category.toLowerCase();
+  // Exact products.category slug is authoritative.
+  if (productSlug === slug) return true;
+  // If the product already has a different official slug, do not fuzzy-match
+  // into another category (e.g. "semi stitched lehenga" must not match
+  // "stitched-lehenga" via substring includes).
+  const hasOtherOfficialSlug = OFFICIAL_BROWSABLE_CATEGORIES.some((c) => c.id === productSlug);
+  if (hasOtherOfficialSlug) return false;
   const label = product.categoryLabel.toLowerCase();
   return getCategoryMatchTerms(slug).some((term) => label.includes(term.toLowerCase()));
 }
