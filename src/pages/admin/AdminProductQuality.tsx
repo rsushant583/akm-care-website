@@ -6,22 +6,26 @@ import { listAdminProducts, type AdminProduct } from "@/services/adminCatalogSer
 import { summarizeQuality, type QualityIssueCode } from "@/lib/admin/productDataQuality";
 import { loadCatalogSettings } from "@/lib/admin/catalogSettings";
 
-const FILTERS: Array<{ id: "all" | QualityIssueCode; label: string }> = [
-  { id: "all", label: "All flagged" },
-  { id: "missing_category", label: "Missing category" },
+type FilterId = "all" | QualityIssueCode;
+
+const FILTERS: Array<{ id: FilterId; label: string }> = [
+  { id: "needs_information", label: "Needs information" },
   { id: "missing_image", label: "Missing image" },
-  { id: "invalid_price_mrp", label: "Bad price/MRP" },
-  { id: "negative_stock", label: "Negative stock" },
-  { id: "legacy_apparel", label: "Legacy apparel" },
+  { id: "missing_category", label: "Missing category" },
+  { id: "legacy_apparel", label: "Legacy category" },
+  { id: "missing_title_attrs", label: "Missing attributes" },
+  { id: "missing_care", label: "Missing care" },
+  { id: "code_like_name", label: "Code-like names" },
+  { id: "low_stock", label: "Low stock" },
+  { id: "out_of_stock", label: "Out of stock" },
   { id: "ambiguous_semi_stitched", label: "SEMI-STICHED" },
-  { id: "missing_title_attrs", label: "Title attrs" },
-  { id: "draft", label: "Drafts" },
+  { id: "all", label: "All flagged" },
 ];
 
 export default function AdminProductQualityPage() {
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | QualityIssueCode>("all");
+  const [filter, setFilter] = useState<FilterId>("needs_information");
   const [lowStock, setLowStock] = useState(5);
 
   useEffect(() => {
@@ -62,10 +66,14 @@ export default function AdminProductQualityPage() {
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         {(
           [
-            ["Missing category", summary.counts.missing_category],
+            ["Needs information", summary.counts.needs_information],
             ["Missing image", summary.counts.missing_image],
+            ["Missing category", summary.counts.missing_category],
             ["Legacy apparel", summary.counts.legacy_apparel],
-            ["Drafts", summary.counts.draft],
+            ["Missing attributes", summary.counts.missing_title_attrs],
+            ["Low stock", summary.counts.low_stock],
+            ["Out of stock", summary.counts.out_of_stock],
+            ["Code-like names", summary.counts.code_like_name],
           ] as const
         ).map(([label, n]) => (
           <div key={label} className="rounded-2xl border bg-white p-4">
@@ -107,7 +115,9 @@ export default function AdminProductQualityPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
-                        {issues.map((issue) => (
+                        {issues
+                          .filter((issue) => issue.code !== "needs_information")
+                          .map((issue) => (
                           <span
                             key={issue.code}
                             className={

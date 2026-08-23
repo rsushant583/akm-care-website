@@ -25,6 +25,7 @@ import { buildAdminProductPreview } from "@/lib/admin/adminProductPreview";
 import { getDraftBlockers, getPublishBlockers } from "@/lib/admin/productPublishValidation";
 import { ADMIN_IMAGE_ACCEPT, validateProductImages } from "@/lib/admin/imageUploadRules";
 import { isWithinNewArrivalWindow, loadCatalogSettings } from "@/lib/admin/catalogSettings";
+import { DESCRIPTION_GUIDANCE, getProductCompleteness } from "@/lib/admin/productCompleteness";
 
 const empty = {
   name: "",
@@ -214,6 +215,30 @@ export default function AdminProductFormPage() {
       buildAdminProductPreview({
         ...form,
         images,
+      }),
+    [form, images],
+  );
+
+  const completeness = useMemo(
+    () =>
+      getProductCompleteness({
+        name: form.name,
+        category: form.category,
+        mrp: form.mrp,
+        selling_price: form.selling_price,
+        akm_care_price: form.akm_care_price,
+        price: form.price,
+        stock_quantity: form.stock_quantity,
+        images,
+        short_description: form.short_description,
+        specifications: form.existingSpecifications,
+        spec_colour: form.spec_colour,
+        spec_fabric: form.spec_fabric,
+        spec_work: form.spec_work,
+        spec_pattern: form.spec_pattern,
+        spec_occasion: form.spec_occasion,
+        spec_includes: form.spec_includes,
+        spec_care: form.spec_care,
       }),
     [form, images],
   );
@@ -538,6 +563,48 @@ export default function AdminProductFormPage() {
       )}
 
       <form onSubmit={onSubmit} className="space-y-6 max-w-5xl">
+        <section className="rounded-2xl border bg-white p-5 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-semibold">Product information</h2>
+            <p className="text-sm font-semibold text-slate-700">
+              Completeness: <span className="text-orange-600">{completeness.percent}%</span>
+            </p>
+          </div>
+          <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-orange-500 transition-all"
+              style={{ width: `${completeness.percent}%` }}
+              aria-hidden
+            />
+          </div>
+          <div className="rounded-xl bg-slate-50 border px-3 py-2 text-sm">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Customer-facing title preview</p>
+            <p className="font-semibold mt-0.5">{preview.displayTitle || "—"}</p>
+            {preview.titlePreview.usedFallback && (
+              <p className="text-xs text-slate-500 mt-1">
+                Using a safe fallback title until colour / fabric / work are filled (leave blank when unknown — do not invent).
+              </p>
+            )}
+          </div>
+          {completeness.missing.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Missing</p>
+              <ul className="list-disc pl-5 text-sm text-slate-700 space-y-0.5">
+                {completeness.missing.slice(0, 8).map((m) => (
+                  <li key={m.id}>{m.label}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {completeness.tips.length > 0 && (
+            <ul className="text-xs text-slate-500 space-y-1">
+              {completeness.tips.map((tip) => (
+                <li key={tip}>{tip}</li>
+              ))}
+            </ul>
+          )}
+        </section>
+
         <section className="rounded-2xl border bg-white p-5 space-y-4">
           <h2 className="font-semibold">Basics</h2>
           <div className="grid sm:grid-cols-2 gap-3">
@@ -590,10 +657,12 @@ export default function AdminProductFormPage() {
           </div>
           <label className="text-sm block">
             <span className="font-medium">Short description</span>
+            <p className="text-xs text-slate-500 mt-0.5 mb-1">{DESCRIPTION_GUIDANCE.short}</p>
             <textarea className="mt-1 w-full rounded-xl border px-3 py-2.5 min-h-20" value={form.short_description} onChange={(e) => set("short_description", e.target.value)} />
           </label>
           <label className="text-sm block">
             <span className="font-medium">Rich description</span>
+            <p className="text-xs text-slate-500 mt-0.5 mb-1">{DESCRIPTION_GUIDANCE.detailed}</p>
             <textarea className="mt-1 w-full rounded-xl border px-3 py-2.5 min-h-40 font-mono text-xs" value={form.detailed_description} onChange={(e) => set("detailed_description", e.target.value)} placeholder="Supports plain/HTML text for now" />
           </label>
         </section>
@@ -659,9 +728,10 @@ export default function AdminProductFormPage() {
           <h2 className="font-semibold">Storefront attributes (optional)</h2>
           <p className="text-xs text-[#6B6B6B]">
             These fields power customer-facing titles and product details. Leave blank when unknown — do not invent values.
+            Saving merges into existing <code className="text-[11px]">specifications</code> and preserves unrelated keys (blouse, size, packing, etc.).
           </p>
           <div className="rounded-xl bg-slate-50 border px-3 py-2 text-sm">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Customer-facing title preview</p>
+            <p className="text-xs uppercase tracking-wide text-slate-500">Title uses</p>
             <p className="font-semibold mt-0.5">{preview.displayTitle || "—"}</p>
             {preview.titlePreview.gaps.length > 0 && (
               <p className="text-xs text-slate-500 mt-1">

@@ -351,6 +351,8 @@ export function mergeSpecifications(
     ["care", "care"],
   ];
   for (const [key, jsonKey] of map) {
+    // Only touch keys the caller explicitly provided — undefined means leave existing value.
+    if (!Object.prototype.hasOwnProperty.call(fashion, key)) continue;
     const value = cleanText(fashion[key] ?? undefined);
     if (value) next[jsonKey] = value;
     else delete next[jsonKey];

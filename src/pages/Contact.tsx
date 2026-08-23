@@ -1,8 +1,9 @@
-import { Phone, Mail, MessageCircle, MapPin, Send } from "lucide-react";
+import { Phone, Mail, MessageCircle, MapPin, Send, Clock } from "lucide-react";
 import { useState } from "react";
 import { toast } from "@/components/ui/sonner";
 import { submitContact } from "@/lib/submissions";
 import { useServices } from "@/hooks/useServices";
+import { usePublicContact } from "@/hooks/usePublicContact";
 import { SEO } from "@/components/SEO";
 import { motion, useReducedMotion } from "framer-motion";
 
@@ -10,6 +11,7 @@ export default function Contact() {
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", service: "", message: "", website: "" });
   const [submitted, setSubmitted] = useState(false);
   const { data: services } = useServices();
+  const contact = usePublicContact();
   const reduce = useReducedMotion();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -139,22 +141,31 @@ export default function Contact() {
               className="space-y-5"
             >
               {[
-                { icon: Phone, label: "Phone", value: "+91-84019 95486", action: "tel:+918401995486", cta: "Call Now" },
+                {
+                  icon: Phone,
+                  label: "Phone",
+                  value: contact.phoneDisplay,
+                  action: `tel:${contact.phoneTel}`,
+                  cta: "Call Now",
+                },
                 {
                   icon: Mail,
                   label: "Email",
-                  value: "contact@akmcare.in",
-                  action: "mailto:contact@akmcare.in",
+                  value: contact.email,
+                  action: `mailto:${contact.email}`,
                   cta: "Send Email",
                 },
                 {
                   icon: MessageCircle,
                   label: "WhatsApp",
-                  value: "+91-84019 95486",
-                  action: "https://wa.me/918401995486",
+                  value: contact.whatsappDisplay,
+                  action: contact.whatsappHref,
                   cta: "Chat on WhatsApp",
                 },
-                { icon: MapPin, label: "Location", value: "Ahmedabad, Gujarat, India", action: "", cta: "" },
+                { icon: MapPin, label: "Location", value: contact.address, action: "", cta: "" },
+                ...(contact.businessHours
+                  ? [{ icon: Clock, label: "Business hours", value: contact.businessHours, action: "", cta: "" }]
+                  : []),
               ].map((item) => (
                 <div
                   key={item.label}

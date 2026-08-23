@@ -13,6 +13,8 @@ import {
 export default function AdminSettingsPage() {
   const { role } = useAdminAuth();
   const allowed = canManageSettings(role || "staff");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [company, setCompany] = useState({ name: "AKM Care", tagline: "" });
   const [contact, setContact] = useState({ phones: "", emails: "", address: "" });
   const [social, setSocial] = useState({ facebook: "", instagram: "", youtube: "", linkedin: "" });
@@ -23,6 +25,7 @@ export default function AdminSettingsPage() {
   const [catalogConfigured, setCatalogConfigured] = useState(false);
 
   useEffect(() => {
+    setLoading(true);
     void getAllSettings()
       .then((s: Record<string, unknown>) => {
         const companyVal = s.company as { name?: string; tagline?: string } | undefined;
@@ -51,11 +54,13 @@ export default function AdminSettingsPage() {
           setCatalogConfigured(false);
         }
       })
-      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : "Failed to load settings"));
+      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : "Failed to load settings"))
+      .finally(() => setLoading(false));
   }, []);
 
   const saveAll = async () => {
     if (!allowed) return toast.error("Only Admin / Super Admin can change settings");
+    setSaving(true);
     try {
       await Promise.all([
         saveSetting("company", company),
@@ -77,52 +82,77 @@ export default function AdminSettingsPage() {
         }),
       ]);
       setCatalogConfigured(true);
-      toast.success("Settings saved");
+      toast.success("Store settings saved — public contact/WhatsApp will use these values.");
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setSaving(false);
     }
   };
 
+  if (loading) {
+    return <p className="text-sm text-slate-500">Loading store settings…</p>;
+  }
+
   return (
     <div className="space-y-6 max-w-3xl">
-      <AdminPageHeader title="Store Settings" subtitle="Company, contact, shipping, catalog thresholds, and theme. No secrets here." />
-      {!allowed && <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">Staff can view settings but only Admin / Super Admin can save.</p>}
+      <AdminPageHeader
+        title="Store Settings"
+        subtitle="Company, customer support, shipping, and catalog rules. Changes to contact/WhatsApp appear on the public Footer and Contact page."
+      />
+      {!allowed && (
+        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+          Staff can view settings but only Admin / Super Admin can save.
+        </p>
+      )}
 
       <Section title="Company information">
-        <input className="w-full rounded-xl border px-3 py-2.5 text-sm" value={company.name} onChange={(e) => setCompany({ ...company, name: e.target.value })} placeholder="Company name" />
-        <input className="w-full rounded-xl border px-3 py-2.5 text-sm" value={company.tagline} onChange={(e) => setCompany({ ...company, tagline: e.target.value })} placeholder="Tagline" />
+        <FieldLabel label="Company name" />
+        <input className="w-full rounded-xl border px-3 py-2.5 text-sm" value={company.name} onChange={(e) => setCompany({ ...company, name: e.target.value })} placeholder="AKM Care" />
+        <FieldLabel label="Tagline" />
+        <input className="w-full rounded-xl border px-3 py-2.5 text-sm" value={company.tagline} onChange={(e) => setCompany({ ...company, tagline: e.target.value })} placeholder="Optional tagline" />
       </Section>
 
-      <Section title="Customer support contact">
-        <input className="w-full rounded-xl border px-3 py-2.5 text-sm" value={contact.phones} onChange={(e) => setContact({ ...contact, phones: e.target.value })} placeholder="Phones (comma-separated)" />
-        <input className="w-full rounded-xl border px-3 py-2.5 text-sm" value={contact.emails} onChange={(e) => setContact({ ...contact, emails: e.target.value })} placeholder="Emails (comma-separated)" />
-        <textarea className="w-full rounded-xl border px-3 py-2.5 text-sm" value={contact.address} onChange={(e) => setContact({ ...contact, address: e.target.value })} placeholder="Address" />
+      <Section title="Customer support (public site)">
+        <p className="text-xs text-slate-500">
+          These values drive Footer and Contact. If a field is blank, the site keeps the existing approved fallback.
+        </p>
+        <FieldLabel label="Support phone(s)" hint="Comma-separated. First number is primary." />
+        <input className="w-full rounded-xl border px-3 py-2.5 text-sm" value={contact.phones} onChange={(e) => setContact({ ...contact, phones: e.target.value })} placeholder="+91-84019 95486" />
+        <FieldLabel label="Support email(s)" hint="Comma-separated. First email is primary." />
+        <input className="w-full rounded-xl border px-3 py-2.5 text-sm" value={contact.emails} onChange={(e) => setContact({ ...contact, emails: e.target.value })} placeholder="contact@akmcare.in" />
+        <FieldLabel label="Address" />
+        <textarea className="w-full rounded-xl border px-3 py-2.5 text-sm" value={contact.address} onChange={(e) => setContact({ ...contact, address: e.target.value })} placeholder="Ahmedabad, Gujarat, India" />
+        <FieldLabel label="WhatsApp number" hint="Used for wa.me link. Leave blank to use support phone / fallback." />
         <input
           className="w-full rounded-xl border px-3 py-2.5 text-sm"
           value={catalog.whatsapp}
           onChange={(e) => setCatalog({ ...catalog, whatsapp: e.target.value })}
-          placeholder={catalogConfigured && catalog.whatsapp ? "WhatsApp number" : "WhatsApp number (needs configuration)"}
+          placeholder={catalogConfigured && catalog.whatsapp ? "WhatsApp number" : "Needs configuration (optional)"}
         />
+        <FieldLabel label="Business hours" hint="Shown on Footer/Contact only when set." />
         <input
           className="w-full rounded-xl border px-3 py-2.5 text-sm"
           value={catalog.business_hours}
           onChange={(e) => setCatalog({ ...catalog, business_hours: e.target.value })}
-          placeholder={catalog.business_hours ? "Business hours" : "Business hours (needs configuration)"}
+          placeholder="e.g. Mon–Sat 10:00–19:00 IST"
         />
-        <p className="text-xs text-slate-500">Leave WhatsApp / hours blank until the business provides authoritative values. Do not invent contact details.</p>
       </Section>
 
       <Section title="Social links">
         {(["facebook", "instagram", "youtube", "linkedin"] as const).map((k) => (
-          <input key={k} className="w-full rounded-xl border px-3 py-2.5 text-sm" value={social[k]} onChange={(e) => setSocial({ ...social, [k]: e.target.value })} placeholder={k} />
+          <div key={k}>
+            <FieldLabel label={k.charAt(0).toUpperCase() + k.slice(1)} />
+            <input className="w-full rounded-xl border px-3 py-2.5 text-sm" value={social[k]} onChange={(e) => setSocial({ ...social, [k]: e.target.value })} placeholder={`${k} URL`} />
+          </div>
         ))}
       </Section>
 
       <Section title="Shipping charges">
         <div className="grid sm:grid-cols-3 gap-3">
-          <Num label="Standard" value={shipping.standard} onChange={(v) => setShipping({ ...shipping, standard: v })} />
-          <Num label="Express" value={shipping.express} onChange={(v) => setShipping({ ...shipping, express: v })} />
-          <Num label="Free above" value={shipping.free_above} onChange={(v) => setShipping({ ...shipping, free_above: v })} />
+          <Num label="Standard (₹)" value={shipping.standard} onChange={(v) => setShipping({ ...shipping, standard: v })} />
+          <Num label="Express (₹)" value={shipping.express} onChange={(v) => setShipping({ ...shipping, express: v })} />
+          <Num label="Free above (₹)" value={shipping.free_above} onChange={(v) => setShipping({ ...shipping, free_above: v })} />
         </div>
       </Section>
 
@@ -138,7 +168,7 @@ export default function AdminSettingsPage() {
           <Num label="New-arrival window (days)" value={catalog.new_arrival_days} onChange={(v) => setCatalog({ ...catalog, new_arrival_days: v })} />
         </div>
         <p className="text-xs text-slate-500">
-          Deals still require a real discount from MRP vs AKM Care price. Bestsellers stay manual — only toggle with sales evidence. Featured stays an explicit admin toggle.
+          Deals require a real discount from MRP vs AKM Care price. Bestsellers stay manual — only toggle with sales evidence.
         </p>
       </Section>
 
@@ -159,9 +189,23 @@ export default function AdminSettingsPage() {
         </label>
       </Section>
 
-      <button type="button" disabled={!allowed} onClick={() => void saveAll()} className="rounded-xl bg-orange-500 text-white px-6 py-3 font-semibold disabled:opacity-50">
-        Save settings
+      <button
+        type="button"
+        disabled={!allowed || saving}
+        onClick={() => void saveAll()}
+        className="rounded-xl bg-orange-500 text-white px-6 py-3 font-semibold disabled:opacity-50"
+      >
+        {saving ? "Saving…" : "Save settings"}
       </button>
+    </div>
+  );
+}
+
+function FieldLabel({ label, hint }: { label: string; hint?: string }) {
+  return (
+    <div className="pt-1">
+      <p className="text-sm font-medium">{label}</p>
+      {hint ? <p className="text-xs text-slate-500">{hint}</p> : null}
     </div>
   );
 }

@@ -2,8 +2,7 @@
  * Admin data-quality flags — report only; never silently rewrite catalog rows.
  */
 
-import { OFFICIAL_BROWSABLE_CATEGORIES } from "@/data/catalog/categories";
-import { parseProductSpecifications } from "@/lib/ecommerce/productPresentation";
+import { isSkuLikeProductName, parseProductSpecifications } from "@/lib/ecommerce/productPresentation";
 import type { AdminProduct } from "@/services/adminCatalogService";
 
 export type QualityIssueCode =
@@ -13,18 +12,19 @@ export type QualityIssueCode =
   | "invalid_price_mrp"
   | "negative_stock"
   | "missing_title_attrs"
+  | "missing_care"
+  | "code_like_name"
   | "ambiguous_semi_stitched"
   | "draft"
   | "out_of_stock"
-  | "low_stock";
+  | "low_stock"
+  | "needs_information";
 
 export type QualityIssue = {
   code: QualityIssueCode;
   label: string;
   severity: "error" | "warn" | "info";
 };
-
-const OFFICIAL = new Set(OFFICIAL_BROWSABLE_CATEGORIES.map((c) => c.id));
 
 function hasUsableImage(p: AdminProduct): boolean {
   if (p.image_url && String(p.image_url).trim()) return true;
@@ -43,13 +43,12 @@ export function assessProductQuality(
   const selling = Number(p.selling_price ?? p.akm_care_price ?? p.price ?? 0);
   const stock = Number(p.stock_quantity ?? 0);
   const specs = parseProductSpecifications(p.specifications);
+  const name = String(p.name || "");
 
   if (!cat) {
     issues.push({ code: "missing_category", label: "Missing category", severity: "error" });
   } else if (cat === "apparel") {
     issues.push({ code: "legacy_apparel", label: 'Legacy category "apparel"', severity: "warn" });
-  } else if (!OFFICIAL.has(cat) && cat !== "apparel") {
-    // Non-official but not apparel — flag only apparel + missing; leave other legacy alone
   }
 
   if (!hasUsableImage(p)) {
@@ -77,7 +76,18 @@ export function assessProductQuality(
     });
   }
 
-  const name = String(p.name || "");
+  if (!specs.care) {
+    issues.push({ code: "missing_care", label: "Missing care instructions", severity: "info" });
+  }
+
+  if (isSkuLikeProductName(name)) {
+    issues.push({
+      code: "code_like_name",
+      label: "Code-like product name — add attributes for title",
+      severity: "info",
+    });
+  }
+
   if (/semi[\s-]?stich/i.test(name) || (/semi/i.test(name) && /stich/i.test(name))) {
     issues.push({
       code: "ambiguous_semi_stitched",
@@ -90,6 +100,20 @@ export function assessProductQuality(
     issues.push({ code: "draft", label: "Draft (hidden on shop)", severity: "info" });
   }
 
+  const needsInfo = issues.some((i) =>
+    [
+      "missing_category",
+      "missing_image",
+      "invalid_price_mrp",
+      "missing_title_attrs",
+      "missing_care",
+      "code_like_name",
+    ].includes(i.code),
+  );
+  if (needsInfo) {
+    issues.push({ code: "needs_information", label: "Needs information", severity: "warn" });
+  }
+
   return issues;
 }
 
@@ -99,12 +123,15 @@ export function summarizeQuality(products: AdminProduct[], lowStockThreshold = 5
     issues: assessProductQuality(p, { lowStockThreshold }),
   }));
   const counts = {
+    needs_information: 0,
     missing_category: 0,
     missing_image: 0,
     invalid_price_mrp: 0,
     negative_stock: 0,
     legacy_apparel: 0,
     missing_title_attrs: 0,
+    missing_care: 0,
+    code_like_name: 0,
     ambiguous_semi_stitched: 0,
     draft: 0,
     low_stock: 0,

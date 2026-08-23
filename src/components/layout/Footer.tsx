@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
-import { Youtube, MessageCircle, Facebook, Phone, Mail, MapPin } from "lucide-react";
+import { Youtube, MessageCircle, Facebook, Phone, Mail, MapPin, Clock } from "lucide-react";
 import logo from "@/assets/akm-logo.jpeg";
 import { OFFICIAL_BROWSABLE_CATEGORIES, shopCategoryPath, shopCollectionPath } from "@/data/catalog/categories";
+import { usePublicContact } from "@/hooks/usePublicContact";
 
 const shopLinks = [
   { label: "All Products", path: "/shop" },
@@ -30,6 +31,8 @@ const companyLinks = [
 ];
 
 export default function Footer() {
+  const contact = usePublicContact();
+
   return (
     <footer className="relative bg-[#1A1A1A] text-white pt-2 pb-24 lg:pb-10">
       <div className="h-1 w-full bg-[#E8621A]" aria-hidden />
@@ -51,7 +54,7 @@ export default function Footer() {
                 <Youtube size={16} />
               </a>
               <a
-                href="https://wa.me/918401995486"
+                href={contact.whatsappHref}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#E8621A] transition-all duration-300"
@@ -128,16 +131,26 @@ export default function Footer() {
             <ul className="space-y-3">
               <li className="flex items-start gap-2.5">
                 <Phone size={16} className="text-[#E8621A] mt-0.5 shrink-0" />
-                <span className="text-sm text-white/65">+91-84019 95486</span>
+                <a href={`tel:${contact.phoneTel}`} className="text-sm text-white/65 hover:text-[#F5A623] transition-colors">
+                  {contact.phoneDisplay}
+                </a>
               </li>
               <li className="flex items-start gap-2.5">
                 <Mail size={16} className="text-[#E8621A] mt-0.5 shrink-0" />
-                <span className="text-sm text-white/65">contact@akmcare.in</span>
+                <a href={`mailto:${contact.email}`} className="text-sm text-white/65 hover:text-[#F5A623] transition-colors break-all">
+                  {contact.email}
+                </a>
               </li>
               <li className="flex items-start gap-2.5">
                 <MapPin size={16} className="text-[#E8621A] mt-0.5 shrink-0" />
-                <span className="text-sm text-white/65">Ahmedabad, Gujarat, India</span>
+                <span className="text-sm text-white/65">{contact.address}</span>
               </li>
+              {contact.businessHours ? (
+                <li className="flex items-start gap-2.5">
+                  <Clock size={16} className="text-[#E8621A] mt-0.5 shrink-0" />
+                  <span className="text-sm text-white/65">{contact.businessHours}</span>
+                </li>
+              ) : null}
             </ul>
           </div>
         </div>
