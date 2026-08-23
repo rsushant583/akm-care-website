@@ -24,7 +24,6 @@ export type ProductImageRole =
   | "pdpMain"
   | "pdpFullscreen"
   | "hero"
-  | "lookbookSupport"
   | "category"
   | "banner"
   | "search"
@@ -45,8 +44,7 @@ const ROLE_DIMS: Record<ProductImageRole, { width: number; height: number }> = {
   thumb: { width: 160, height: 200 },
   pdpMain: { width: 1200, height: 1600 },
   pdpFullscreen: { width: 1600, height: 2133 },
-  hero: { width: 1200, height: 1500 },
-  lookbookSupport: { width: 480, height: 640 },
+  hero: { width: 800, height: 1000 },
   category: { width: 400, height: 500 },
   banner: { width: 800, height: 640 },
   search: { width: 96, height: 128 },
@@ -67,8 +65,7 @@ const ROLE_SRCSET_WIDTHS: Record<ProductImageRole, number[]> = {
   thumb: [400],
   pdpMain: [600, 800, 1200],
   pdpFullscreen: [800, 1200, 1600],
-  hero: [600, 800, 1200, 1600],
-  lookbookSupport: [400, 600, 800],
+  hero: [600, 800, 1200],
   category: [400, 600],
   banner: [600, 800, 1200],
   search: [400],
@@ -86,8 +83,7 @@ const ROLE_SIZES: Record<ProductImageRole, string> = {
   thumb: "4.25rem",
   pdpMain: "(max-width: 1023px) 100vw, min(36rem, 48vw)",
   pdpFullscreen: "100vw",
-  hero: "(max-width: 1023px) 100vw, min(48vw, 36rem)",
-  lookbookSupport: "(max-width: 1023px) 28vw, min(14vw, 11rem)",
+  hero: "(max-width: 1023px) 100vw, 50vw",
   category: "(max-width: 1023px) 10.75rem, 16vw",
   banner: "(max-width: 767px) 100vw, 45vw",
   search: "3rem",

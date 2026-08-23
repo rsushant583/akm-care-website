@@ -1,12 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { CatalogProduct } from "@/lib/ecommerce/types";
 import {
-  buildLookbookSlides,
   hasUsableProductImage,
   isStorefrontVisibleProduct,
   pickCategoryRailProducts,
-  pickLatestSpotlightProducts,
-  pickLookbookSupporting,
   pickNewestArrivals,
 } from "@/lib/ecommerce/merchandising";
 
@@ -70,144 +67,6 @@ describe("hasUsableProductImage", () => {
       ),
     ).toBe(false);
     expect(hasUsableProductImage(makeProduct({ id: "z" }))).toBe(true);
-  });
-});
-
-describe("pickLatestSpotlightProducts", () => {
-  it("prioritizes fashion categories and newest first within priority", () => {
-    const jeans = makeProduct({
-      id: "jeans-new",
-      category: "mens-jeans",
-      categoryLabel: "Men's Jeans",
-      createdAt: "2026-08-20T00:00:00.000Z",
-    });
-    const oldSaree = makeProduct({
-      id: "saree-old",
-      category: "sarees",
-      categoryLabel: "Sarees",
-      createdAt: "2026-01-01T00:00:00.000Z",
-    });
-    const newSaree = makeProduct({
-      id: "saree-new",
-      category: "sarees",
-      categoryLabel: "Sarees",
-      createdAt: "2026-08-22T00:00:00.000Z",
-    });
-    const gown = makeProduct({
-      id: "gown-1",
-      category: "ladies-gown",
-      categoryLabel: "Ladies Gown",
-      createdAt: "2026-08-21T00:00:00.000Z",
-    });
-
-    const result = pickLatestSpotlightProducts([jeans, oldSaree, newSaree, gown], 4);
-    // Fashion first by newest date; jeans only as fill after fashion slots.
-    expect(result.map((p) => p.id)).toEqual(["saree-new", "gown-1", "saree-old", "jeans-new"]);
-  });
-
-  it("excludes draft, archived, and products without usable images", () => {
-    const good = makeProduct({ id: "good", createdAt: "2026-08-01T00:00:00.000Z" });
-    const draft = makeProduct({ id: "draft", status: "draft", createdAt: "2026-08-22T00:00:00.000Z" });
-    const noImg = makeProduct({
-      id: "no-img",
-      images: [],
-      image_url: "",
-      createdAt: "2026-08-22T00:00:00.000Z",
-    });
-
-    const result = pickLatestSpotlightProducts([draft, noImg, good], 5);
-    expect(result.map((p) => p.id)).toEqual(["good"]);
-  });
-
-  it("returns empty when nothing eligible", () => {
-    expect(pickLatestSpotlightProducts([], 8)).toEqual([]);
-    expect(
-      pickLatestSpotlightProducts(
-        [makeProduct({ id: "d", status: "draft" })],
-        8,
-      ),
-    ).toEqual([]);
-  });
-
-  it("dedupes by image src and respects limit", () => {
-    const a = makeProduct({
-      id: "a",
-      images: [{ src: "/same.png", alt: "a" }],
-      image_url: "/same.png",
-      createdAt: "2026-08-22T00:00:00.000Z",
-    });
-    const b = makeProduct({
-      id: "b",
-      images: [{ src: "/same.png", alt: "b" }],
-      image_url: "/same.png",
-      createdAt: "2026-08-21T00:00:00.000Z",
-    });
-    const c = makeProduct({
-      id: "c",
-      category: "ladies-gown",
-      categoryLabel: "Ladies Gown",
-      createdAt: "2026-08-20T00:00:00.000Z",
-    });
-
-    const result = pickLatestSpotlightProducts([a, b, c], 2);
-    expect(result).toHaveLength(2);
-    expect(result[0].id).toBe("a");
-    expect(result.map((p) => p.id)).not.toContain("b");
-  });
-});
-
-describe("buildLookbookSlides / pickLookbookSupporting", () => {
-  it("builds one slide per pool product with featured + supporting", () => {
-    const saree = makeProduct({ id: "s1", category: "sarees", categoryLabel: "Sarees" });
-    const gown = makeProduct({ id: "g1", category: "ladies-gown", categoryLabel: "Ladies Gown" });
-    const lehenga = makeProduct({
-      id: "l1",
-      category: "stitched-lehenga",
-      categoryLabel: "Stitched Lehenga",
-    });
-    const slides = buildLookbookSlides([saree, gown, lehenga], 3);
-    expect(slides).toHaveLength(3);
-    expect(slides[0].featured.id).toBe("s1");
-    expect(slides[0].supporting.map((p) => p.id)).toEqual(["g1", "l1"]);
-    expect(slides[0].supporting.map((p) => p.id)).not.toContain("s1");
-  });
-
-  it("prefers category diversity in supporting looks", () => {
-    const s1 = makeProduct({ id: "s1", category: "sarees", categoryLabel: "Sarees" });
-    const s2 = makeProduct({ id: "s2", category: "sarees", categoryLabel: "Sarees" });
-    const gown = makeProduct({ id: "g1", category: "ladies-gown", categoryLabel: "Ladies Gown" });
-    const lehenga = makeProduct({
-      id: "l1",
-      category: "stitched-lehenga",
-      categoryLabel: "Stitched Lehenga",
-    });
-
-    const supports = pickLookbookSupporting([s1, s2, gown, lehenga], s1, 3);
-    expect(supports.map((p) => p.id)).toEqual(["g1", "l1", "s2"]);
-    expect(new Set(supports.map((p) => p.category)).size).toBeGreaterThanOrEqual(2);
-  });
-
-  it("never duplicates the featured product", () => {
-    const a = makeProduct({ id: "a", category: "sarees" });
-    const b = makeProduct({ id: "b", category: "ladies-gown" });
-    const supports = pickLookbookSupporting([a, b], a, 3);
-    expect(supports.every((p) => p.id !== "a")).toBe(true);
-  });
-
-  it("falls back gracefully with fewer than 3 usable products", () => {
-    const only = makeProduct({ id: "only", category: "sarees" });
-    expect(buildLookbookSlides([only], 3)).toEqual([{ featured: only, supporting: [] }]);
-
-    const a = makeProduct({ id: "a", category: "sarees" });
-    const b = makeProduct({ id: "b", category: "ladies-gown" });
-    const slides = buildLookbookSlides([a, b], 3);
-    expect(slides[0].supporting).toHaveLength(1);
-    expect(slides[0].supporting[0].id).toBe("b");
-  });
-
-  it("returns empty slides for empty pool", () => {
-    expect(buildLookbookSlides([], 3)).toEqual([]);
-    expect(pickLookbookSupporting([], makeProduct({ id: "x" }), 3)).toEqual([]);
   });
 });
 

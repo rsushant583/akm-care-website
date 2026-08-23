@@ -248,31 +248,6 @@ export function getProductDisplayTitle(product: CatalogProduct): string {
   return humanizedName;
 }
 
-/**
- * Homepage hero headline — never exposes internal SKU codes as the primary title.
- * Falls back to category label when display title is still SKU-like.
- */
-export function getHeroDisplayTitle(product: CatalogProduct): string {
-  const display = getProductDisplayTitle(product);
-  if (!isSkuLikeProductName(display) && display.trim().length >= 3) return display;
-
-  const category =
-    cleanText(product.categoryLabel) ||
-    productTypePhrase(product.category) ||
-    "Collection";
-  return category;
-}
-
-/**
- * Hero meta line: colour · fabric/work only. Omits SKU / product codes.
- */
-export function getHeroFactualMeta(product: CatalogProduct): string | undefined {
-  const attrs = getProductAttributes(product);
-  const parts = [attrs.colour, attrs.fabric || workOrPattern(attrs)].filter(Boolean);
-  if (parts.length === 0) return undefined;
-  return parts.join(" · ");
-}
-
 /** Secondary metadata line for cards / PDP (SKU or category — never the primary title). */
 export function getProductMetaLine(product: CatalogProduct): string | undefined {
   const code = cleanText(product.productCode) || cleanText(product.sku);

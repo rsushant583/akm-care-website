@@ -6,18 +6,6 @@ import {
 import { productPath } from "@/lib/ecommerce/slug";
 import type { CatalogProduct } from "./types";
 
-/** Official fashion categories prioritized for homepage hero rotation. */
-export const FASHION_SPOTLIGHT_CATEGORY_PRIORITY: readonly OfficialCategoryId[] = [
-  "sarees",
-  "ladies-gown",
-  "stitched-lehenga",
-  "unstitched-lehenga",
-  "semi-stitched-gown",
-  "semi-stitched-lehenga",
-  "semi-stitched-blouse",
-] as const;
-
-const DEFAULT_SPOTLIGHT_LIMIT = 8;
 const MIN_CATEGORY_RAIL = 2;
 
 export function uniqueProducts(lists: CatalogProduct[][], excludeIds?: Set<string>): CatalogProduct[] {
@@ -50,13 +38,6 @@ function productCreatedMs(product: CatalogProduct): number {
   return Number.isFinite(ms) ? ms : 0;
 }
 
-function fashionPriorityIndex(product: CatalogProduct): number {
-  const idx = FASHION_SPOTLIGHT_CATEGORY_PRIORITY.findIndex((slug) =>
-    categoryMatchesProduct(slug, product),
-  );
-  return idx === -1 ? FASHION_SPOTLIGHT_CATEGORY_PRIORITY.length : idx;
-}
-
 function sortNewestFirst(a: CatalogProduct, b: CatalogProduct): number {
   const byDate = productCreatedMs(b) - productCreatedMs(a);
   if (byDate !== 0) return byDate;
@@ -79,128 +60,6 @@ export function pickNewestArrivals(
     .slice()
     .sort(sortNewestFirst);
   return eligible.slice(0, Math.max(0, limit));
-}
-
-/**
- * Latest fashion-forward products for hero spotlight rotation.
- * Prefer priority categories; fill from other visible products if needed.
- */
-export function pickLatestSpotlightProducts(
-  products: CatalogProduct[],
-  limit = DEFAULT_SPOTLIGHT_LIMIT,
-): CatalogProduct[] {
-  const max = Math.max(0, Math.min(limit, DEFAULT_SPOTLIGHT_LIMIT));
-  if (max === 0) return [];
-
-  const eligible = products
-    .filter(isStorefrontVisibleProduct)
-    .filter(hasUsableProductImage)
-    .filter((p) => {
-      // Must map to at least one official browsable category when possible;
-      // legacy/unknown categories still allowed as fill after fashion priority.
-      return Boolean(p.category || p.categoryLabel);
-    });
-
-  // Fashion categories first (newest uploaded), then other categories as fill.
-  // Within fashion, prefer lower priority-index on equal timestamps.
-  const fashion = eligible
-    .filter((p) => fashionPriorityIndex(p) < FASHION_SPOTLIGHT_CATEGORY_PRIORITY.length)
-    .slice()
-    .sort((a, b) => {
-      const byDate = sortNewestFirst(a, b);
-      if (byDate !== 0) return byDate;
-      return fashionPriorityIndex(a) - fashionPriorityIndex(b);
-    });
-
-  const rest = eligible
-    .filter((p) => fashionPriorityIndex(p) >= FASHION_SPOTLIGHT_CATEGORY_PRIORITY.length)
-    .slice()
-    .sort(sortNewestFirst);
-
-  const seenIds = new Set<string>();
-  const seenSrc = new Set<string>();
-  const out: CatalogProduct[] = [];
-
-  for (const product of [...fashion, ...rest]) {
-    if (seenIds.has(product.id)) continue;
-    const src = product.images[0]?.src || product.image_url;
-    if (!src || seenSrc.has(src)) continue;
-    seenIds.add(product.id);
-    seenSrc.add(src);
-    out.push(product);
-    if (out.length >= max) break;
-  }
-
-  return out;
-}
-
-export type LookbookSlide = {
-  featured: CatalogProduct;
-  supporting: CatalogProduct[];
-};
-
-const DEFAULT_SUPPORTING = 3;
-
-function categoryKey(product: CatalogProduct): string {
-  return String(product.category || product.categoryLabel || "")
-    .trim()
-    .toLowerCase();
-}
-
-/**
- * Pick supporting looks for a featured product from the spotlight pool.
- * Prefer different categories; never repeat the featured product; fill gracefully.
- */
-export function pickLookbookSupporting(
-  pool: CatalogProduct[],
-  featured: CatalogProduct,
-  limit = DEFAULT_SUPPORTING,
-): CatalogProduct[] {
-  const max = Math.max(0, Math.min(limit, DEFAULT_SUPPORTING));
-  if (max === 0 || pool.length === 0) return [];
-
-  const remaining = pool.filter((p) => p.id !== featured.id);
-  if (remaining.length === 0) return [];
-
-  const featuredCat = categoryKey(featured);
-  const out: CatalogProduct[] = [];
-  const used = new Set<string>();
-  const usedCats = new Set<string>(featuredCat ? [featuredCat] : []);
-
-  // Pass 1 — different category (keeps lookbook variety).
-  for (const product of remaining) {
-    if (out.length >= max) break;
-    const cat = categoryKey(product);
-    if (cat && usedCats.has(cat)) continue;
-    out.push(product);
-    used.add(product.id);
-    if (cat) usedCats.add(cat);
-  }
-
-  // Pass 2 — fill remaining slots without duplicates.
-  for (const product of remaining) {
-    if (out.length >= max) break;
-    if (used.has(product.id)) continue;
-    out.push(product);
-    used.add(product.id);
-  }
-
-  return out;
-}
-
-/**
- * Build rotating lookbook compositions from the spotlight pool.
- * Each slide promotes one featured product and 0–3 supporting looks.
- */
-export function buildLookbookSlides(
-  products: CatalogProduct[],
-  supportingCount = DEFAULT_SUPPORTING,
-): LookbookSlide[] {
-  if (!products.length) return [];
-  return products.map((featured) => ({
-    featured,
-    supporting: pickLookbookSupporting(products, featured, supportingCount),
-  }));
 }
 
 /** First real catalog image per official category. Never invents imagery. */

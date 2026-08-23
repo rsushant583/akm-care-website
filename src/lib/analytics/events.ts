@@ -66,27 +66,6 @@ export function trackSelectItem(params: {
   });
 }
 
-/** Hero spotlight impression — once per mount when products are ready. */
-export function trackHeroView(products: CatalogProduct[]): void {
-  if (products.length === 0) return;
-  ga4Event("hero_view", {
-    item_list_id: "home_hero",
-    item_count: products.length,
-    items: toGA4Items(products.slice(0, 8)),
-  });
-}
-
-export function trackHeroProductClick(product: CatalogProduct, index?: number): void {
-  const item = toGA4Item(product, 1);
-  ga4Event("hero_product_click", {
-    item_list_id: "home_hero",
-    item_id: product.id,
-    item_name: product.name,
-    items: [item],
-    ...(typeof index === "number" ? { index } : {}),
-  });
-}
-
 export function trackNewArrivalsView(products: CatalogProduct[]): void {
   if (products.length === 0) return;
   ga4Event("new_arrivals_view", {
