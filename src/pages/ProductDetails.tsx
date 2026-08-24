@@ -25,7 +25,6 @@ import { getAvailableQuantity, isProductInStock } from "@/lib/ecommerce/availabi
 import { getStockLabel } from "@/lib/ecommerce/badges";
 import { customerSafeMessage } from "@/lib/ecommerce/customerCopy";
 import { shareProduct } from "@/lib/ecommerce/share";
-import { isValidIndianPincode, mockDeliveryAvailable } from "@/lib/pincodeDelivery";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { useCompare } from "@/context/CompareContext";
@@ -33,6 +32,7 @@ import { useRecentlyViewed } from "@/context/RecentlyViewedContext";
 import {
   EmptyState,
   ErrorState,
+  PincodeServiceability,
   ProductAttributeDetails,
   ProductGallery,
   ProductHighlights,
@@ -92,8 +92,6 @@ export default function ProductDetails() {
   const [showSticky, setShowSticky] = useState(false);
   const [adding, setAdding] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
-  const [pinInput, setPinInput] = useState("");
-  const [pinStatus, setPinStatus] = useState<"idle" | "invalid" | "ok" | "no">("idle");
   const [openSection, setOpenSection] = useState<"shipping" | "returns" | "warranty" | null>("shipping");
   const actionsRef = useRef<HTMLDivElement>(null);
   const addLockRef = useRef(false);
@@ -115,7 +113,6 @@ export default function ProductDetails() {
     setColorId(undefined);
     setVariantId(undefined);
     setJustAdded(false);
-    setPinStatus("idle");
   }, [product?.id]);
 
   useEffect(() => {
@@ -235,15 +232,6 @@ export default function ProductDetails() {
     if (!inStock || adding) return;
     buyNowLine(selection);
     navigate("/checkout");
-  };
-
-  const checkPincode = () => {
-    const p = pinInput.trim();
-    if (!isValidIndianPincode(p)) {
-      setPinStatus("invalid");
-      return;
-    }
-    setPinStatus(mockDeliveryAvailable(p) ? "ok" : "no");
   };
 
   const catalogSpecs: Array<[string, string]> = [
@@ -437,51 +425,17 @@ export default function ProductDetails() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-black/[0.06] bg-[#FAF8F5] p-3.5 space-y-2">
-                <p className="text-sm font-semibold">Deliver to</p>
-                <div className="flex gap-2">
-                  <label className="sr-only" htmlFor="pdp-pincode">
-                    Pincode
-                  </label>
-                  <input
-                    id="pdp-pincode"
-                    inputMode="numeric"
-                    maxLength={6}
-                    placeholder="Enter pincode"
-                    value={pinInput}
-                    onChange={(e) => {
-                      setPinInput(e.target.value.replace(/\D/g, "").slice(0, 6));
-                      setPinStatus("idle");
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") checkPincode();
-                    }}
-                    className="flex-1 min-w-0 h-11 rounded-full border border-black/10 bg-white px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8621A]/35"
-                  />
-                  <button type="button" onClick={checkPincode} className="btn-secondary h-11 px-4 shrink-0">
-                    Check
-                  </button>
-                </div>
-                {pinStatus === "invalid" && (
-                  <p className="text-xs text-destructive">Enter a valid 6-digit Indian pincode.</p>
-                )}
-                {pinStatus === "ok" && (
-                  <p className="text-xs text-emerald-700">
-                    We deliver to this pincode. Exact delivery date is confirmed at checkout.
-                  </p>
-                )}
-                {pinStatus === "no" && (
-                  <p className="text-xs text-amber-800">
-                    This pincode may not be serviceable yet. Try another pincode or contact support.
-                  </p>
-                )}
-                {shippingLabel && (
-                  <p className="text-xs text-[#6B6B6B] flex items-center gap-1.5 pt-0.5">
-                    <Truck size={14} className="text-[#E8621A]" aria-hidden />
-                    Shipping: {shippingLabel}
-                  </p>
-                )}
-              </div>
+              <PincodeServiceability
+                variant="compact"
+                footer={
+                  shippingLabel ? (
+                    <p className="text-xs text-[#6B6B6B] flex items-center gap-1.5">
+                      <Truck size={14} className="text-[#E8621A]" aria-hidden />
+                      Shipping: {shippingLabel}
+                    </p>
+                  ) : null
+                }
+              />
 
               <div ref={actionsRef} className="space-y-3">
                 {inStock ? (

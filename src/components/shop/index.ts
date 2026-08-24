@@ -19,3 +19,4 @@ export {
   ProductHighlights,
   ProductShippingReturnsLink,
 } from "./ProductAttributeDetails";
+export { PincodeServiceability } from "./PincodeServiceability";

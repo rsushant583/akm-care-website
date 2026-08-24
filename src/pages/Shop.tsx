@@ -17,13 +17,13 @@ import {
   SHOP_SORT_OPTIONS,
 } from "@/lib/ecommerce/shopUrlState";
 import { useCart } from "@/context/CartContext";
-import { isValidIndianPincode, mockDeliveryAvailable } from "@/lib/pincodeDelivery";
 import { submitProductInterest } from "@/lib/submissions";
 import { toast } from "@/components/ui/sonner";
 import {
   CategoryStrip,
   EmptyState,
   ErrorState,
+  PincodeServiceability,
   ProductFilters,
   ProductGrid,
   ProductGridSkeleton,
@@ -67,9 +67,6 @@ export default function Shop() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [selectedProduct, setSelectedProduct] = useState("");
-  const [pinInput, setPinInput] = useState("");
-  const [pinStatus, setPinStatus] = useState<"idle" | "invalid" | "ok" | "no">("idle");
-
   const commitUrl = useCallback(
     (
       next: { filters: ShopFilters; sort: SortOption; collection?: typeof collection },
@@ -361,15 +358,6 @@ export default function Shop() {
       ? "Products for this category will appear here as they are added to the catalog."
       : "Try adjusting filters or search to discover more AKM Care products.";
 
-  const checkPincode = () => {
-    const p = pinInput.trim();
-    if (!isValidIndianPincode(p)) {
-      setPinStatus("invalid");
-      return;
-    }
-    setPinStatus(mockDeliveryAvailable(p) ? "ok" : "no");
-  };
-
   const handleNotify = async (e: React.FormEvent) => {
     e.preventDefault();
     const result = await submitProductInterest({
@@ -632,40 +620,7 @@ export default function Shop() {
                 </div>
               </div>
 
-              <div className="max-w-xl bg-white rounded-2xl border border-black/[0.08] p-5 sm:p-6 shadow-sm">
-                <h2 className="font-heading text-lg sm:text-xl mb-1">Check Delivery Availability by Pincode</h2>
-                <p className="text-sm text-muted-foreground mb-4">Enter your 6-digit Indian pincode</p>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    placeholder="Pincode"
-                    value={pinInput}
-                    onChange={(e) => {
-                      setPinInput(e.target.value.replace(/\D/g, "").slice(0, 6));
-                      setPinStatus("idle");
-                    }}
-                    className="flex-1 px-4 py-3 rounded-xl border border-border bg-background text-base focus:outline-none focus:ring-2 focus:ring-[#E8621A]/35"
-                  />
-                  <button
-                    type="button"
-                    onClick={checkPincode}
-                    className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:brightness-110 transition-all whitespace-nowrap"
-                  >
-                    Check Availability
-                  </button>
-                </div>
-                {pinStatus === "invalid" && (
-                  <p className="text-sm text-destructive mt-3">Please enter a valid 6-digit pincode.</p>
-                )}
-                {pinStatus === "ok" && (
-                  <p className="text-sm font-medium text-emerald-700 mt-3">Delivery Available</p>
-                )}
-                {pinStatus === "no" && (
-                  <p className="text-sm font-medium text-destructive mt-3">Delivery Not Available</p>
-                )}
-              </div>
+              <PincodeServiceability variant="card" />
 
               <RecentlyViewedStrip />
             </>
