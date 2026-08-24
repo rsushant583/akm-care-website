@@ -22,7 +22,8 @@ function orbitOffset(index: number, radius = ORBIT_RADIUS) {
   return { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius };
 }
 
-function DigitOrbit({
+/** Exported for compact checkout embedding — same orbital language as shop/PDP. */
+export function DigitOrbit({
   digits,
   reduced,
 }: {
