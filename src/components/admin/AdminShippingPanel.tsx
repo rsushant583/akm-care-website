@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "@/components/ui/sonner";
 import {
   assessCreateShipmentReadiness,
@@ -7,6 +7,12 @@ import {
   type AdminShipmentView,
 } from "@/services/adminShippingService";
 import type { AdminOrderDetail } from "@/services/adminOrdersService";
+import {
+  EMPTY_PACKED_PARCEL_FORM,
+  packedParcelValidationMessage,
+  parseParcelProfile,
+  parcelProfileToForm,
+} from "@/lib/shipping/parcelProfile";
 
 const PAST_PICKUP = new Set([
   "picked_up",
@@ -28,6 +34,8 @@ export function AdminShippingPanel({ order, canEdit, onChanged }: Props) {
   const [readinessReasons, setReadinessReasons] = useState<string[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [packedForm, setPackedForm] = useState(EMPTY_PACKED_PARCEL_FORM);
+  const parcelPrefillOrderId = useRef<string | null>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -39,11 +47,19 @@ export function AdminShippingPanel({ order, canEdit, onChanged }: Props) {
       setShipment(res.shipment || null);
       setProviderEnabled(res.enabled ?? null);
       setReadinessReasons(readiness.reasons);
+      if (parcelPrefillOrderId.current !== order.id) {
+        setPackedForm(readiness.storeParcel ? parcelProfileToForm(readiness.storeParcel) : EMPTY_PACKED_PARCEL_FORM);
+        parcelPrefillOrderId.current = order.id;
+      }
     } catch (e) {
       // get may fail if function not deployed yet
       setProviderEnabled(false);
       const readiness = await assessCreateShipmentReadiness(order);
       setReadinessReasons(readiness.reasons);
+      if (parcelPrefillOrderId.current !== order.id) {
+        setPackedForm(readiness.storeParcel ? parcelProfileToForm(readiness.storeParcel) : EMPTY_PACKED_PARCEL_FORM);
+        parcelPrefillOrderId.current = order.id;
+      }
       if (e instanceof Error && !/FunctionsFetchError|Failed to send/i.test(e.message)) {
         toast.error(e.message);
       }
@@ -56,11 +72,20 @@ export function AdminShippingPanel({ order, canEdit, onChanged }: Props) {
     void refresh();
   }, [refresh]);
 
+  const packedParcel = parseParcelProfile(packedForm);
+  const packedError = packedParcelValidationMessage(packedForm);
+
   const run = async (action: Parameters<typeof runShippingAction>[0]) => {
     if (!canEdit) return;
+    if (action === "create") {
+      if (!packedParcel) {
+        toast.error(packedError || "Enter the packed parcel weight and dimensions.");
+        return;
+      }
+    }
     setBusy(action);
     try {
-      const res = await runShippingAction(action, order.id);
+      const res = await runShippingAction(action, order.id, action === "create" && packedParcel ? { parcel: packedParcel } : undefined);
       setShipment(res.shipment || null);
       setProviderEnabled(res.enabled ?? true);
       toast.success(`Shipping: ${action.replace(/_/g, " ")} succeeded`);
@@ -80,7 +105,8 @@ export function AdminShippingPanel({ order, canEdit, onChanged }: Props) {
     paid &&
     !hasActive &&
     readinessReasons.length === 0 &&
-    providerEnabled === true;
+    providerEnabled === true &&
+    Boolean(packedParcel);
   const canCancel =
     canEdit && hasActive && shipment && !PAST_PICKUP.has(shipment.status);
 
@@ -122,6 +148,42 @@ export function AdminShippingPanel({ order, canEdit, onChanged }: Props) {
                   ))}
                 </ul>
               )}
+              <div className="rounded-xl border bg-slate-50 px-3 py-3 space-y-2">
+                <p className="text-xs font-medium text-slate-700">Packed parcel (this shipment)</p>
+                <p className="text-xs text-slate-500">
+                  Enter the final closed/packed parcel. Store default is only a starting point and is not saved
+                  back to settings when you edit these fields.
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <PackedField
+                    label="Weight (kg)"
+                    value={packedForm.weight_kg}
+                    onChange={(v) => setPackedForm({ ...packedForm, weight_kg: v })}
+                    disabled={!canEdit}
+                  />
+                  <PackedField
+                    label="Length (cm)"
+                    value={packedForm.length_cm}
+                    onChange={(v) => setPackedForm({ ...packedForm, length_cm: v })}
+                    disabled={!canEdit}
+                  />
+                  <PackedField
+                    label="Breadth (cm)"
+                    value={packedForm.breadth_cm}
+                    onChange={(v) => setPackedForm({ ...packedForm, breadth_cm: v })}
+                    disabled={!canEdit}
+                  />
+                  <PackedField
+                    label="Height (cm)"
+                    value={packedForm.height_cm}
+                    onChange={(v) => setPackedForm({ ...packedForm, height_cm: v })}
+                    disabled={!canEdit}
+                  />
+                </div>
+                {packedError && (
+                  <p className="text-xs text-amber-900">{packedError}</p>
+                )}
+              </div>
               <button
                 type="button"
                 disabled={!canCreate || busy !== null}
@@ -171,6 +233,14 @@ export function AdminShippingPanel({ order, canEdit, onChanged }: Props) {
                 <div>
                   <dt className="text-slate-500">Status</dt>
                   <dd className="font-medium capitalize">{shipment.status.replace(/_/g, " ")}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">Packed parcel</dt>
+                  <dd className="font-medium">
+                    {shipment.weight_kg != null && shipment.length_cm != null && shipment.breadth_cm != null && shipment.height_cm != null
+                      ? `${shipment.weight_kg} kg · ${shipment.length_cm}×${shipment.breadth_cm}×${shipment.height_cm} cm`
+                      : "—"}
+                  </dd>
                 </div>
               </dl>
               {shipment.last_error && (
@@ -245,6 +315,34 @@ export function AdminShippingPanel({ order, canEdit, onChanged }: Props) {
         </>
       )}
     </section>
+  );
+}
+
+function PackedField({
+  label,
+  value,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <label className="text-xs block">
+      <span className="font-medium text-slate-700">{label}</span>
+      <input
+        type="number"
+        min={0}
+        step="any"
+        inputMode="decimal"
+        disabled={disabled}
+        className="mt-1 w-full rounded-lg border bg-white px-2 py-1.5 text-sm disabled:opacity-60"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </label>
   );
 }
 

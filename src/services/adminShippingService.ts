@@ -3,7 +3,13 @@ import {
   buildDestinationSnapshot,
   validateDestinationSnapshot,
 } from "@/lib/shipping/addressSnapshot";
-import { PACKAGE_REQUIRED_MESSAGE, parseParcelProfile, PARCEL_PROFILE_SETTINGS_KEY } from "@/lib/shipping/parcelProfile";
+import {
+  PARCEL_PROFILE_SETTINGS_KEY,
+  buildCreateShipmentRequest,
+  parseParcelProfile,
+  requirePackedParcel,
+  type ParcelProfile,
+} from "@/lib/shipping/parcelProfile";
 
 export type AdminShipmentView = {
   id: string;
@@ -50,6 +56,7 @@ export type ShippingAdminResponse = {
 async function invokeShippingAdmin(
   action: ShippingAction,
   orderId: string,
+  extra?: { parcel?: ParcelProfile },
 ): Promise<ShippingAdminResponse> {
   const client = getSupabaseClient();
   if (!client) throw new Error("Supabase not configured");
@@ -57,8 +64,13 @@ async function invokeShippingAdmin(
   const token = sessionData.session?.access_token;
   if (!token) throw new Error("Admin sign-in required");
 
+  const requestBody =
+    action === "create" && extra?.parcel
+      ? buildCreateShipmentRequest(orderId, extra.parcel)
+      : { action, orderId };
+
   const { data, error } = await client.functions.invoke("shipping-admin", {
-    body: { action, orderId },
+    body: requestBody,
     headers: { Authorization: `Bearer ${token}` },
   });
   if (error) {
@@ -66,11 +78,11 @@ async function invokeShippingAdmin(
     // Functions may return JSON error body
     throw new Error(msg);
   }
-  const body = (data || {}) as ShippingAdminResponse;
-  if (!body.success) {
-    throw new Error(body.error || "Shipping action failed");
+  const responseBody = (data || {}) as ShippingAdminResponse;
+  if (!responseBody.success) {
+    throw new Error(responseBody.error || "Shipping action failed");
   }
-  return body;
+  return responseBody;
 }
 
 export async function getAdminShipment(orderId: string): Promise<ShippingAdminResponse> {
@@ -80,7 +92,12 @@ export async function getAdminShipment(orderId: string): Promise<ShippingAdminRe
 export async function runShippingAction(
   action: Exclude<ShippingAction, "get">,
   orderId: string,
+  extra?: { parcel?: ParcelProfile },
 ): Promise<ShippingAdminResponse> {
+  if (action === "create") {
+    const parcel = requirePackedParcel(extra?.parcel);
+    return invokeShippingAdmin(action, orderId, { parcel });
+  }
   return invokeShippingAdmin(action, orderId);
 }
 
@@ -89,6 +106,7 @@ export type CreateShipmentReadiness = {
   reasons: string[];
   providerEnabled: boolean | null;
   parcelConfigured: boolean;
+  storeParcel: ParcelProfile | null;
   destinationOk: boolean;
 };
 
@@ -117,7 +135,7 @@ export async function assessCreateShipmentReadiness(order: {
     reasons.push(`Missing shipping destination: ${destCheck.missing.join(", ")}`);
   }
 
-  let parcelConfigured = false;
+  let storeParcel: ParcelProfile | null = null;
   const client = getSupabaseClient();
   if (client) {
     const { data } = await client
@@ -125,15 +143,15 @@ export async function assessCreateShipmentReadiness(order: {
       .select("value")
       .eq("key", PARCEL_PROFILE_SETTINGS_KEY)
       .maybeSingle();
-    parcelConfigured = Boolean(parseParcelProfile(data?.value));
+    storeParcel = parseParcelProfile(data?.value);
   }
-  if (!parcelConfigured) reasons.push(PACKAGE_REQUIRED_MESSAGE);
 
   return {
     canCreate: reasons.length === 0,
     reasons,
     providerEnabled: null,
-    parcelConfigured,
+    parcelConfigured: Boolean(storeParcel),
+    storeParcel,
     destinationOk: destCheck.ok,
   };
 }
